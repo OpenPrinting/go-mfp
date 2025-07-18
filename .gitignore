@@ -10,3 +10,5 @@ cmd/mfp-discover/mfp-discover
 cmd/mfp-model/mfp-model
 cmd/mfp-proxy/mfp-proxy
 cmd/mfp-virtual/mfp-virtual
+
+.vscode
