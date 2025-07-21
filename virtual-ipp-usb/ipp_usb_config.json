@@ -1,0 +1,12 @@
+{
+  "ipp_server_url": "http://localhost:631/ipp/print",
+  "device_name": "Virtual USB-IPP-Proxy",
+  "vendor_id": "0x03F0",
+  "product_id": "0x1234",
+  "manufacturer": "Virtual",
+  "product": "IPP-USB Proxy",
+  "serial": "VIP001",
+  "listen_ip": "0.0.0.0",
+  "listen_port": 3240,
+  "debug": true
+}
