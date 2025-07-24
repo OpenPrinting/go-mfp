@@ -1,3 +1,11 @@
+// MFP - Multi-Function Printers and scanners toolkit
+// Virtual USB/IP device emulator for testing and fuzzing
+//
+// Copyright (C) 2025 and up by Mohammed Imaduddin (mdimad005@gmail.com)
+// See LICENSE for license terms and conditions
+//
+// USB/IP emulation logic
+
 package main
 
 import (
