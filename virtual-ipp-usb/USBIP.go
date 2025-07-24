@@ -9,16 +9,20 @@ import (
 )
 
 const (
-	USBIP_DIR_OUT = 0
-	USBIP_DIR_IN  = 1
+	// USBIPDirOut indicates OUT direction in USB/IP
+	USBIPDirOut = 0
+	// USBIPDirIn indicates IN direction in USB/IP
+	USBIPDirIn = 1
 )
 
+// USBIPHeader represents the common USB/IP protocol header used in communication.
 type USBIPHeader struct {
 	Version uint16
 	Command uint16
 	Status  uint32
 }
 
+// Pack serializes the USBIPHeader into a byte slice using big-endian encoding.
 func (h *USBIPHeader) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, h.Version)
@@ -27,6 +31,7 @@ func (h *USBIPHeader) Pack() []byte {
 	return buf.Bytes()
 }
 
+// Unpack deserializes the given byte slice into the USBIPHeader fields using big-endian encoding.
 func (h *USBIPHeader) Unpack(data []byte) {
 	buf := bytes.NewReader(data)
 	binary.Read(buf, binary.BigEndian, &h.Version)
@@ -34,10 +39,12 @@ func (h *USBIPHeader) Unpack(data []byte) {
 	binary.Read(buf, binary.BigEndian, &h.Status)
 }
 
+// Size returns the fixed size in bytes of a packed USBIPHeader.
 func (h *USBIPHeader) Size() int {
 	return 8
 }
 
+// USBInterface represents a USB interface descriptor containing class and protocol information.
 type USBInterface struct {
 	BInterfaceClass    uint8
 	BInterfaceSubClass uint8
@@ -45,6 +52,7 @@ type USBInterface struct {
 	Align              uint8
 }
 
+// Pack serializes the USBInterface into a byte slice using big-endian encoding.
 func (u *USBInterface) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, u.BInterfaceClass)
@@ -54,7 +62,8 @@ func (u *USBInterface) Pack() []byte {
 	return buf.Bytes()
 }
 
-type OP_REP_DevList struct {
+// OPREPDevList represents the device list reply structure in the USB/IP protocol.
+type OPREPDevList struct {
 	Base                USBIPHeader
 	NExportedDevice     uint32
 	UsbPath             [256]byte
@@ -62,8 +71,8 @@ type OP_REP_DevList struct {
 	Busnum              uint32
 	Devnum              uint32
 	Speed               uint32
-	IdVendor            uint16
-	IdProduct           uint16
+	IDVendor            uint16
+	IDProduct           uint16
 	BcdDevice           uint16
 	BDeviceClass        uint8
 	BDeviceSubClass     uint8
@@ -74,7 +83,8 @@ type OP_REP_DevList struct {
 	Interfaces          USBInterface
 }
 
-func (o *OP_REP_DevList) Pack() []byte {
+// Pack serializes the OPREPDevList into a byte slice using big-endian encoding.
+func (o *OPREPDevList) Pack() []byte {
 	buf := new(bytes.Buffer)
 	buf.Write(o.Base.Pack())
 	binary.Write(buf, binary.BigEndian, o.NExportedDevice)
@@ -83,8 +93,8 @@ func (o *OP_REP_DevList) Pack() []byte {
 	binary.Write(buf, binary.BigEndian, o.Busnum)
 	binary.Write(buf, binary.BigEndian, o.Devnum)
 	binary.Write(buf, binary.BigEndian, o.Speed)
-	binary.Write(buf, binary.BigEndian, o.IdVendor)
-	binary.Write(buf, binary.BigEndian, o.IdProduct)
+	binary.Write(buf, binary.BigEndian, o.IDVendor)
+	binary.Write(buf, binary.BigEndian, o.IDProduct)
 	binary.Write(buf, binary.BigEndian, o.BcdDevice)
 	binary.Write(buf, binary.BigEndian, o.BDeviceClass)
 	binary.Write(buf, binary.BigEndian, o.BDeviceSubClass)
@@ -96,15 +106,16 @@ func (o *OP_REP_DevList) Pack() []byte {
 	return buf.Bytes()
 }
 
-type OP_REP_Import struct {
+// OPREPImport represents the structure used to respond to an import request in the USB/IP protocol.
+type OPREPImport struct {
 	Base                USBIPHeader
 	UsbPath             [256]byte
 	BusID               [32]byte
 	Busnum              uint32
 	Devnum              uint32
 	Speed               uint32
-	IdVendor            uint16
-	IdProduct           uint16
+	IDVendor            uint16
+	IDProduct           uint16
 	BcdDevice           uint16
 	BDeviceClass        uint8
 	BDeviceSubClass     uint8
@@ -114,7 +125,8 @@ type OP_REP_Import struct {
 	BNumInterfaces      uint8
 }
 
-func (o *OP_REP_Import) Pack() []byte {
+// Pack serializes the OPREPImport into a byte slice using big-endian encoding.
+func (o *OPREPImport) Pack() []byte {
 	buf := new(bytes.Buffer)
 	buf.Write(o.Base.Pack())
 	buf.Write(o.UsbPath[:])
@@ -122,8 +134,8 @@ func (o *OP_REP_Import) Pack() []byte {
 	binary.Write(buf, binary.BigEndian, o.Busnum)
 	binary.Write(buf, binary.BigEndian, o.Devnum)
 	binary.Write(buf, binary.BigEndian, o.Speed)
-	binary.Write(buf, binary.BigEndian, o.IdVendor)
-	binary.Write(buf, binary.BigEndian, o.IdProduct)
+	binary.Write(buf, binary.BigEndian, o.IDVendor)
+	binary.Write(buf, binary.BigEndian, o.IDProduct)
 	binary.Write(buf, binary.BigEndian, o.BcdDevice)
 	binary.Write(buf, binary.BigEndian, o.BDeviceClass)
 	binary.Write(buf, binary.BigEndian, o.BDeviceSubClass)
@@ -134,7 +146,8 @@ func (o *OP_REP_Import) Pack() []byte {
 	return buf.Bytes()
 }
 
-type USBIP_RET_Submit struct {
+// USBIPRETSubmit represents the USB/IP return submit packet structure.
+type USBIPRETSubmit struct {
 	Command         uint32
 	Seqnum          uint32
 	Devid           uint32
@@ -149,7 +162,9 @@ type USBIP_RET_Submit struct {
 	Data            []byte
 }
 
-func (u *USBIP_RET_Submit) Pack() []byte {
+// Pack serializes the USBIPRETSubmit structure into a byte slice using big-endian encoding.
+func (u *USBIPRETSubmit) Pack() []byte {
+
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, u.Command)
 	binary.Write(buf, binary.BigEndian, u.Seqnum)
@@ -166,11 +181,14 @@ func (u *USBIP_RET_Submit) Pack() []byte {
 	return buf.Bytes()
 }
 
-func (u *USBIP_RET_Submit) Size() int {
+// Size returns the fixed size (in bytes) of the USBIPRETSubmit header.
+func (u *USBIPRETSubmit) Size() int {
+
 	return 48
 }
 
-type USBIP_CMD_Submit struct {
+// USBIPCMDSubmit represents the USB/IP command submit packet structure.
+type USBIPCMDSubmit struct {
 	Command              uint32
 	Seqnum               uint32
 	Devid                uint32
@@ -184,7 +202,9 @@ type USBIP_CMD_Submit struct {
 	Setup                [8]byte
 }
 
-func (u *USBIP_CMD_Submit) Unpack(data []byte) {
+// Unpack deserializes the byte slice into a USBIPCMDSubmit structure using big-endian encoding.
+func (u *USBIPCMDSubmit) Unpack(data []byte) {
+
 	buf := bytes.NewReader(data)
 	binary.Read(buf, binary.BigEndian, &u.Command)
 	binary.Read(buf, binary.BigEndian, &u.Seqnum)
@@ -199,10 +219,13 @@ func (u *USBIP_CMD_Submit) Unpack(data []byte) {
 	copy(u.Setup[:], data[40:48])
 }
 
-func (u *USBIP_CMD_Submit) Size() int {
+// Size returns the fixed size (in bytes) of a USBIPCMDSubmit structure.
+func (u *USBIPCMDSubmit) Size() int {
+
 	return 48
 }
 
+// StandardDeviceRequest represents a standard USB control request structure.
 type StandardDeviceRequest struct {
 	BmRequestType uint8
 	BRequest      uint8
@@ -211,6 +234,7 @@ type StandardDeviceRequest struct {
 	WLength       uint16
 }
 
+// Unpack parses a StandardDeviceRequest from a byte slice.
 func (s *StandardDeviceRequest) Unpack(data []byte) {
 	buf := bytes.NewReader(data)
 	binary.Read(buf, binary.LittleEndian, &s.BmRequestType)
@@ -220,6 +244,7 @@ func (s *StandardDeviceRequest) Unpack(data []byte) {
 	binary.Read(buf, binary.LittleEndian, &s.WLength)
 }
 
+// DeviceDescriptor describes a USB device, including vendor/product IDs and configurations.
 type DeviceDescriptor struct {
 	BLength            uint8
 	BDescriptorType    uint8
@@ -228,8 +253,8 @@ type DeviceDescriptor struct {
 	BDeviceSubClass    uint8
 	BDeviceProtocol    uint8
 	BMaxPacketSize0    uint8
-	IdVendor           uint16
-	IdProduct          uint16
+	IDVendor           uint16
+	IDProduct          uint16
 	BcdDevice          uint16
 	IManufacturer      uint8
 	IProduct           uint8
@@ -237,6 +262,7 @@ type DeviceDescriptor struct {
 	BNumConfigurations uint8
 }
 
+// Pack serializes the DeviceDescriptor into a byte slice using little-endian format.
 func (d DeviceDescriptor) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, d.BLength)
@@ -246,8 +272,8 @@ func (d DeviceDescriptor) Pack() []byte {
 	binary.Write(buf, binary.LittleEndian, d.BDeviceSubClass)
 	binary.Write(buf, binary.LittleEndian, d.BDeviceProtocol)
 	binary.Write(buf, binary.LittleEndian, d.BMaxPacketSize0)
-	binary.Write(buf, binary.LittleEndian, d.IdVendor)
-	binary.Write(buf, binary.LittleEndian, d.IdProduct)
+	binary.Write(buf, binary.LittleEndian, d.IDVendor)
+	binary.Write(buf, binary.LittleEndian, d.IDProduct)
 	binary.Write(buf, binary.LittleEndian, d.BcdDevice)
 	binary.Write(buf, binary.LittleEndian, d.IManufacturer)
 	binary.Write(buf, binary.LittleEndian, d.IProduct)
@@ -256,6 +282,7 @@ func (d DeviceDescriptor) Pack() []byte {
 	return buf.Bytes()
 }
 
+// DeviceConfiguration defines a configuration for a USB device including interfaces.
 type DeviceConfiguration struct {
 	BLength             uint8
 	BDescriptorType     uint8
@@ -268,6 +295,7 @@ type DeviceConfiguration struct {
 	Interfaces          [][]InterfaceDescriptor
 }
 
+// Pack serializes the DeviceConfiguration into a byte slice.
 func (d *DeviceConfiguration) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, d.BLength)
@@ -281,6 +309,7 @@ func (d *DeviceConfiguration) Pack() []byte {
 	return buf.Bytes()
 }
 
+// BOSDescriptor defines a Binary Object Store descriptor for a USB device.
 type BOSDescriptor struct {
 	BLength         uint8
 	BDescriptorType uint8
@@ -288,6 +317,7 @@ type BOSDescriptor struct {
 	BNumDeviceCaps  uint8
 }
 
+// Pack serializes the BOSDescriptor into a byte slice.
 func (b *BOSDescriptor) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, b.BLength)
@@ -297,6 +327,7 @@ func (b *BOSDescriptor) Pack() []byte {
 	return buf.Bytes()
 }
 
+// DeviceQualifierDescriptor describes a high-speed capable device in other speeds.
 type DeviceQualifierDescriptor struct {
 	BLength            uint8
 	BDescriptorType    uint8
@@ -309,6 +340,7 @@ type DeviceQualifierDescriptor struct {
 	BReserved          uint8
 }
 
+// Pack serializes the DeviceQualifierDescriptor into a byte slice.
 func (d *DeviceQualifierDescriptor) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, d.BLength)
@@ -323,6 +355,7 @@ func (d *DeviceQualifierDescriptor) Pack() []byte {
 	return buf.Bytes()
 }
 
+// InterfaceDescriptor describes a single interface within a configuration.
 type InterfaceDescriptor struct {
 	BLength            uint8
 	BDescriptorType    uint8
@@ -337,6 +370,7 @@ type InterfaceDescriptor struct {
 	Endpoints          []EndpointDescriptor
 }
 
+// Pack serializes the InterfaceDescriptor into a byte slice.
 func (i *InterfaceDescriptor) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, i.BLength)
@@ -351,6 +385,7 @@ func (i *InterfaceDescriptor) Pack() []byte {
 	return buf.Bytes()
 }
 
+// EndpointDescriptor describes a USB endpoint within an interface.
 type EndpointDescriptor struct {
 	BLength          uint8
 	BDescriptorType  uint8
@@ -361,6 +396,7 @@ type EndpointDescriptor struct {
 	ClassDescriptor  interface{ Pack() []byte }
 }
 
+// Pack serializes the EndpointDescriptor into a byte slice.
 func (e *EndpointDescriptor) Pack() []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, e.BLength)
@@ -372,6 +408,7 @@ func (e *EndpointDescriptor) Pack() []byte {
 	return buf.Bytes()
 }
 
+// USBRequest represents a USB transfer request received from the host.
 type USBRequest struct {
 	Seqnum               uint32
 	Devid                uint32
@@ -385,6 +422,7 @@ type USBRequest struct {
 	TransferBuffer       []byte
 }
 
+// USBDevice defines an interface for emulated USB devices.
 type USBDevice interface {
 	GetConfigurations() []DeviceConfiguration
 	GetDeviceDescriptor() DeviceDescriptor
@@ -393,15 +431,18 @@ type USBDevice interface {
 	SetConnection(conn net.Conn)
 }
 
+// BaseUSBDevice provides a default implementation for core USB device behaviors.
 type BaseUSBDevice struct {
 	Connection        net.Conn
 	AllConfigurations []byte
 }
 
+// SetConnection sets the TCP connection used to communicate with the host.
 func (b *BaseUSBDevice) SetConnection(conn net.Conn) {
 	b.Connection = conn
 }
 
+// GenerateRawConfiguration flattens and serializes the configuration descriptors.
 func (b *BaseUSBDevice) GenerateRawConfiguration(device USBDevice) {
 	var allConfigurations []byte
 	for _, configuration := range device.GetConfigurations() {
@@ -424,9 +465,10 @@ func (b *BaseUSBDevice) GenerateRawConfiguration(device USBDevice) {
 	b.AllConfigurations = allConfigurations
 }
 
+// SendUSBRet sends a USBIP_RET_Submit response back to the host.
 func (b *BaseUSBDevice) SendUSBRet(usbReq USBRequest, usbRes []byte, usbLen int, status uint32) {
 	fmt.Printf("Sending %s\n", BytesToString(usbRes))
-	ret := &USBIP_RET_Submit{
+	ret := &USBIPRETSubmit{
 		Command:         0x3,
 		Seqnum:          usbReq.Seqnum,
 		Devid:           0,
@@ -443,6 +485,7 @@ func (b *BaseUSBDevice) SendUSBRet(usbReq USBRequest, usbRes []byte, usbLen int,
 	b.Connection.Write(ret.Pack())
 }
 
+// HandleGetDescriptor processes a GET_DESCRIPTOR request from the host.
 func (b *BaseUSBDevice) HandleGetDescriptor(device USBDevice, controlReq StandardDeviceRequest, usbReq USBRequest) bool {
 	descriptorType := uint8(controlReq.WValue >> 8)
 	descriptorIndex := uint8(controlReq.WValue & 0xff)
@@ -463,12 +506,14 @@ func (b *BaseUSBDevice) HandleGetDescriptor(device USBDevice, controlReq Standar
 	return false
 }
 
+// HandleSetConfiguration processes a SET_CONFIGURATION request from the host.
 func (b *BaseUSBDevice) HandleSetConfiguration(device USBDevice, controlReq StandardDeviceRequest, usbReq USBRequest) bool {
 	fmt.Printf("handle_set_configuration %d\n", controlReq.WValue)
 	b.SendUSBRet(usbReq, []byte{}, 0, 0)
 	return true
 }
 
+// HandleUSBControl handles a standard USB control transfer on endpoint 0.
 func (b *BaseUSBDevice) HandleUSBControl(device USBDevice, usbReq USBRequest) {
 	controlReq := StandardDeviceRequest{}
 	controlReq.Unpack(usbReq.Setup[:])
@@ -510,6 +555,7 @@ func (b *BaseUSBDevice) HandleUSBControl(device USBDevice, usbReq USBRequest) {
 	}
 }
 
+// HandleUSBRequest routes a USB request to the appropriate handler.
 func (b *BaseUSBDevice) HandleUSBRequest(device USBDevice, usbReq USBRequest) {
 	if usbReq.Ep == 0 { // Endpoint 0 is always the control endpoint
 		b.HandleUSBControl(device, usbReq)
@@ -518,6 +564,7 @@ func (b *BaseUSBDevice) HandleUSBRequest(device USBDevice, usbReq USBRequest) {
 	}
 }
 
+// BytesToString returns a hex-escaped string for a byte slice
 func BytesToString(data []byte) string {
 	if len(data) == 0 {
 		return ""
@@ -529,15 +576,18 @@ func BytesToString(data []byte) string {
 	return result.String()
 }
 
+// USBContainer manages a collection of virtual USB devices.
 type USBContainer struct {
 	USBDevices []USBDevice
 }
 
+// AddUSBDevice adds a USBDevice to the container.
 func (c *USBContainer) AddUSBDevice(device USBDevice) {
 	c.USBDevices = append(c.USBDevices, device)
 }
 
-func (c *USBContainer) HandleAttach() *OP_REP_Import {
+// HandleAttach handles a device import request from the USB/IP client.
+func (c *USBContainer) HandleAttach() *OPREPImport {
 	usbDev := c.USBDevices[0]
 	deviceDescriptor := usbDev.GetDeviceDescriptor()
 	configurations := usbDev.GetConfigurations()
@@ -548,15 +598,15 @@ func (c *USBContainer) HandleAttach() *OP_REP_Import {
 	var busID [32]byte
 	copy(busID[:], "1-1")
 
-	return &OP_REP_Import{
+	return &OPREPImport{
 		Base:                USBIPHeader{Version: 0x0111, Command: 3, Status: 0},
 		UsbPath:             usbPath,
 		BusID:               busID,
 		Busnum:              1,
 		Devnum:              2,
 		Speed:               2,
-		IdVendor:            deviceDescriptor.IdVendor,
-		IdProduct:           deviceDescriptor.IdProduct,
+		IDVendor:            deviceDescriptor.IDVendor,
+		IDProduct:           deviceDescriptor.IDProduct,
 		BcdDevice:           deviceDescriptor.BcdDevice,
 		BDeviceClass:        deviceDescriptor.BDeviceClass,
 		BDeviceSubClass:     deviceDescriptor.BDeviceSubClass,
@@ -567,7 +617,8 @@ func (c *USBContainer) HandleAttach() *OP_REP_Import {
 	}
 }
 
-func (c *USBContainer) HandleDeviceList() *OP_REP_DevList {
+// HandleDeviceList responds with a list of available USB devices.
+func (c *USBContainer) HandleDeviceList() *OPREPDevList {
 	usbDev := c.USBDevices[0]
 	deviceDescriptor := usbDev.GetDeviceDescriptor()
 	configurations := usbDev.GetConfigurations()
@@ -578,7 +629,7 @@ func (c *USBContainer) HandleDeviceList() *OP_REP_DevList {
 	var busID [32]byte
 	copy(busID[:], "1-1")
 
-	return &OP_REP_DevList{
+	return &OPREPDevList{
 		Base:                USBIPHeader{Version: 0x0111, Command: 5, Status: 0},
 		NExportedDevice:     1,
 		UsbPath:             usbPath,
@@ -586,8 +637,8 @@ func (c *USBContainer) HandleDeviceList() *OP_REP_DevList {
 		Busnum:              1,
 		Devnum:              2,
 		Speed:               2,
-		IdVendor:            deviceDescriptor.IdVendor,
-		IdProduct:           deviceDescriptor.IdProduct,
+		IDVendor:            deviceDescriptor.IDVendor,
+		IDProduct:           deviceDescriptor.IDProduct,
 		BcdDevice:           deviceDescriptor.BcdDevice,
 		BDeviceClass:        deviceDescriptor.BDeviceClass,
 		BDeviceSubClass:     deviceDescriptor.BDeviceSubClass,
@@ -604,6 +655,7 @@ func (c *USBContainer) HandleDeviceList() *OP_REP_DevList {
 	}
 }
 
+// Run starts the USB/IP server and handles incoming connections.
 func (c *USBContainer) Run(ip string, port int) {
 	if ip == "" {
 		ip = "0.0.0.0"
@@ -652,7 +704,7 @@ func (c *USBContainer) Run(ip string, port int) {
 			} else {
 				fmt.Println("----------------")
 				fmt.Println("handles requests")
-				cmd := USBIP_CMD_Submit{}
+				cmd := USBIPCMDSubmit{}
 				cmdHeaderData := make([]byte, cmd.Size())
 				n, err := conn.Read(cmdHeaderData)
 				if err != nil || n == 0 {
@@ -661,7 +713,7 @@ func (c *USBContainer) Run(ip string, port int) {
 				cmd.Unpack(cmdHeaderData)
 
 				var transferBuffer []byte
-				if cmd.Direction == USBIP_DIR_OUT && cmd.TransferBufferLength > 0 {
+				if cmd.Direction == USBIPDirOut && cmd.TransferBufferLength > 0 {
 					transferBuffer = make([]byte, cmd.TransferBufferLength)
 					conn.Read(transferBuffer)
 				}

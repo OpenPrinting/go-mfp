@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// Config holds settings used to initialize the virtual IPP-over-USB device.
 type Config struct {
 	IPPServerURL string `json:"ipp_server_url"`
 	DeviceName   string `json:"device_name"`
@@ -26,6 +27,7 @@ type Config struct {
 	Debug        bool   `json:"debug"`
 }
 
+// IPPOverUSBDevice simulates a USB printer that forwards data to an IPP server.
 type IPPOverUSBDevice struct {
 	BaseUSBDevice
 	config           Config
@@ -41,7 +43,9 @@ type IPPOverUSBDevice struct {
 	pendingResponse  []byte
 }
 
+// NewIPPOverUSBDevice creates a new IPP-over-USB device from the given config file.
 func NewIPPOverUSBDevice(configFile string) (*IPPOverUSBDevice, error) {
+
 	device := &IPPOverUSBDevice{}
 
 	config, err := device.loadConfig(configFile)
@@ -150,8 +154,8 @@ func (d *IPPOverUSBDevice) createDeviceDescriptor() DeviceDescriptor {
 		BDeviceSubClass:    0x00,
 		BDeviceProtocol:    0x00,
 		BMaxPacketSize0:    0x40,
-		IdVendor:           d.vendorID,
-		IdProduct:          d.productID,
+		IDVendor:           d.vendorID,
+		IDProduct:          d.productID,
 		BcdDevice:          0x0100,
 		IManufacturer:      1,
 		IProduct:           2,
@@ -246,11 +250,15 @@ func (d *IPPOverUSBDevice) createConfigurations() []DeviceConfiguration {
 	return []DeviceConfiguration{config}
 }
 
+// GetDeviceDescriptor returns the USB device descriptor for the virtual printer.
 func (d *IPPOverUSBDevice) GetDeviceDescriptor() DeviceDescriptor {
+
 	return d.deviceDescriptor
 }
 
+// GetConfigurations returns all USB configurations supported by the device.
 func (d *IPPOverUSBDevice) GetConfigurations() []DeviceConfiguration {
+
 	return d.configurations
 }
 
@@ -306,7 +314,9 @@ func (d *IPPOverUSBDevice) disconnectFromServer() {
 	d.tcpConnected = false
 }
 
+// HandleData processes bulk IN/OUT USB data requests sent to the device.
 func (d *IPPOverUSBDevice) HandleData(usbReq USBRequest) {
+
 	switch usbReq.Ep {
 	case 0x01, 0x03:
 		d.handleBulkOut(usbReq)
@@ -407,7 +417,9 @@ func (d *IPPOverUSBDevice) handleBulkIn(usbReq USBRequest) {
 	d.tcpConnection.SetReadDeadline(time.Now().Add(10 * time.Second))
 }
 
+// HandleDeviceSpecificControl processes USB class or vendor-specific control requests.
 func (d *IPPOverUSBDevice) HandleDeviceSpecificControl(controlReq StandardDeviceRequest, usbReq USBRequest) {
+
 	if controlReq.BmRequestType == 0xA1 {
 		if controlReq.BRequest == 0x01 { // GET_DEVICE_ID
 			deviceID := fmt.Sprintf("MFG:%s;CMD:PostScript,PDF;MDL:%s;CLS:PRINTER;",
