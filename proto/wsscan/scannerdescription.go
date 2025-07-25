@@ -64,20 +64,29 @@ func decodeScannerDescription(root xmldoc.Element) (
 
 	// Decode ScannerName (required)
 	var sn TextWithLangElement
-	sn.Decode(scannerName.Elem)
+	sn, err = sn.decodeTextWithLangElement(scannerName.Elem)
+	if err != nil {
+		return sd, err
+	}
 	sd.ScannerName = sn
 
 	// Decode ScannerInfo (optional)
 	if scannerInfo.Found {
 		var si TextWithLangElement
-		si.Decode(scannerInfo.Elem)
+		si, err = si.decodeTextWithLangElement(scannerInfo.Elem)
+		if err != nil {
+			return sd, err
+		}
 		sd.ScannerInfo = optional.New(si)
 	}
 
 	// Decode ScannerLocation (optional)
 	if scannerLocation.Found {
 		var sl TextWithLangElement
-		sl.Decode(scannerLocation.Elem)
+		sl, err = sl.decodeTextWithLangElement(scannerLocation.Elem)
+		if err != nil {
+			return sd, err
+		}
 		sd.ScannerLocation = optional.New(sl)
 	}
 
@@ -94,7 +103,7 @@ func (sd ScannerDescription) toXML(name string) xmldoc.Element {
 	// Add ScannerName (required)
 	elm.Children = append(
 		elm.Children,
-		sd.ScannerName.ToXML(NsWSCN+":ScannerName"),
+		sd.ScannerName.toXML(NsWSCN+":ScannerName"),
 	)
 
 	// Add ScannerInfo (optional)
@@ -102,7 +111,7 @@ func (sd ScannerDescription) toXML(name string) xmldoc.Element {
 		info := optional.Get(sd.ScannerInfo)
 		elm.Children = append(
 			elm.Children,
-			info.ToXML(NsWSCN+":ScannerInfo"),
+			info.toXML(NsWSCN+":ScannerInfo"),
 		)
 	}
 
@@ -111,7 +120,7 @@ func (sd ScannerDescription) toXML(name string) xmldoc.Element {
 		location := optional.Get(sd.ScannerLocation)
 		elm.Children = append(
 			elm.Children,
-			location.ToXML(NsWSCN+":ScannerLocation"),
+			location.toXML(NsWSCN+":ScannerLocation"),
 		)
 	}
 

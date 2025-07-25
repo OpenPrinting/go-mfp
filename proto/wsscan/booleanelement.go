@@ -16,7 +16,8 @@ import (
 )
 
 // BooleanElement is a string type representing a boolean XML value.
-// Allowed values: "0", "1", "false", "true" (case-insensitive, whitespace ignored).
+// Allowed values: "0", "1", "false", "true"
+// (case-insensitive, whitespace ignored).
 type BooleanElement string
 
 // Validate checks that the value is a valid BooleanElement value.

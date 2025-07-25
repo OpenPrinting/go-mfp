@@ -73,21 +73,3 @@ func decodeRangeElement(root xmldoc.Element) (re RangeElement, err error) {
 
 	return re, nil
 }
-
-// Validate checks that MinValue <= MaxValue and both are within
-// [minAllowed, maxAllowed].
-func (re RangeElement) Validate(minAllowed, maxAllowed int) error {
-	if re.MinValue > re.MaxValue {
-		return fmt.Errorf("MinValue (%d) must be <= MaxValue (%d)",
-			re.MinValue, re.MaxValue)
-	}
-	if re.MinValue < minAllowed || re.MinValue > maxAllowed {
-		return fmt.Errorf("MinValue (%d) must be in range [%d, %d]",
-			re.MinValue, minAllowed, maxAllowed)
-	}
-	if re.MaxValue < minAllowed || re.MaxValue > maxAllowed {
-		return fmt.Errorf("MaxValue (%d) must be in range [%d, %d]",
-			re.MaxValue, minAllowed, maxAllowed)
-	}
-	return nil
-}

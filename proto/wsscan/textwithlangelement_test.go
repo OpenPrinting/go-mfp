@@ -20,7 +20,7 @@ func TestTextWithLangElement_RoundTrip(t *testing.T) {
 		Text: "Test Scanner",
 		Lang: optional.New("en-US"),
 	}
-	elm := orig.ToXML("wscn:ScannerName")
+	elm := orig.toXML("wscn:ScannerName")
 	if elm.Name != "wscn:ScannerName" {
 		t.Errorf("expected element name 'wscn:ScannerName', got '%s'", elm.Name)
 	}
@@ -31,8 +31,10 @@ func TestTextWithLangElement_RoundTrip(t *testing.T) {
 		t.Errorf("expected xml:lang attribute 'en-US', got %+v", elm.Attrs)
 	}
 
-	var decoded TextWithLangElement
-	decoded.Decode(elm)
+	decoded, err := orig.decodeTextWithLangElement(elm)
+	if err != nil {
+		t.Fatalf("decode returned error: %v", err)
+	}
 	if !reflect.DeepEqual(orig, decoded) {
 		t.Errorf("expected %+v, got %+v", orig, decoded)
 	}
@@ -42,13 +44,15 @@ func TestTextWithLangElement_EmptyLang(t *testing.T) {
 	orig := TextWithLangElement{
 		Text: "No Lang",
 	}
-	elm := orig.ToXML("wscn:ScannerInfo")
+	elm := orig.toXML("wscn:ScannerInfo")
 	if len(elm.Attrs) != 0 {
 		t.Errorf("expected no attributes, got %+v", elm.Attrs)
 	}
 
-	var decoded TextWithLangElement
-	decoded.Decode(elm)
+	decoded, err := orig.decodeTextWithLangElement(elm)
+	if err != nil {
+		t.Fatalf("decode returned error: %v", err)
+	}
 	if !reflect.DeepEqual(orig, decoded) {
 		t.Errorf("expected %+v, got %+v", orig, decoded)
 	}
