@@ -23,15 +23,15 @@ func createValidDeviceSettings() DeviceSettings {
 	return DeviceSettings{
 		AutoExposureSupported:             autoExp,
 		BrightnessSupported:               brightness,
-		CompressionQualityFactorSupported: RangeElement{MinValue: 1, MaxValue: 100},
+		CompressionQualityFactorSupported: Range{MinValue: 1, MaxValue: 100},
 		ContentTypesSupported:             []ContentTypeValue{Auto},
 		ContrastSupported:                 contrast,
 		DocumentSizeAutoDetectSupported:   docSize,
 		FormatsSupported:                  []FormatValue{PNG},
 		RotationsSupported:                []RotationValue{Rotation0},
 		ScalingRangeSupported: ScalingRangeSupported{
-			ScalingWidth:  RangeElement{MinValue: 1, MaxValue: 1000},
-			ScalingHeight: RangeElement{MinValue: 1, MaxValue: 1000},
+			ScalingWidth:  Range{MinValue: 1, MaxValue: 1000},
+			ScalingHeight: Range{MinValue: 1, MaxValue: 1000},
 		},
 	}
 }

@@ -24,8 +24,8 @@ func TestScalingRangeSupported_XMLRoundTrip(t *testing.T) {
 	}
 	for _, c := range cases {
 		srs := ScalingRangeSupported{
-			ScalingWidth:  RangeElement{MinValue: c.wmin, MaxValue: c.wmax},
-			ScalingHeight: RangeElement{MinValue: c.hmin, MaxValue: c.hmax},
+			ScalingWidth:  Range{MinValue: c.wmin, MaxValue: c.wmax},
+			ScalingHeight: Range{MinValue: c.hmin, MaxValue: c.hmax},
 		}
 		elm := srs.toXML(NsWSCN + ":ScalingRangeSupported")
 		parsed, err := decodeScalingRangeSupported(elm)

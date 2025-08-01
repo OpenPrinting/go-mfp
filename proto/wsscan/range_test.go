@@ -24,12 +24,12 @@ func TestRangeElement_XMLRoundTrip(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		re := RangeElement{MinValue: c.min, MaxValue: c.max}
+		re := Range{MinValue: c.min, MaxValue: c.max}
 		elm := xmldoc.Element{
 			Name:     NsWSCN + ":TestRange",
 			Children: re.toXML(),
 		}
-		parsed, err := decodeRangeElement(elm)
+		parsed, err := decodeRange(elm)
 		if err != nil {
 			t.Errorf("decodeRangeElement: input %+v, unexpected error: %v",
 				re, err)
@@ -79,7 +79,7 @@ func TestRangeElement_DecodeErrors(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			elm := tc.setup()
-			_, err := decodeRangeElement(elm)
+			_, err := decodeRange(elm)
 			if err == nil {
 				t.Fatal("expected error, got nil")
 			}

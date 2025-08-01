@@ -17,8 +17,8 @@ import (
 // ScalingRangeSupported represents the <wscn:ScalingRangeSupported> element,
 // containing ScalingWidth and ScalingHeight.
 type ScalingRangeSupported struct {
-	ScalingWidth  RangeElement
-	ScalingHeight RangeElement
+	ScalingWidth  Range
+	ScalingHeight Range
 }
 
 // toXML generates XML tree for the [ScalingRangeSupported].
@@ -57,13 +57,13 @@ func decodeScalingRangeSupported(root xmldoc.Element) (
 		return srs, xmldoc.XMLErrMissed(missed.Name)
 	}
 
-	width, err := decodeRangeElement(widthLookup.Elem)
+	width, err := decodeRange(widthLookup.Elem)
 	if err != nil {
 		return srs, fmt.Errorf("invalid ScalingWidth: %w", err)
 	}
 	srs.ScalingWidth = width
 
-	height, err := decodeRangeElement(heightLookup.Elem)
+	height, err := decodeRange(heightLookup.Elem)
 	if err != nil {
 		return srs, fmt.Errorf("invalid ScalingHeight: %w", err)
 	}

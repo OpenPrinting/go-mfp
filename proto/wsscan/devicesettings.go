@@ -19,7 +19,7 @@ import (
 type DeviceSettings struct {
 	AutoExposureSupported             BooleanElement
 	BrightnessSupported               BooleanElement
-	CompressionQualityFactorSupported RangeElement
+	CompressionQualityFactorSupported Range
 	ContentTypesSupported             []ContentTypeValue
 	ContrastSupported                 BooleanElement
 	DocumentSizeAutoDetectSupported   BooleanElement
@@ -143,7 +143,7 @@ func decodeDeviceSettings(root xmldoc.Element) (ds DeviceSettings, err error) {
 		brightnessSupported.Elem); err != nil {
 		return ds, fmt.Errorf("BrightnessSupported: %w", err)
 	}
-	if ds.CompressionQualityFactorSupported, err = decodeRangeElement(compressionQualityFactorSupported.Elem); err != nil {
+	if ds.CompressionQualityFactorSupported, err = decodeRange(compressionQualityFactorSupported.Elem); err != nil {
 		return ds, fmt.Errorf("CompressionQualityFactorSupported: %w", err)
 	}
 
