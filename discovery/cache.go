@@ -34,7 +34,7 @@ type cacheEnt struct {
 // newCache creates the new discovery cache
 func newCache() *cache {
 	return &cache{
-		readyAt: time.Now().Add(WarmUpTime),
+		readyAt: time.Now().Add(warmUpTime),
 		entries: make(map[UnitID]*cacheEnt),
 	}
 }
@@ -309,7 +309,7 @@ func (ent *cacheEnt) snapshot() (un unit, ok bool) {
 // the staging area is published.
 func (ent *cacheEnt) stagingBegin() {
 	if !ent.stagingInProgress() {
-		ent.stagingDoneAt = time.Now().Add(StabilizationTime)
+		ent.stagingDoneAt = time.Now().Add(stabilizationTime)
 	}
 }
 
