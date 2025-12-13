@@ -1,8 +1,10 @@
-// MFP - Multi-Function Printers and scanners toolkit
-// discovery - Discovery module tests
+// MFP  - Multi-Function Printers and scanners toolkit
+// discovery - Discovery module test suite
 //
-// Copyright (C) 2025
-// Author: Ayush Singh
+// Copyright (C) 2025 and up by SinghCod3r
+// See LICENSE for license terms and conditions
+//
+// Test suite for discovery functionality
 
 package discovery
 
