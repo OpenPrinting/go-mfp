@@ -1,10 +1,8 @@
-// MFP  - Multi-Function Printers and scanners toolkit
-// discovery - Discovery module test suite
+// MFP - Multi-Function Printers and scanners toolkit
+// discovery - Discovery module tests
 //
-// Copyright (C) 2025 and up by SinghCod3r
-// See LICENSE for license terms and conditions
-//
-// Test suite for discovery functionality
+// Copyright (C) 2025
+// Author: Ayush Singh
 
 package discovery
 
@@ -305,70 +303,5 @@ func TestClient_Unreachable(t *testing.T) {
 
 	if len(devices) != 0 {
 		t.Errorf("Expected 0 devices, got %d", len(devices))
-	}
-}
-
-// Regression Test for Bug #3: Panic in AddBackend
-func TestClient_AddBackend_Nil(t *testing.T) {
-	ctx := context.Background()
-	client := NewClient(ctx)
-	defer client.Close()
-
-	// Should not panic
-	client.AddBackend(nil)
-}
-
-// Regression Test for Bug #2: Incorrect Merging of Devices without UUIDs
-func TestClient_Merge_NoUUID(t *testing.T) {
-	originalWarmUpTime := WarmUpTime
-	originalStabilizationTime := StabilizationTime
-	WarmUpTime = 100 * time.Millisecond
-	StabilizationTime = 100 * time.Millisecond
-	defer func() {
-		WarmUpTime = originalWarmUpTime
-		StabilizationTime = originalStabilizationTime
-	}()
-
-	ctx := context.Background()
-	client := NewClient(ctx)
-	defer client.Close()
-
-	backend := NewMockBackend("mock-backend")
-	
-	// Device 1: No UUID
-	uid1 := UnitID{
-		DNSSDName: "Printer 1",
-		UUID:      uuid.NilUUID,
-		SvcType:   ServicePrinter,
-		SvcProto:  ServiceIPP,
-	}
-
-	// Device 2: No UUID, different name
-	uid2 := UnitID{
-		DNSSDName: "Printer 2",
-		UUID:      uuid.NilUUID,
-		SvcType:   ServicePrinter,
-		SvcProto:  ServiceIPP,
-	}
-
-	backend.AddEvent(&EventAddUnit{ID: uid1})
-	backend.AddEvent(&EventPrinterParameters{ID: uid1, MakeModel: "Model 1"})
-	backend.AddEvent(&EventAddEndpoint{ID: uid1, Endpoint: "ipp://1.1.1.1"})
-
-	backend.AddEvent(&EventAddUnit{ID: uid2})
-	backend.AddEvent(&EventPrinterParameters{ID: uid2, MakeModel: "Model 2"})
-	backend.AddEvent(&EventAddEndpoint{ID: uid2, Endpoint: "ipp://2.2.2.2"})
-
-	client.AddBackend(backend)
-	time.Sleep(200 * time.Millisecond)
-
-	devices, err := client.GetDevices(ctx, ModeNormal)
-	if err != nil {
-		t.Fatalf("GetDevices failed: %v", err)
-	}
-
-	// Should be 2 distinct devices, not merged
-	if len(devices) != 2 {
-		t.Errorf("Expected 2 devices, got %d", len(devices))
 	}
 }

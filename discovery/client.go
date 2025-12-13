@@ -68,9 +68,7 @@ func (clnt *Client) AddBackend(bk Backend) {
 	clnt.lock.Lock()
 	defer clnt.lock.Unlock()
 
-	if bk == nil {
-		return
-	}
+
 
 	if _, found := clnt.backends[bk]; found {
 		err := fmt.Errorf("backend %s already added", bk.Name())

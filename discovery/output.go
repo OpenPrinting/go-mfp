@@ -182,14 +182,8 @@ func (out *output) genMergeDevicesByNameUUID(units []unit) []device {
 // genMergeDevicesByUUID merges devices with the same UUID
 func (out *output) genMergeDevicesByUUID(devices []device) []device {
 	scratchpad := make(map[uuid.UUID]device)
-	noUUID := make([]device, 0)
 
 	for _, dev := range devices {
-		if dev.uuid == uuid.NilUUID {
-			noUUID = append(noUUID, dev)
-			continue
-		}
-
 		if prev, found := scratchpad[dev.uuid]; found {
 			prev.realm = RealmInvalid
 			prev.units = append(prev.units, dev.units...)
@@ -200,11 +194,10 @@ func (out *output) genMergeDevicesByUUID(devices []device) []device {
 		}
 	}
 
-	devices = make([]device, 0, len(scratchpad)+len(noUUID))
+	devices = make([]device, 0, len(scratchpad))
 	for _, dev := range scratchpad {
 		devices = append(devices, dev)
 	}
-	devices = append(devices, noUUID...)
 
 	return devices
 }
