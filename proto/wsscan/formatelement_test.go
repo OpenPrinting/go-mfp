@@ -18,7 +18,7 @@ import (
 
 func TestFormatElement_RoundTrip(t *testing.T) {
 	orig := FormatElement{
-		Value:       "png",
+		Value:       PNG,
 		Override:    optional.New(BooleanElement("false")),
 		UsedDefault: optional.New(BooleanElement("1")),
 	}
@@ -70,7 +70,7 @@ func TestFormatElement_RoundTrip(t *testing.T) {
 
 func TestFormatElement_NoAttributes(t *testing.T) {
 	orig := FormatElement{
-		Value: "jpeg2k",
+		Value: JPEG2K,
 	}
 
 	elm := toXMLFormatElement(orig, NsWSCN+":Format")
@@ -92,64 +92,72 @@ func TestFormatElement_NoAttributes(t *testing.T) {
 }
 
 func TestFormatElement_StandardValues(t *testing.T) {
-	standardValues := []string{
-		"dib",
-		"exif",
-		"jbig",
-		"jfif",
-		"jpeg2k",
-		"pdf-a",
-		"png",
-		"tiff-single-uncompressed",
-		"tiff-single-g4",
-		"tiff-single-g3mh",
-		"tiff-single-jpeg-tn2",
-		"tiff-multi-uncompressed",
-		"tiff-multi-g4",
-		"tiff-multi-g3mh",
-		"tiff-multi-jpeg-tn2",
-		"xps",
+	standardValues := []struct {
+		formatValue FormatValue
+		textValue   string
+	}{
+		{DIB, "dib"},
+		{EXIF, "exif"},
+		{JBIG, "jbig"},
+		{JFIF, "jfif"},
+		{JPEG2K, "jpeg2k"},
+		{PDFA, "pdf-a"},
+		{PNG, "png"},
+		{TIFFSingleUncompressed, "tiff-single-uncompressed"},
+		{TIFFSingleG4, "tiff-single-g4"},
+		{TIFFSingleG3MH, "tiff-single-g3mh"},
+		{TIFFSingleJPEGTN2, "tiff-single-jpeg-tn2"},
+		{TIFFMultiUncompressed, "tiff-multi-uncompressed"},
+		{TIFFMultiG4, "tiff-multi-g4"},
+		{TIFFMultiG3MH, "tiff-multi-g3mh"},
+		{TIFFMultiJPEGTN2, "tiff-multi-jpeg-tn2"},
+		{XPS, "xps"},
 	}
 
-	for _, val := range standardValues {
-		t.Run(val, func(t *testing.T) {
+	for _, tc := range standardValues {
+		t.Run(tc.textValue, func(t *testing.T) {
 			orig := FormatElement{
-				Value: val,
+				Value: tc.formatValue,
 			}
 
 			elm := toXMLFormatElement(orig, NsWSCN+":Format")
-			if elm.Text != val {
-				t.Errorf("expected text '%s', got '%s'", val, elm.Text)
+			if elm.Text != tc.textValue {
+				t.Errorf("expected text '%s', got '%s'", tc.textValue, elm.Text)
 			}
 
 			decoded, err := decodeFormatElement(elm)
 			if err != nil {
 				t.Fatalf("decode returned error: %v", err)
 			}
-			if decoded.Value != val {
-				t.Errorf("expected value %s, got %s", val, decoded.Value)
+			if decoded.Value != tc.formatValue {
+				t.Errorf("expected value %v, got %v", tc.formatValue, decoded.Value)
 			}
 		})
 	}
 }
 
 func TestFormatElement_VendorDefinedValues(t *testing.T) {
-	// Test that vendor-defined values are accepted
+	// Test that vendor-defined values decode to UnknownFormatValue
 	vendorValues := []string{"vendor-format-1", "custom-format", "extended-value"}
 
 	for _, val := range vendorValues {
 		t.Run(val, func(t *testing.T) {
-			orig := FormatElement{
-				Value: val,
+			root := xmldoc.Element{
+				Name: NsWSCN + ":Format",
+				Text: val,
 			}
 
-			elm := toXMLFormatElement(orig, NsWSCN+":Format")
-			decoded, err := decodeFormatElement(elm)
+			decoded, err := decodeFormatElement(root)
 			if err != nil {
 				t.Fatalf("decode returned error for vendor-defined value '%s': %v", val, err)
 			}
-			if decoded.Value != val {
-				t.Errorf("expected value %s, got %s", val, decoded.Value)
+			if decoded.Value != UnknownFormatValue {
+				t.Errorf("expected UnknownFormatValue, got %v", decoded.Value)
+			}
+			// When encoding UnknownFormatValue, it will return "Unknown"
+			elm := toXMLFormatElement(decoded, NsWSCN+":Format")
+			if elm.Text != "Unknown" {
+				t.Errorf("expected text 'Unknown' for UnknownFormatValue, got '%s'", elm.Text)
 			}
 		})
 	}
@@ -171,8 +179,8 @@ func TestFormatElement_FromXML(t *testing.T) {
 		t.Fatalf("decode returned error: %v", err)
 	}
 
-	if decoded.Value != "tiff-multi-g4" {
-		t.Errorf("expected value 'tiff-multi-g4', got '%s'", decoded.Value)
+	if decoded.Value != TIFFMultiG4 {
+		t.Errorf("expected value TIFFMultiG4, got %v", decoded.Value)
 	}
 	if override := optional.Get(decoded.Override); string(override) != "0" {
 		t.Errorf("expected Override='0', got '%s'", override)
@@ -205,7 +213,7 @@ func TestFormatElement_InvalidBooleanAttributes(t *testing.T) {
 func TestFormatElement_OnlyOverride(t *testing.T) {
 	// Test with only Override attribute
 	orig := FormatElement{
-		Value:    "pdf-a",
+		Value:    PDFA,
 		Override: optional.New(BooleanElement("1")),
 	}
 
@@ -222,15 +230,15 @@ func TestFormatElement_OnlyOverride(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode returned error: %v", err)
 	}
-	if decoded.Value != "pdf-a" {
-		t.Errorf("expected value 'pdf-a', got '%s'", decoded.Value)
+	if decoded.Value != PDFA {
+		t.Errorf("expected value PDFA, got %v", decoded.Value)
 	}
 }
 
 func TestFormatElement_OnlyUsedDefault(t *testing.T) {
 	// Test with only UsedDefault attribute
 	orig := FormatElement{
-		Value:       "exif",
+		Value:       EXIF,
 		UsedDefault: optional.New(BooleanElement("false")),
 	}
 
@@ -247,7 +255,7 @@ func TestFormatElement_OnlyUsedDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode returned error: %v", err)
 	}
-	if decoded.Value != "exif" {
-		t.Errorf("expected value 'exif', got '%s'", decoded.Value)
+	if decoded.Value != EXIF {
+		t.Errorf("expected value EXIF, got %v", decoded.Value)
 	}
 }

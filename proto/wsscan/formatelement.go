@@ -19,27 +19,21 @@ import (
 // "tiff-single-uncompressed", "tiff-single-g4", "tiff-single-g3mh",
 // "tiff-single-jpeg-tn2", "tiff-multi-uncompressed", "tiff-multi-g4",
 // "tiff-multi-g3mh", "tiff-multi-jpeg-tn2", "xps".
-// Vendor-defined values are also allowed.
+// Vendor-defined values are also allowed and will decode as UnknownFormatValue.
 //
 // It includes optional wscn:Override and wscn:UsedDefault attributes
 // (all xs:string, but should be boolean values: 0, false, 1, or true).
 // Note: This element does NOT have a MustHonor attribute.
-//
-// Note: This is different from the [FormatValue] enum type which is used
-// in FormatsSupported lists.
-type FormatElement = AttributedElement[string]
+type FormatElement = AttributedElement[FormatValue]
 
 // decodeFormatElement decodes [FormatElement] from the XML tree.
 func decodeFormatElement(root xmldoc.Element) (FormatElement, error) {
-	return decodeAttributedElement(root, func(s string) (string, error) {
-		// Accept any string value as vendor-defined values are allowed
-		return s, nil
+	return decodeAttributedElement(root, func(s string) (FormatValue, error) {
+		return DecodeFormatValue(s), nil
 	})
 }
 
 // toXMLFormatElement generates XML tree for the [FormatElement].
 func toXMLFormatElement(f FormatElement, name string) xmldoc.Element {
-	return f.toXML(name, func(s string) string {
-		return s
-	})
+	return f.toXML(name, FormatValue.String)
 }

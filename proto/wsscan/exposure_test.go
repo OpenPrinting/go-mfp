@@ -18,14 +18,16 @@ import (
 
 func TestExposure_RoundTrip(t *testing.T) {
 	orig := Exposure{
-		MustHonor: optional.New(BooleanElement("true")),
-		Children: []xmldoc.Element{
-			{Name: NsWSCN + ":SomeChild", Text: "value1"},
-			{Name: NsWSCN + ":AnotherChild", Text: "value2"},
+		MustHonor:    optional.New(BooleanElement("true")),
+		AutoExposure: BooleanElement("1"),
+		ExposureSettings: ExposureSettings{
+			Brightness: optional.New(AttributedElement[int]{
+				Value: 50,
+			}),
 		},
 	}
 
-	elm := toXMLExposure(orig, NsWSCN+":Exposure")
+	elm := orig.toXML(NsWSCN + ":Exposure")
 
 	if elm.Name != NsWSCN+":Exposure" {
 		t.Errorf("expected element name '%s', got '%s'",
@@ -47,16 +49,6 @@ func TestExposure_RoundTrip(t *testing.T) {
 		t.Errorf("expected MustHonor='true', got '%s'", elm.Attrs[0].Value)
 	}
 
-	// Check children
-	if elm.Children[0].Name != NsWSCN+":SomeChild" {
-		t.Errorf("expected first child name '%s', got '%s'",
-			NsWSCN+":SomeChild", elm.Children[0].Name)
-	}
-	if elm.Children[1].Name != NsWSCN+":AnotherChild" {
-		t.Errorf("expected second child name '%s', got '%s'",
-			NsWSCN+":AnotherChild", elm.Children[1].Name)
-	}
-
 	// Decode back
 	decoded, err := decodeExposure(elm)
 	if err != nil {
@@ -65,82 +57,68 @@ func TestExposure_RoundTrip(t *testing.T) {
 	if !reflect.DeepEqual(orig.MustHonor, decoded.MustHonor) {
 		t.Errorf("expected MustHonor %+v, got %+v", orig.MustHonor, decoded.MustHonor)
 	}
-	if len(decoded.Children) != len(orig.Children) {
-		t.Errorf("expected %d children, got %d", len(orig.Children), len(decoded.Children))
+	if orig.AutoExposure != decoded.AutoExposure {
+		t.Errorf("expected AutoExposure %+v, got %+v", orig.AutoExposure, decoded.AutoExposure)
 	}
-	for i := range orig.Children {
-		if !orig.Children[i].Equal(decoded.Children[i]) {
-			t.Errorf("child %d mismatch: expected %+v, got %+v",
-				i, orig.Children[i], decoded.Children[i])
-		}
+	if !reflect.DeepEqual(orig.ExposureSettings, decoded.ExposureSettings) {
+		t.Errorf("expected ExposureSettings %+v, got %+v", orig.ExposureSettings, decoded.ExposureSettings)
 	}
 }
 
-func TestExposure_NoAttributes(t *testing.T) {
-	orig := Exposure{
+func TestExposure_MissingAutoExposure(t *testing.T) {
+	root := xmldoc.Element{
+		Name: NsWSCN + ":Exposure",
 		Children: []xmldoc.Element{
-			{Name: NsWSCN + ":Child", Text: "value"},
+			{
+				Name:     NsWSCN + ":ExposureSettings",
+				Children: []xmldoc.Element{},
+			},
 		},
 	}
 
-	elm := toXMLExposure(orig, NsWSCN+":Exposure")
-
-	if len(elm.Attrs) != 0 {
-		t.Errorf("expected no attributes, got %+v", elm.Attrs)
-	}
-	if len(elm.Children) != 1 {
-		t.Errorf("expected 1 child, got %d", len(elm.Children))
-	}
-
-	decoded, err := decodeExposure(elm)
-	if err != nil {
-		t.Fatalf("decode returned error: %v", err)
-	}
-	if decoded.MustHonor != nil {
-		t.Errorf("expected empty MustHonor, got %+v", decoded.MustHonor)
-	}
-	if len(decoded.Children) != 1 {
-		t.Errorf("expected 1 child, got %d", len(decoded.Children))
+	_, err := decodeExposure(root)
+	if err == nil {
+		t.Errorf("expected error for missing AutoExposure, got nil")
 	}
 }
 
-func TestExposure_NoChildren(t *testing.T) {
-	orig := Exposure{
-		MustHonor: optional.New(BooleanElement("false")),
-		Children:  nil,
+func TestExposure_MissingExposureSettings(t *testing.T) {
+	root := xmldoc.Element{
+		Name: NsWSCN + ":Exposure",
+		Children: []xmldoc.Element{
+			{
+				Name: NsWSCN + ":AutoExposure",
+				Text: "true",
+			},
+		},
 	}
 
-	elm := toXMLExposure(orig, NsWSCN+":Exposure")
-
-	if len(elm.Children) != 0 {
-		t.Errorf("expected no children, got %d", len(elm.Children))
-	}
-	if len(elm.Attrs) != 1 {
-		t.Errorf("expected 1 attribute, got %d", len(elm.Attrs))
-	}
-
-	decoded, err := decodeExposure(elm)
-	if err != nil {
-		t.Fatalf("decode returned error: %v", err)
-	}
-	if mustHonor := optional.Get(decoded.MustHonor); string(mustHonor) != "false" {
-		t.Errorf("expected MustHonor='false', got '%s'", mustHonor)
-	}
-	if len(decoded.Children) != 0 {
-		t.Errorf("expected no children, got %d", len(decoded.Children))
+	_, err := decodeExposure(root)
+	if err == nil {
+		t.Errorf("expected error for missing ExposureSettings, got nil")
 	}
 }
 
 func TestExposure_FromXML(t *testing.T) {
-	// Create XML element manually with MustHonor and children
 	root := xmldoc.Element{
 		Name: NsWSCN + ":Exposure",
 		Attrs: []xmldoc.Attr{
 			{Name: NsWSCN + ":MustHonor", Value: "1"},
 		},
 		Children: []xmldoc.Element{
-			{Name: NsWSCN + ":ExposureSettings", Text: "auto"},
-			{Name: NsWSCN + ":Brightness", Text: "50"},
+			{
+				Name: NsWSCN + ":AutoExposure",
+				Text: "true",
+			},
+			{
+				Name: NsWSCN + ":ExposureSettings",
+				Children: []xmldoc.Element{
+					{
+						Name: NsWSCN + ":Brightness",
+						Text: "50",
+					},
+				},
+			},
 		},
 	}
 
@@ -152,28 +130,20 @@ func TestExposure_FromXML(t *testing.T) {
 	if mustHonor := optional.Get(decoded.MustHonor); string(mustHonor) != "1" {
 		t.Errorf("expected MustHonor='1', got '%s'", mustHonor)
 	}
-	if len(decoded.Children) != 2 {
-		t.Errorf("expected 2 children, got %d", len(decoded.Children))
+	if decoded.AutoExposure != BooleanElement("true") {
+		t.Errorf("expected AutoExposure='true', got '%v'", decoded.AutoExposure)
 	}
-	if decoded.Children[0].Name != NsWSCN+":ExposureSettings" {
-		t.Errorf("expected first child name '%s', got '%s'",
-			NsWSCN+":ExposureSettings", decoded.Children[0].Name)
-	}
-	if decoded.Children[1].Name != NsWSCN+":Brightness" {
-		t.Errorf("expected second child name '%s', got '%s'",
-			NsWSCN+":Brightness", decoded.Children[1].Name)
+	expSettings := decoded.ExposureSettings
+	if brightness := optional.Get(expSettings.Brightness); brightness.Value != 50 {
+		t.Errorf("expected Brightness=50, got %d", brightness.Value)
 	}
 }
 
 func TestExposure_InvalidBooleanAttribute(t *testing.T) {
-	// Test that invalid boolean value in MustHonor attribute is rejected
 	root := xmldoc.Element{
 		Name: NsWSCN + ":Exposure",
 		Attrs: []xmldoc.Attr{
 			{Name: NsWSCN + ":MustHonor", Value: "invalid"},
-		},
-		Children: []xmldoc.Element{
-			{Name: NsWSCN + ":Child", Text: "value"},
 		},
 	}
 
@@ -183,25 +153,19 @@ func TestExposure_InvalidBooleanAttribute(t *testing.T) {
 	}
 }
 
-func TestExposure_ValidBooleanValues(t *testing.T) {
-	validValues := []string{"0", "1", "false", "true", "False", "True"}
+func TestExposure_InvalidAutoExposure(t *testing.T) {
+	root := xmldoc.Element{
+		Name: NsWSCN + ":Exposure",
+		Children: []xmldoc.Element{
+			{
+				Name: NsWSCN + ":AutoExposure",
+				Text: "invalid",
+			},
+		},
+	}
 
-	for _, val := range validValues {
-		t.Run(val, func(t *testing.T) {
-			root := xmldoc.Element{
-				Name: NsWSCN + ":Exposure",
-				Attrs: []xmldoc.Attr{
-					{Name: NsWSCN + ":MustHonor", Value: val},
-				},
-			}
-
-			decoded, err := decodeExposure(root)
-			if err != nil {
-				t.Errorf("unexpected error for valid value '%s': %v", val, err)
-			}
-			if mustHonor := optional.Get(decoded.MustHonor); string(mustHonor) == "" {
-				t.Errorf("expected MustHonor to be set for value '%s'", val)
-			}
-		})
+	_, err := decodeExposure(root)
+	if err == nil {
+		t.Errorf("expected error for invalid AutoExposure value 'invalid', got nil")
 	}
 }

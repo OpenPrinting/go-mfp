@@ -18,7 +18,7 @@ import (
 
 func TestContentType_RoundTrip(t *testing.T) {
 	orig := ContentType{
-		Value:       "Auto",
+		Value:       Auto,
 		MustHonor:   optional.New(BooleanElement("true")),
 		Override:    optional.New(BooleanElement("false")),
 		UsedDefault: optional.New(BooleanElement("1")),
@@ -73,7 +73,7 @@ func TestContentType_RoundTrip(t *testing.T) {
 
 func TestContentType_NoAttributes(t *testing.T) {
 	orig := ContentType{
-		Value: "Text",
+		Value: Text,
 	}
 
 	elm := toXMLContentType(orig, NsWSCN+":ContentType")
@@ -95,44 +95,22 @@ func TestContentType_NoAttributes(t *testing.T) {
 }
 
 func TestContentType_StandardValues(t *testing.T) {
-	standardValues := []string{"Auto", "Text", "Photo", "Halftone", "Mixed"}
+	standardValues := []ContentTypeValue{Auto, Text, Photo, Halftone, Mixed}
 
 	for _, val := range standardValues {
-		t.Run(val, func(t *testing.T) {
+		t.Run(val.String(), func(t *testing.T) {
 			orig := ContentType{
 				Value: val,
 			}
 
 			elm := toXMLContentType(orig, NsWSCN+":ContentType")
-			if elm.Text != val {
-				t.Errorf("expected text '%s', got '%s'", val, elm.Text)
+			if elm.Text != val.String() {
+				t.Errorf("expected text '%s', got '%s'", val.String(), elm.Text)
 			}
 
 			decoded, err := decodeContentType(elm)
 			if err != nil {
 				t.Fatalf("decode returned error: %v", err)
-			}
-			if decoded.Value != val {
-				t.Errorf("expected value %s, got %s", val, decoded.Value)
-			}
-		})
-	}
-}
-
-func TestContentType_ExtendedValues(t *testing.T) {
-	// Test that extended values are accepted (as per spec: "You can both extend and subset values")
-	extendedValues := []string{"CustomType1", "AnotherType", "ExtendedValue"}
-
-	for _, val := range extendedValues {
-		t.Run(val, func(t *testing.T) {
-			orig := ContentType{
-				Value: val,
-			}
-
-			elm := toXMLContentType(orig, NsWSCN+":ContentType")
-			decoded, err := decodeContentType(elm)
-			if err != nil {
-				t.Fatalf("decode returned error for extended value '%s': %v", val, err)
 			}
 			if decoded.Value != val {
 				t.Errorf("expected value %s, got %s", val, decoded.Value)
@@ -158,7 +136,7 @@ func TestContentType_FromXML(t *testing.T) {
 		t.Fatalf("decode returned error: %v", err)
 	}
 
-	if decoded.Value != "Photo" {
+	if decoded.Value != Photo {
 		t.Errorf("expected value 'Photo', got '%s'", decoded.Value)
 	}
 	if mustHonor := optional.Get(decoded.MustHonor); string(mustHonor) != "0" {
