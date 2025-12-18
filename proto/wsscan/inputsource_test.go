@@ -18,7 +18,7 @@ import (
 
 func TestInputSource_RoundTrip(t *testing.T) {
 	orig := InputSource{
-		Value:       "ADF",
+		Value:       InputSourceADF,
 		MustHonor:   optional.New(BooleanElement("true")),
 		Override:    optional.New(BooleanElement("false")),
 		UsedDefault: optional.New(BooleanElement("1")),
@@ -73,7 +73,7 @@ func TestInputSource_RoundTrip(t *testing.T) {
 
 func TestInputSource_NoAttributes(t *testing.T) {
 	orig := InputSource{
-		Value: "Platen",
+		Value: InputSourcePlaten,
 	}
 
 	elm := toXMLInputSource(orig, NsWSCN+":InputSource")
@@ -95,30 +95,33 @@ func TestInputSource_NoAttributes(t *testing.T) {
 }
 
 func TestInputSource_StandardValues(t *testing.T) {
-	standardValues := []string{
-		"ADF",
-		"ADFDuplex",
-		"Film",
-		"Platen",
+	standardValues := []struct {
+		enumValue InputSourceValue
+		textValue string
+	}{
+		{InputSourceADF, "ADF"},
+		{InputSourceADFDuplex, "ADFDuplex"},
+		{InputSourceFilm, "Film"},
+		{InputSourcePlaten, "Platen"},
 	}
 
-	for _, val := range standardValues {
-		t.Run(val, func(t *testing.T) {
+	for _, tc := range standardValues {
+		t.Run(tc.textValue, func(t *testing.T) {
 			orig := InputSource{
-				Value: val,
+				Value: tc.enumValue,
 			}
 
 			elm := toXMLInputSource(orig, NsWSCN+":InputSource")
-			if elm.Text != val {
-				t.Errorf("expected text '%s', got '%s'", val, elm.Text)
+			if elm.Text != tc.textValue {
+				t.Errorf("expected text '%s', got '%s'", tc.textValue, elm.Text)
 			}
 
 			decoded, err := decodeInputSource(elm)
 			if err != nil {
 				t.Fatalf("decode returned error: %v", err)
 			}
-			if decoded.Value != val {
-				t.Errorf("expected value %s, got %s", val, decoded.Value)
+			if decoded.Value != tc.enumValue {
+				t.Errorf("expected value %v, got %v", tc.enumValue, decoded.Value)
 			}
 		})
 	}
@@ -141,8 +144,8 @@ func TestInputSource_FromXML(t *testing.T) {
 		t.Fatalf("decode returned error: %v", err)
 	}
 
-	if decoded.Value != "ADFDuplex" {
-		t.Errorf("expected value 'ADFDuplex', got '%s'", decoded.Value)
+	if decoded.Value != InputSourceADFDuplex {
+		t.Errorf("expected value InputSourceADFDuplex, got %v", decoded.Value)
 	}
 	if mustHonor := optional.Get(decoded.MustHonor); string(mustHonor) != "0" {
 		t.Errorf("expected MustHonor='0', got '%s'", mustHonor)
@@ -172,12 +175,20 @@ func TestInputSource_InvalidBooleanAttributes(t *testing.T) {
 }
 
 func TestInputSource_AllStandardValuesWithAttributes(t *testing.T) {
-	standardValues := []string{"ADF", "ADFDuplex", "Film", "Platen"}
+	standardValues := []struct {
+		enumValue InputSourceValue
+		textValue string
+	}{
+		{InputSourceADF, "ADF"},
+		{InputSourceADFDuplex, "ADFDuplex"},
+		{InputSourceFilm, "Film"},
+		{InputSourcePlaten, "Platen"},
+	}
 
-	for _, val := range standardValues {
-		t.Run(val, func(t *testing.T) {
+	for _, tc := range standardValues {
+		t.Run(tc.textValue, func(t *testing.T) {
 			orig := InputSource{
-				Value:       val,
+				Value:       tc.enumValue,
 				MustHonor:   optional.New(BooleanElement("1")),
 				Override:    optional.New(BooleanElement("0")),
 				UsedDefault: optional.New(BooleanElement("true")),
@@ -186,13 +197,40 @@ func TestInputSource_AllStandardValuesWithAttributes(t *testing.T) {
 			elm := toXMLInputSource(orig, NsWSCN+":InputSource")
 			decoded, err := decodeInputSource(elm)
 			if err != nil {
-				t.Fatalf("decode returned error for value '%s': %v", val, err)
+				t.Fatalf("decode returned error for value '%s': %v", tc.textValue, err)
 			}
-			if decoded.Value != val {
-				t.Errorf("expected value %s, got %s", val, decoded.Value)
+			if decoded.Value != tc.enumValue {
+				t.Errorf("expected value %v, got %v", tc.enumValue, decoded.Value)
 			}
 			if len(elm.Attrs) != 3 {
-				t.Errorf("expected 3 attributes for value '%s', got %d", val, len(elm.Attrs))
+				t.Errorf("expected 3 attributes for value '%s', got %d", tc.textValue, len(elm.Attrs))
+			}
+		})
+	}
+}
+
+func TestInputSource_VendorDefinedValues(t *testing.T) {
+	// Test that vendor-defined values decode to UnknownInputSourceValue
+	vendorValues := []string{"vendor-source-1", "custom-source", "extended-value"}
+
+	for _, val := range vendorValues {
+		t.Run(val, func(t *testing.T) {
+			root := xmldoc.Element{
+				Name: NsWSCN + ":InputSource",
+				Text: val,
+			}
+
+			decoded, err := decodeInputSource(root)
+			if err != nil {
+				t.Fatalf("decode returned error for vendor-defined value '%s': %v", val, err)
+			}
+			if decoded.Value != UnknownInputSourceValue {
+				t.Errorf("expected UnknownInputSourceValue, got %v", decoded.Value)
+			}
+			// When encoding UnknownInputSourceValue, it will return "Unknown"
+			elm := toXMLInputSource(decoded, NsWSCN+":InputSource")
+			if elm.Text != "Unknown" {
+				t.Errorf("expected text 'Unknown' for UnknownInputSourceValue, got '%s'", elm.Text)
 			}
 		})
 	}
