@@ -83,8 +83,8 @@ func TestInputSize_DocumentSizeAutoDetectOnly(t *testing.T) {
 
 	elm := orig.toXML(NsWSCN + ":InputSize")
 
-	if len(elm.Children) != 1 {
-		t.Errorf("expected 1 child, got %d", len(elm.Children))
+	if len(elm.Children) != 2 {
+		t.Errorf("expected 2 children, got %d", len(elm.Children))
 	}
 	if elm.Children[0].Name != NsWSCN+":DocumentSizeAutoDetect" {
 		t.Errorf("expected child name '%s', got '%s'",
