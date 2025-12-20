@@ -24,7 +24,9 @@ import (
 //
 // The element contains child elements:
 //   - ScalingWidth (required AttributedElement[int]) - scaling width value in range 1-1000
+//     Note: ScalingWidth should only use Override and UsedDefault attributes, not MustHonor
 //   - ScalingHeight (required AttributedElement[int]) - scaling height value in range 1-1000
+//     Note: ScalingHeight should only use Override and UsedDefault attributes, not MustHonor
 type Scaling struct {
 	MustHonor     optional.Val[BooleanElement]
 	ScalingWidth  AttributedElement[int]
@@ -55,14 +57,6 @@ func (sc Scaling) toXML(name string) xmldoc.Element {
 	return elm
 }
 
-// validateScalingValue validates that the scaling value is in the range 1-1000.
-func validateScalingValue(val int) error {
-	if val < 1 || val > 1000 {
-		return fmt.Errorf("scaling value must be in range 1-1000, got %d", val)
-	}
-	return nil
-}
-
 // decodeScaling decodes [Scaling] from the XML tree.
 func decodeScaling(root xmldoc.Element) (Scaling, error) {
 	var sc Scaling
@@ -80,9 +74,6 @@ func decodeScaling(root xmldoc.Element) (Scaling, error) {
 		val, err := strconv.Atoi(s)
 		if err != nil {
 			return 0, fmt.Errorf("invalid integer: %w", err)
-		}
-		if err := validateScalingValue(val); err != nil {
-			return 0, err
 		}
 		return val, nil
 	}

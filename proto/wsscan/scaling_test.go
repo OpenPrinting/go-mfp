@@ -93,10 +93,12 @@ func TestScaling_RoundTrip_NoAttributes(t *testing.T) {
 	}
 
 	if decoded.ScalingWidth.Value != orig.ScalingWidth.Value {
-		t.Errorf("expected ScalingWidth.Value %d, got %d", orig.ScalingWidth.Value, decoded.ScalingWidth.Value)
+		t.Errorf("expected ScalingWidth.Value %d, got %d",
+			orig.ScalingWidth.Value, decoded.ScalingWidth.Value)
 	}
 	if decoded.ScalingHeight.Value != orig.ScalingHeight.Value {
-		t.Errorf("expected ScalingHeight.Value %d, got %d", orig.ScalingHeight.Value, decoded.ScalingHeight.Value)
+		t.Errorf("expected ScalingHeight.Value %d, got %d",
+			orig.ScalingHeight.Value, decoded.ScalingHeight.Value)
 	}
 }
 
@@ -372,17 +374,17 @@ func TestScaling_BoundaryValues(t *testing.T) {
 }
 
 func TestScaling_AttributesOnChildElements(t *testing.T) {
-	// Test ScalingWidth and ScalingHeight with all attributes
+	// Test ScalingWidth and ScalingHeight with Override and UsedDefault attributes
+	// Note: Per spec, ScalingWidth and ScalingHeight should NOT have MustHonor attribute
+	// (only the parent Scaling element has MustHonor)
 	orig := Scaling{
 		ScalingWidth: AttributedElement[int]{
 			Value:       300,
-			MustHonor:   optional.New(BooleanElement("true")),
 			Override:    optional.New(BooleanElement("false")),
 			UsedDefault: optional.New(BooleanElement("1")),
 		},
 		ScalingHeight: AttributedElement[int]{
 			Value:       400,
-			MustHonor:   optional.New(BooleanElement("0")),
 			Override:    optional.New(BooleanElement("true")),
 			UsedDefault: optional.New(BooleanElement("false")),
 		},
