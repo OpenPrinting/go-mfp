@@ -57,14 +57,17 @@ func NewPrinter(ctx context.Context,
 	}
 
 	// Initialize I/O on IEEE-1284 interfaces
-	if cnt711+cnt712 >= 0 {
+	if cnt711+cnt712 > 0 {
 		match := func(alt usb.InterfaceDescriptor) bool {
 			return alt.Match(match711) || alt.Match(match712)
 		}
 		endpoints := dev.EndpointsByFunc(match)
 
-		for _, endpoint := range endpoints {
-			go drainLegacyPrinter(ctx, endpoint)
+		for i, endpoint := range endpoints {
+			if i < len(printers) {
+				go runLegacyPrinter(ctx, endpoint,
+					printers[i])
+			}
 		}
 	}
 
@@ -82,14 +85,39 @@ func NewPrinter(ctx context.Context,
 	return dev, nil
 }
 
-func drainLegacyPrinter(ctx context.Context, endpoint *Endpoint) {
-	buf := make([]byte, 512)
-	for {
-		n, err := endpoint.Read(buf)
-		if err != nil {
-			break
-		}
+// runLegacyPrinter pipes data between a USB endpoint and an
+// IEEE 1284 printer in both directions:
+//   - Host to printer: endpoint.Read() → printer.Write()
+//   - Printer to host: printer.Read() → endpoint.Write()
+func runLegacyPrinter(ctx context.Context, endpoint *Endpoint,
+	printer *ieee1284.Printer) {
 
-		log.Dump(ctx, log.LevelTrace, buf[:n])
-	}
+	// Host → Printer
+	go func() {
+		buf := make([]byte, 512)
+		for {
+			n, err := endpoint.Read(buf)
+			if err != nil {
+				log.Debug(ctx, "usbip: legacy printer: "+
+					"endpoint read: %s", err)
+				printer.Close()
+				return
+			}
+			printer.Write(buf[:n])
+		}
+	}()
+
+	// Printer → Host
+	go func() {
+		buf := make([]byte, 512)
+		for {
+			n, err := printer.Read(buf)
+			if err != nil {
+				log.Debug(ctx, "usbip: legacy printer: "+
+					"printer read: %s", err)
+				return
+			}
+			endpoint.Write(buf[:n])
+		}
+	}()
 }

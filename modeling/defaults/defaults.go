@@ -115,7 +115,7 @@ func USBIPPDescriptor() usb.DeviceDescriptor {
 						{
 							BInterfaceClass:    7,
 							BInterfaceSubClass: 1,
-							BInterfaceProtocol: 1,
+							BInterfaceProtocol: 2,
 							IEEE1284DeviceID:   deviceID,
 							Endpoints: []usb.EndpointDescriptor{
 								ippusbEndpoint,

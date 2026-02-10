@@ -41,7 +41,7 @@ func newUsbipServer(ctx context.Context,
 
 	ieeeprinters := make([]*ieee1284.Printer, n)
 	for i := 0; i < n; i++ {
-		ieeeprinters[i] = ieee1284.NewPrinter(ctx)
+		ieeeprinters[i] = ieee1284.NewPrinter(ctx, nil)
 	}
 
 	// Create the USB printer device
