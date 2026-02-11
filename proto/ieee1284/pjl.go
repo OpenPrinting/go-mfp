@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // PJL command handling

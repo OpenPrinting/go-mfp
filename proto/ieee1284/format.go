@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // Document format detection
@@ -15,13 +15,13 @@ import (
 
 // DocFormat represents a detected document format.
 type DocFormat int
-
+// Known values for DocFormat.
 const (
 	DocFormatUnknown    DocFormat = iota // Unknown format
 	DocFormatPostScript                  // PostScript
 	DocFormatPDF                         // PDF
 	DocFormatPCL                         // PCL 5
-	DocFormatPCLXL                       // PCL-XL / PCL 6
+	DocFormatPCLXL5                       // PCL-XL / PCL 6
 )
 
 // String returns a human-readable name for the format.
@@ -33,7 +33,7 @@ func (f DocFormat) String() string {
 		return "PDF"
 	case DocFormatPCL:
 		return "PCL"
-	case DocFormatPCLXL:
+	case DocFormatPCLXL5:
 		return "PCL-XL"
 	default:
 		return "Unknown"
@@ -51,7 +51,7 @@ type magicEntry struct {
 var magicTable = []magicEntry{
 	{[]byte("%!PS"), DocFormatPostScript},
 	{[]byte("%PDF-"), DocFormatPDF},
-	{[]byte(") HP-PCL XL"), DocFormatPCLXL},
+	{[]byte(") HP-PCL XL"), DocFormatPCLXL5},
 }
 
 // detectFormatByMagic detects a document format by magic byte prefix.
@@ -85,7 +85,7 @@ func detectFormatByLanguage(lang string) DocFormat {
 	case "PCL":
 		return DocFormatPCL
 	case "PCLXL":
-		return DocFormatPCLXL
+		return DocFormatPCLXL5
 	default:
 		return DocFormatUnknown
 	}
