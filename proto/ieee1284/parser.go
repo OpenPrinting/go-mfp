@@ -182,7 +182,7 @@ func (p *Printer) feedDocument() bool {
 		}
 
 		// Check for PCL reset (ESC E) as end marker for PCL 5
-		if b == 0x1b && p.format == DocFormatPCL {
+		if b == 0x1b && p.format == DocFormatPCL5 {
 			if i+1 < len(p.buf) {
 				if p.buf[i+1] == 'E' {
 					p.docBuf = append(p.docBuf,

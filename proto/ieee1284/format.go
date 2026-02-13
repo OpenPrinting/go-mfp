@@ -20,8 +20,8 @@ const (
 	DocFormatUnknown    DocFormat = iota // Unknown format
 	DocFormatPostScript                  // PostScript
 	DocFormatPDF                         // PDF
-	DocFormatPCL                         // PCL 5
-	DocFormatPCLXL5                       // PCL-XL / PCL 6
+	DocFormatPCL5                         // PCL 5
+	DocFormatPCLXL                   // PCL-XL / PCL 6
 )
 
 // String returns a human-readable name for the format.
@@ -31,9 +31,9 @@ func (f DocFormat) String() string {
 		return "PostScript"
 	case DocFormatPDF:
 		return "PDF"
-	case DocFormatPCL:
+	case DocFormatPCL5:
 		return "PCL"
-	case DocFormatPCLXL5:
+	case DocFormatPCLXL:
 		return "PCL-XL"
 	default:
 		return "Unknown"
@@ -51,7 +51,7 @@ type magicEntry struct {
 var magicTable = []magicEntry{
 	{[]byte("%!PS"), DocFormatPostScript},
 	{[]byte("%PDF-"), DocFormatPDF},
-	{[]byte(") HP-PCL XL"), DocFormatPCLXL5},
+	{[]byte(") HP-PCL XL"), DocFormatPCLXL},
 }
 
 // detectFormatByMagic detects a document format by magic byte prefix.
@@ -68,7 +68,7 @@ func detectFormatByMagic(data []byte) DocFormat {
 	// PCL commands use characters in the range 0x21-0x7e after ESC,
 	// but not '%' (which would be UEL).
 	if len(data) >= 2 && data[0] == 0x1b && data[1] != '%' {
-		return DocFormatPCL
+		return DocFormatPCL5
 	}
 
 	return DocFormatUnknown
@@ -83,9 +83,9 @@ func detectFormatByLanguage(lang string) DocFormat {
 	case "PDF":
 		return DocFormatPDF
 	case "PCL":
-		return DocFormatPCL
+		return DocFormatPCL5
 	case "PCLXL":
-		return DocFormatPCLXL5
+		return DocFormatPCLXL
 	default:
 		return DocFormatUnknown
 	}

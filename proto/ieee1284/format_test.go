@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gamail.com)
+// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // Document format detection tests
@@ -21,8 +21,8 @@ func TestDetectFormatByMagic(t *testing.T) {
 		{"PostScript", []byte("%!PS-Adobe-3.0\n"), DocFormatPostScript},
 		{"PDF", []byte("%PDF-1.4\n"), DocFormatPDF},
 		{"PCL-XL", []byte(") HP-PCL XL;2;0\n"), DocFormatPCLXL},
-		{"PCL5 ESC-E", []byte{0x1b, 'E'}, DocFormatPCL},
-		{"PCL5 ESC-command", []byte{0x1b, '&', 'l', '1', 'O'}, DocFormatPCL},
+		{"PCL5 ESC-E", []byte{0x1b, 'E'}, DocFormatPCL5},
+		{"PCL5 ESC-command", []byte{0x1b, '&', 'l', '1', 'O'}, DocFormatPCL5},
 		{"Unknown", []byte("Hello, World!"), DocFormatUnknown},
 		{"Empty", []byte{}, DocFormatUnknown},
 	}
@@ -48,8 +48,8 @@ func TestDetectFormatByLanguage(t *testing.T) {
 		{"PostScript", DocFormatPostScript},
 		{"PDF", DocFormatPDF},
 		{"pdf", DocFormatPDF},
-		{"PCL", DocFormatPCL},
-		{"pcl", DocFormatPCL},
+		{"PCL", DocFormatPCL5},
+		{"pcl", DocFormatPCL5},
 		{"PCLXL", DocFormatPCLXL},
 		{"pclxl", DocFormatPCLXL},
 		{"UNKNOWN", DocFormatUnknown},
@@ -76,7 +76,7 @@ func TestDocFormatString(t *testing.T) {
 		{DocFormatUnknown, "Unknown"},
 		{DocFormatPostScript, "PostScript"},
 		{DocFormatPDF, "PDF"},
-		{DocFormatPCL, "PCL"},
+		{DocFormatPCL5, "PCL"},
 		{DocFormatPCLXL, "PCL-XL"},
 	}
 
