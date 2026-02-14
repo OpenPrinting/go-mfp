@@ -17,35 +17,45 @@ import (
 
 // Helpers
 
+// containsFatalPython filters out Python code that would terminate the process
 func containsFatalPython(s string) bool {
 	return strings.Contains(s, "sys.exit") ||
 		strings.Contains(s, "os._exit") ||
 		strings.Contains(s, "raise SystemExit")
 }
 
-func safeEval(py *Python, src string) {
-	done := make(chan struct{})
+// safeEval runs py.Eval with a timeout to avoid blocking fuzz workers
+func safeEval(py *Python, src string) error {
+	done := make(chan error, 1)
 	go func() {
-		defer close(done)
-		_ = py.Eval(src)
+		obj := py.Eval(src)
+		if obj != nil {
+			done <- obj.Err()
+			return
+		}
+		done <- nil
 	}()
 
 	select {
-	case <-done:
+	case err := <-done:
+		return err
 	case <-time.After(100 * time.Millisecond):
+		return nil
 	}
 }
 
-func safeExec(py *Python, src string) {
-	done := make(chan struct{})
+// safeExec runs py.Exec with a timeout to avoid blocking fuzz workers
+func safeExec(py *Python, src string) error {
+	done := make(chan error, 1)
 	go func() {
-		defer close(done)
-		_ = py.Exec(src, "")
+		done <- py.Exec(src, "")
 	}()
 
 	select {
-	case <-done:
+	case err := <-done:
+		return err
 	case <-time.After(100 * time.Millisecond):
+		return nil
 	}
 }
 
@@ -68,16 +78,14 @@ func getFuzzPython(t *testing.T) *Python {
 	return fuzzPy
 }
 
-// Interpreter fuzzing
-
+// FuzzPythonEvalExec fuzzes Python Eval/Exec to ensure that arbitrary input does not crash the interpreter or leave it in a broken state
 func FuzzPythonEvalExec(f *testing.F) {
 	f.Add("1 + 1")
-	f.Add("print('hello')")
 	f.Add("")
-	f.Add("x = [1, 2, 3]\nx")
+	f.Add("x = [1, 2, 3]")
 	f.Add("def f(x): return x * 2\nf(10)")
-	f.Add("1/0")
-	f.Add("this is not python")
+	f.Add("1/0")                // runtime error
+	f.Add("this is not python") // syntax error
 
 	f.Fuzz(func(t *testing.T, src string) {
 		if containsFatalPython(src) {
@@ -89,13 +97,19 @@ func FuzzPythonEvalExec(f *testing.F) {
 			return
 		}
 
-		safeEval(py, src)
-		safeExec(py, src)
+		errEval := safeEval(py, src)
+		errExec := safeExec(py, src)
+
+		// For known invalid inputs, we expect errors
+		if src == "1/0" || src == "this is not python" {
+			if errEval == nil && errExec == nil {
+				t.Fatalf("expected error for input %q, got nil", src)
+			}
+		}
 	})
 }
 
-// Object conversion fuzzing
-
+// FuzzPythonNewObjectInt64 fuzzes conversion of integer values from Go to Python objects
 func FuzzPythonNewObjectInt64(f *testing.F) {
 	f.Add(int64(0))
 	f.Add(int64(-1))
@@ -121,6 +135,7 @@ func FuzzPythonNewObjectInt64(f *testing.F) {
 	})
 }
 
+// FuzzPythonNewObjectFloat64 fuzzes conversion of float values from Go to Python objects
 func FuzzPythonNewObjectFloat64(f *testing.F) {
 	f.Add(float64(0))
 	f.Add(float64(1.5))
@@ -140,6 +155,7 @@ func FuzzPythonNewObjectFloat64(f *testing.F) {
 	})
 }
 
+// FuzzPythonNewObjectString fuzzes string conversion from Go to Python unicode objects
 func FuzzPythonNewObjectString(f *testing.F) {
 	f.Add("")
 	f.Add("hello")
@@ -158,6 +174,7 @@ func FuzzPythonNewObjectString(f *testing.F) {
 	})
 }
 
+// FuzzPythonNewObjectBytes fuzzes byte slice conversion to Python bytes objects
 func FuzzPythonNewObjectBytes(f *testing.F) {
 	f.Add([]byte{})
 	f.Add([]byte{0x00, 0x01, 0xff})
@@ -175,6 +192,7 @@ func FuzzPythonNewObjectBytes(f *testing.F) {
 	})
 }
 
+// FuzzPythonContainerConversion fuzzes conversion of Go slices and maps to Python containers
 func FuzzPythonContainerConversion(f *testing.F) {
 	f.Add(0)
 	f.Add(1)
@@ -213,6 +231,7 @@ func FuzzPythonContainerConversion(f *testing.F) {
 	})
 }
 
+// FuzzPythonGlobals fuzzes access to Python global variables via Set/Get/Contains/Del
 func FuzzPythonGlobals(f *testing.F) {
 	f.Add("x", int64(1))
 	f.Add("", int64(0))
