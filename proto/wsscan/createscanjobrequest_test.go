@@ -49,7 +49,8 @@ func TestCreateScanJobRequestRoundTrip(t *testing.T) {
 					JobDescription: JobDescription{
 						JobName:                "DocumentScan",
 						JobOriginatingUserName: "admin",
-						JobInformation:         optional.New("Scanning documents"),
+						JobInformation: optional.New(
+							"Scanning documents"),
 					},
 				},
 			},
@@ -61,6 +62,19 @@ func TestCreateScanJobRequestRoundTrip(t *testing.T) {
 					JobDescription: JobDescription{
 						JobName:                "FullScan",
 						JobOriginatingUserName: "system",
+					},
+				},
+			},
+		},
+		{
+			name: "CreateScanJobRequest",
+			csjr: CreateScanJobRequest{
+				DestinationToken: optional.New("dest-token-123"),
+				ScanIdentifier:   optional.New("scan-id-456"),
+				ScanTicket: ScanTicket{
+					JobDescription: JobDescription{
+						JobName:                "DeviceScan",
+						JobOriginatingUserName: "user@example.com",
 					},
 				},
 			},
@@ -103,7 +117,7 @@ func TestCreateScanJobRequestDecodeError(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "valid CreateScanJobRequest",
+			name: "valid CreateScanJobRequest (ScanTicket only)",
 			xml: xmldoc.Element{
 				Name: NsWSCN + ":CreateScanJobRequest",
 				Children: []xmldoc.Element{
@@ -113,14 +127,34 @@ func TestCreateScanJobRequestDecodeError(t *testing.T) {
 							{
 								Name: NsWSCN + ":JobDescription",
 								Children: []xmldoc.Element{
-									{
-										Name: NsWSCN + ":JobName",
-										Text: "ValidJob",
-									},
-									{
-										Name: NsWSCN + ":JobOriginatingUserName",
-										Text: "validuser",
-									},
+									{Name: NsWSCN + ":JobName", Text: "ValidJob"},
+									{Name: NsWSCN + ":JobOriginatingUserName",
+										Text: "validuser"},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid CreateScanJobRequest with optional fields",
+			xml: xmldoc.Element{
+				Name: NsWSCN + ":CreateScanJobRequest",
+				Children: []xmldoc.Element{
+					{Name: NsWSCN + ":DestinationToken", Text: "dest-valid"},
+					{Name: NsWSCN + ":ScanIdentifier", Text: "scan-valid"},
+					{
+						Name: NsWSCN + ":ScanTicket",
+						Children: []xmldoc.Element{
+							{
+								Name: NsWSCN + ":JobDescription",
+								Children: []xmldoc.Element{
+									{Name: NsWSCN + ":JobName",
+										Text: "ValidJob"},
+									{Name: NsWSCN + ":JobOriginatingUserName",
+										Text: "validuser"},
 								},
 							},
 						},
@@ -143,29 +177,61 @@ func TestCreateScanJobRequestDecodeError(t *testing.T) {
 }
 
 func TestCreateScanJobRequestToXML(t *testing.T) {
-	csjr := CreateScanJobRequest{
-		ScanTicket: ScanTicket{
-			JobDescription: JobDescription{
-				JobName:                "MyJob",
-				JobOriginatingUserName: "testuser",
+	t.Run("ScanTicket only", func(t *testing.T) {
+		csjr := CreateScanJobRequest{
+			ScanTicket: ScanTicket{
+				JobDescription: JobDescription{
+					JobName:                "MyJob",
+					JobOriginatingUserName: "testuser",
+				},
 			},
-		},
-	}
-
-	xml := csjr.toXML(NsWSCN + ":CreateScanJobRequest")
-
-	// Verify element name
-	if xml.Name != NsWSCN+":CreateScanJobRequest" {
-		t.Errorf("Expected name %s, got %s",
-			NsWSCN+":CreateScanJobRequest", xml.Name)
-	}
-
-	// Host-initiated mode: only ScanTicket child
-	if len(xml.Children) != 1 {
-		t.Errorf("Expected 1 child (ScanTicket), got %d", len(xml.Children))
-	}
-	if len(xml.Children) > 0 && xml.Children[0].Name != NsWSCN+":ScanTicket" {
-		t.Errorf("Expected child %s, got %s",
-			NsWSCN+":ScanTicket", xml.Children[0].Name)
-	}
+		}
+		xml := csjr.toXML(NsWSCN + ":CreateScanJobRequest")
+		if xml.Name != NsWSCN+":CreateScanJobRequest" {
+			t.Errorf("Expected name %s, got %s",
+				NsWSCN+":CreateScanJobRequest", xml.Name)
+		}
+		if len(xml.Children) != 1 {
+			t.Errorf("Expected 1 child (ScanTicket), got %d", len(xml.Children))
+		}
+		if len(xml.Children) > 0 && xml.Children[0].Name != NsWSCN+":ScanTicket" {
+			t.Errorf("Expected child %s, got %s",
+				NsWSCN+":ScanTicket", xml.Children[0].Name)
+		}
+	})
+	t.Run("with optional DestinationToken and ScanIdentifier", func(t *testing.T) {
+		csjr := CreateScanJobRequest{
+			DestinationToken: optional.New("token-abc"),
+			ScanIdentifier:   optional.New("id-xyz"),
+			ScanTicket: ScanTicket{
+				JobDescription: JobDescription{
+					JobName:                "MyJob",
+					JobOriginatingUserName: "testuser",
+				},
+			},
+		}
+		xml := csjr.toXML(NsWSCN + ":CreateScanJobRequest")
+		if len(xml.Children) != 3 {
+			t.Errorf("Expected 3 children, got %d", len(xml.Children))
+		}
+		expectedNames := []string{NsWSCN + ":DestinationToken",
+			NsWSCN + ":ScanIdentifier", NsWSCN + ":ScanTicket"}
+		for i, expected := range expectedNames {
+			if i >= len(xml.Children) {
+				break
+			}
+			if xml.Children[i].Name != expected {
+				t.Errorf("Child %d: expected %s, got %s",
+					i, expected, xml.Children[i].Name)
+			}
+		}
+		if len(xml.Children) > 0 && xml.Children[0].Text != "token-abc" {
+			t.Errorf("DestinationToken: expected 'token-abc', got %s",
+				xml.Children[0].Text)
+		}
+		if len(xml.Children) > 1 && xml.Children[1].Text != "id-xyz" {
+			t.Errorf("ScanIdentifier: expected 'id-xyz', got %s",
+				xml.Children[1].Text)
+		}
+	})
 }
