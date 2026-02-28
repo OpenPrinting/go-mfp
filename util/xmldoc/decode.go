@@ -52,7 +52,8 @@ func Decode(ns Namespace, in io.Reader) (Element, error) {
 
 			// Create an element
 			stack = append(stack, elem)
-			elem = Element{Name: name}
+			line, _ := decoder.InputPos()
+			elem = Element{Name: name, Line: line}
 
 			// Decode attributes
 			for _, attr := range t.Attr {

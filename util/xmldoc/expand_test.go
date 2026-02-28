@@ -9,7 +9,6 @@
 package xmldoc
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -71,7 +70,7 @@ func TestExpand(t *testing.T) {
 			return ""
 		})
 
-	if !reflect.DeepEqual(out, expected) {
+	if !out.Equal(expected) {
 		t.Errorf("expected:\n%s\npresent:\n%s\n",
 			expected.EncodeIndentString(nil, "  "),
 			out.EncodeIndentString(nil, "  "))

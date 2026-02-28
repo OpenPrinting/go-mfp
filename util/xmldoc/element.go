@@ -18,6 +18,7 @@ import (
 type Element struct {
 	Name     string    // Name of this element (ns:name)
 	Text     string    // Element body
+	Line     int       // Decode: document position, Encode: ignored
 	Attrs    []Attr    // Element attributes
 	Children []Element // All children
 }
@@ -34,7 +35,8 @@ func (root Element) IsZero() bool {
 		root.Attrs == nil && root.Children == nil
 }
 
-// Equal tests that two XML trees are equal.
+// Equal tests that two XML trees are equal, except difference
+// in the [Element.Line].
 func (root Element) Equal(root2 Element) bool {
 	switch {
 	case root.Name != root2.Name || root.Text != root2.Text:
@@ -146,7 +148,7 @@ func (root Element) childrenSimilar(root2 Element) bool {
 	return true
 }
 
-// Equal tests that two XML attrubutes are equal.
+// Equal tests that two XML attrubutes are equal
 func (attr Attr) Equal(attr2 Attr) bool {
 	return attr == attr2
 }

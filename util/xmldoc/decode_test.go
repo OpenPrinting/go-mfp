@@ -10,7 +10,6 @@ package xmldoc
 
 import (
 	"bytes"
-	"reflect"
 	"testing"
 )
 
@@ -89,7 +88,7 @@ func TestDecode(t *testing.T) {
 		return
 	}
 
-	if !reflect.DeepEqual(out, expect) {
+	if !out.Equal(expect) {
 		fmtexp := expect.EncodeIndentString(nil, "  ")
 		fmtout := out.EncodeIndentString(nil, "  ")
 		t.Errorf("expected:\n%s\npresent:\n%s\n",
