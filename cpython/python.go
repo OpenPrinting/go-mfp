@@ -77,6 +77,22 @@ func (py *Python) Close() {
 		return
 	}
 
+	// On ARM64, Py_EndInterpreter hangs in wait_for_thread_shutdown()
+	// because threading._shutdown() blocks on a semaphore that is never
+	// signalled in a subinterpreter context (CPython issues #122517, #87135).
+	//
+	// As a workaround, we call threading._shutdown() explicitly first
+	// (to process any atexit hooks), then replace it with a no-op so
+	// Py_EndInterpreter's internal call becomes harmless.
+	//
+	// See: https://github.com/OpenPrinting/go-mfp/issues/20
+	gate.eval(
+		"import threading\n"+
+			"threading._shutdown = lambda: None\n",
+		"Python.Close",
+		false,
+	)
+
 	py.objects.purge(gate)
 
 	interp := py.interp
