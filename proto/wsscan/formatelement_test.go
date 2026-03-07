@@ -16,6 +16,9 @@ import (
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
 )
 
+// Verifies that a Format with all optional
+// attributes (Override and UsedDefault) survives a toXML/decodeFormat
+// round-trip without losing any information.
 func TestFormat_RoundTrip_AllAttributes(t *testing.T) {
 	orig := Format(
 		ValWithOptions[FormatValue]{
@@ -47,6 +50,8 @@ func TestFormat_RoundTrip_AllAttributes(t *testing.T) {
 	}
 }
 
+// Verifies that a minimal Format ( No optional attributes) with only
+// the text value round-trips correctly through XML
 func TestFormat_RoundTrip_NoAttributes(t *testing.T) {
 	orig := Format(
 		ValWithOptions[FormatValue]{
@@ -68,6 +73,9 @@ func TestFormat_RoundTrip_NoAttributes(t *testing.T) {
 	}
 }
 
+// Verifies that all standard, well-known FormatValue
+// constants are encoded to the correct string and decoded back to the same
+// constant.
 func TestFormat_StandardValues(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -109,8 +117,9 @@ func TestFormat_StandardValues(t *testing.T) {
 	}
 }
 
+// Ensure that the Format element never uses the
+// MustHonor attribute and instead relies only on Override / UsedDefault.
 func TestFormat_NoMustHonor(t *testing.T) {
-	// Verify that MustHonor is not used (only Override and UsedDefault)
 	f := Format(
 		ValWithOptions[FormatValue]{
 			Text:     JPEG2K,
@@ -132,6 +141,8 @@ func TestFormat_NoMustHonor(t *testing.T) {
 	}
 }
 
+// Verifies that a Format element with the Override
+// attribute set round-trips correctly and that Override is interpreted as true.
 func TestFormat_WithOverride(t *testing.T) {
 	orig := Format(
 		ValWithOptions[FormatValue]{
@@ -159,6 +170,8 @@ func TestFormat_WithOverride(t *testing.T) {
 	}
 }
 
+// Verifies that a Format element with the
+// UsedDefault attribute set round-trips correctly and that UsedDefault is true.
 func TestFormat_WithUsedDefault(t *testing.T) {
 	orig := Format(
 		ValWithOptions[FormatValue]{
@@ -186,6 +199,9 @@ func TestFormat_WithUsedDefault(t *testing.T) {
 	}
 }
 
+// Verifies that vendor-specific or otherwise unknown
+// format strings are preserved as-is instead of being mapped to
+// UnknownFormatValue.
 func TestFormat_UnknownValue(t *testing.T) {
 	elm := xmldoc.Element{
 		Name: "wscn:Format",
@@ -196,11 +212,15 @@ func TestFormat_UnknownValue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode returned error: %v", err)
 	}
-	if decoded.Text != UnknownFormatValue {
-		t.Errorf("expected UnknownFormatValue, got %v", decoded.Text)
+	if decoded.Text != FormatValue("unknown-format") {
+		t.Errorf("expected vendor format value to be preserved, got %v",
+			decoded.Text)
 	}
 }
 
+// Verifies that an invalid boolean value in
+// an attribute (e.g. Override="invalid") is reported as an error by
+// decodeFormat.
 func TestFormat_InvalidBooleanAttribute(t *testing.T) {
 	elm := xmldoc.Element{
 		Name: "wscn:Format",

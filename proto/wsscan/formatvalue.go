@@ -9,36 +9,55 @@
 package wsscan
 
 import (
+	"fmt"
+
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
 )
 
-// FormatValue defines the file format and compression type supported by the scan device.
-type FormatValue int
+// FormatValue defines the file format and compression
+// type supported by the scan device.
+//
+// It is backed by string so that it can represent both standard values defined
+// in the WS-Scan specification and vendor-specific extensions that may appear
+// in the wild.
+type FormatValue string
 
-// Known format values (constants for well-known types)
+// Known format values (constants for well-known types).
+// Additional values may exist in real devices; those are represented by
+// arbitrary [FormatValue] values constructed from their string form.
 const (
-	UnknownFormatValue FormatValue = iota
-	DIB
-	EXIF
-	JBIG
-	JFIF
-	JPEG2K
-	PDFA
-	PNG
-	TIFFSingleUncompressed
-	TIFFSingleG4
-	TIFFSingleG3MH
-	TIFFSingleJPEGTN2
-	TIFFMultiUncompressed
-	TIFFMultiG4
-	TIFFMultiG3MH
-	TIFFMultiJPEGTN2
-	XPS
+	// UnknownFormatValue is used when the format string is empty or otherwise
+	// invalid. For any non-empty string we keep the original value instead of
+	// collapsing it to UnknownFormatValue, so that vendor-defined values are
+	// preserved.
+	UnknownFormatValue FormatValue = ""
+
+	DIB                    FormatValue = "dib"
+	EXIF                   FormatValue = "exif"
+	JBIG                   FormatValue = "jbig"
+	JFIF                   FormatValue = "jfif"
+	JPEG2K                 FormatValue = "jpeg2k"
+	PDFA                   FormatValue = "pdf-a"
+	PNG                    FormatValue = "png"
+	TIFFSingleUncompressed FormatValue = "tiff-single-uncompressed"
+	TIFFSingleG4           FormatValue = "tiff-single-g4"
+	TIFFSingleG3MH         FormatValue = "tiff-single-g3mh"
+	TIFFSingleJPEGTN2      FormatValue = "tiff-single-jpeg-tn2"
+	TIFFMultiUncompressed  FormatValue = "tiff-multi-uncompressed"
+	TIFFMultiG4            FormatValue = "tiff-multi-g4"
+	TIFFMultiG3MH          FormatValue = "tiff-multi-g3mh"
+	TIFFMultiJPEGTN2       FormatValue = "tiff-multi-jpeg-tn2"
+	XPS                    FormatValue = "xps"
 )
 
 // decodeFormatValue decodes [FormatValue] from the XML tree.
 func decodeFormatValue(root xmldoc.Element) (fv FormatValue, err error) {
-	return decodeEnum(root, DecodeFormatValue)
+	if root.Text == "" {
+		err = fmt.Errorf("invalid FormatValue: empty")
+		err = xmldoc.XMLErrWrap(root, err)
+		return UnknownFormatValue, err
+	}
+	return FormatValue(root.Text), nil
 }
 
 // toXML generates XML tree for the [FormatValue].
@@ -51,78 +70,42 @@ func (fv FormatValue) toXML(name string) xmldoc.Element {
 
 // String returns a string representation of the [FormatValue].
 func (fv FormatValue) String() string {
+	return string(fv)
+}
+
+// MimeType returns MIME type string for the value, or
+// empty string for the unknown or vendor-defined value.
+func (fv FormatValue) MimeType() string {
 	switch fv {
 	case DIB:
-		return "dib"
-	case EXIF:
-		return "exif"
+		return "image/bmp"
+	case EXIF, JFIF:
+		return "image/jpeg"
 	case JBIG:
-		return "jbig"
-	case JFIF:
-		return "jfif"
+		return "image/jbig"
 	case JPEG2K:
-		return "jpeg2k"
+		return "image/jp2"
 	case PDFA:
-		return "pdf-a"
+		return "application/pdf"
 	case PNG:
-		return "png"
-	case TIFFSingleUncompressed:
-		return "tiff-single-uncompressed"
-	case TIFFSingleG4:
-		return "tiff-single-g4"
-	case TIFFSingleG3MH:
-		return "tiff-single-g3mh"
-	case TIFFSingleJPEGTN2:
-		return "tiff-single-jpeg-tn2"
-	case TIFFMultiUncompressed:
-		return "tiff-multi-uncompressed"
-	case TIFFMultiG4:
-		return "tiff-multi-g4"
-	case TIFFMultiG3MH:
-		return "tiff-multi-g3mh"
-	case TIFFMultiJPEGTN2:
-		return "tiff-multi-jpeg-tn2"
+		return "image/png"
+	case TIFFSingleUncompressed,
+		TIFFSingleG4,
+		TIFFSingleG3MH,
+		TIFFSingleJPEGTN2,
+		TIFFMultiUncompressed,
+		TIFFMultiG4,
+		TIFFMultiG3MH,
+		TIFFMultiJPEGTN2:
+		return "image/tiff"
 	case XPS:
-		return "xps"
+		return "application/vnd.ms-xpsdocument"
+	default:
+		return ""
 	}
-	return "Unknown"
 }
 
 // DecodeFormatValue decodes [FormatValue] out of its XML string representation.
 func DecodeFormatValue(s string) FormatValue {
-	switch s {
-	case "dib":
-		return DIB
-	case "exif":
-		return EXIF
-	case "jbig":
-		return JBIG
-	case "jfif":
-		return JFIF
-	case "jpeg2k":
-		return JPEG2K
-	case "pdf-a":
-		return PDFA
-	case "png":
-		return PNG
-	case "tiff-single-uncompressed":
-		return TIFFSingleUncompressed
-	case "tiff-single-g4":
-		return TIFFSingleG4
-	case "tiff-single-g3mh":
-		return TIFFSingleG3MH
-	case "tiff-single-jpeg-tn2":
-		return TIFFSingleJPEGTN2
-	case "tiff-multi-uncompressed":
-		return TIFFMultiUncompressed
-	case "tiff-multi-g4":
-		return TIFFMultiG4
-	case "tiff-multi-g3mh":
-		return TIFFMultiG3MH
-	case "tiff-multi-jpeg-tn2":
-		return TIFFMultiJPEGTN2
-	case "xps":
-		return XPS
-	}
-	return UnknownFormatValue
+	return FormatValue(s)
 }

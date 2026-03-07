@@ -39,5 +39,5 @@ func formatValueDecoder(s string) (FormatValue, error) {
 
 // formatValueEncoder converts a FormatValue to a string.
 func formatValueEncoder(fv FormatValue) string {
-	return fv.String()
+	return string(fv)
 }
