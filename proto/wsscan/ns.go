@@ -11,4 +11,5 @@ package wsscan
 // Namespace prefixes:
 const (
 	NsWSCN = "wscn"
+	NsXML  = "xmlns"
 )
