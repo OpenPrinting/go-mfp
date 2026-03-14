@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-//Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// Copyright (C) 2024 and up by Mohammad Arman(officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // Shared test helpers
@@ -26,16 +26,17 @@ func newTestContext() context.Context {
 // docResult captures a single handler invocation.
 type docResult struct {
 	format DocFormat
+	params JobParams
 	data   []byte
 }
 
 // testHandler returns a DocumentHandler that appends results
 // to the provided slice.
 func testHandler(results *[]docResult) DocumentHandler {
-	return func(format DocFormat, data []byte) {
+	return func(format DocFormat, params JobParams, data []byte) {
 		cp := make([]byte, len(data))
 		copy(cp, data)
-		*results = append(*results, docResult{format, cp})
+		*results = append(*results, docResult{format, params, cp})
 	}
 }
 

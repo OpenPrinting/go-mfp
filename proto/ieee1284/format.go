@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
+// Copyright (C) 2024 and up by Mohammad Arman(officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // Document format detection
@@ -15,13 +15,14 @@ import (
 
 // DocFormat represents a detected document format.
 type DocFormat int
-// Known values for DocFormat.
+
 const (
 	DocFormatUnknown    DocFormat = iota // Unknown format
 	DocFormatPostScript                  // PostScript
 	DocFormatPDF                         // PDF
-	DocFormatPCL5                         // PCL 5
-	DocFormatPCLXL                   // PCL-XL / PCL 6
+	DocFormatPCL                         // PCL 5
+	DocFormatPCLXL                       // PCL-XL / PCL 6
+	DocFormatPlainText                   // Plain text
 )
 
 // String returns a human-readable name for the format.
@@ -31,10 +32,12 @@ func (f DocFormat) String() string {
 		return "PostScript"
 	case DocFormatPDF:
 		return "PDF"
-	case DocFormatPCL5:
+	case DocFormatPCL:
 		return "PCL"
 	case DocFormatPCLXL:
 		return "PCL-XL"
+	case DocFormatPlainText:
+		return "Plain Text"
 	default:
 		return "Unknown"
 	}
@@ -68,7 +71,7 @@ func detectFormatByMagic(data []byte) DocFormat {
 	// PCL commands use characters in the range 0x21-0x7e after ESC,
 	// but not '%' (which would be UEL).
 	if len(data) >= 2 && data[0] == 0x1b && data[1] != '%' {
-		return DocFormatPCL5
+		return DocFormatPCL
 	}
 
 	return DocFormatUnknown
@@ -83,10 +86,24 @@ func detectFormatByLanguage(lang string) DocFormat {
 	case "PDF":
 		return DocFormatPDF
 	case "PCL":
-		return DocFormatPCL5
+		return DocFormatPCL
 	case "PCLXL":
 		return DocFormatPCLXL
 	default:
 		return DocFormatUnknown
 	}
+}
+
+// isPrintableText reports whether b is a byte commonly found in
+// plain text: printable ASCII (0x20-0x7E) or whitespace
+// characters (tab, newline, carriage return, form feed).
+func isPrintableText(b byte) bool {
+	if b >= 0x20 && b <= 0x7E {
+		return true
+	}
+	switch b {
+	case '\t', '\n', '\r', '\f':
+		return true
+	}
+	return false
 }

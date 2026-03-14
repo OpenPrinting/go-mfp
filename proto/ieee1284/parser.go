@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
+// Copyright (C) 2024 and up by Mohammad Arman(officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // Print job stream parser
@@ -16,9 +16,25 @@ import (
 // UEL is the Universal Exit Language escape sequence.
 const uel = "\x1b%-12345X"
 
+// JobParams holds print job parameters negotiated via PJL
+// commands before a document is sent.
+//
+// The Variables map contains @PJL SET key=value pairs.
+// CUPS emits these from PPD *cupsPJL attributes, so the
+// set of variables is printer-model-specific (e.g.,
+// SMOOTHING, ECONOMODE, USERNAME).
+type JobParams struct {
+	// JobName is the value from @PJL JOB NAME = "...".
+	JobName string
+
+	// Variables holds @PJL SET key=value pairs.
+	// Keys are stored in uppercase.
+	Variables map[string]string
+}
+
 // DocumentHandler is called when a complete document is extracted
 // from the print stream.
-type DocumentHandler func(format DocFormat, data []byte)
+type DocumentHandler func(format DocFormat, params JobParams, data []byte)
 
 // parserState represents the current state of the stream parser.
 type parserState int
@@ -90,7 +106,17 @@ func (p *Printer) feedIdle() bool {
 		return true
 	}
 
-	// Unrecognized data — discard it
+	// If it looks like printable text, treat it as a plain
+	// text document. Most printers print unrecognized ASCII
+	// input as plain text.
+	if isPrintableText(p.buf[0]) {
+		p.state = stateDocument
+		p.format = DocFormatPlainText
+		p.docBuf = nil
+		return true
+	}
+
+	// Unrecognized binary data — discard it
 	p.buf = nil
 	return false
 }
@@ -122,20 +148,13 @@ func (p *Printer) feedPJL() bool {
 		}
 		after := trimmed[len(pjlPrefix):]
 
-		// Check for @PJL ENTER LANGUAGE=X
-		const enterPrefix = "@PJL ENTER LANGUAGE="
-		if strings.HasPrefix(upper, enterPrefix) {
-			lang := strings.TrimSpace(line[len(enterPrefix):])
-			lang = strings.TrimSpace(lang)
-			p.format = detectFormatByLanguage(lang)
-			p.state = stateDocument
-			p.docBuf = nil
+		// Parse and dispatch the PJL command.
+		// handlePJL returns true for ENTER LANGUAGE,
+		// which triggers the transition to document state.
+		cmd := parsePJLCommand(after)
+		if p.handlePJL(cmd) {
 			return true
 		}
-
-		// Dispatch other PJL commands
-		cmd := parsePJLCommand(after)
-		p.handlePJL(cmd)
 	}
 }
 
@@ -168,11 +187,14 @@ func (p *Printer) feedDocument() bool {
 			}
 		}
 
-		// Check for Ctrl-D (PostScript/PDF end marker)
+		// Check for Ctrl-D (EOT, 0x04) as end-of-job marker.
+		// PostScript interpreters treat Ctrl-D as
+		// end-of-file when received over a communication
+		// channel.
 		if b == 0x04 {
 			switch p.format {
 			case DocFormatPostScript, DocFormatPDF,
-				DocFormatUnknown:
+				DocFormatPlainText, DocFormatUnknown:
 				p.docBuf = append(p.docBuf, p.buf[:i]...)
 				p.emitDocument()
 				p.buf = p.buf[i+1:] // skip Ctrl-D
@@ -181,8 +203,8 @@ func (p *Printer) feedDocument() bool {
 			}
 		}
 
-		// Check for PCL reset (ESC E) as end marker for PCL 5
-		if b == 0x1b && p.format == DocFormatPCL5 {
+		// Check for PCL reset (ESC E) as end marker for PCL 5.
+		if b == 0x1b && p.format == DocFormatPCL {
 			if i+1 < len(p.buf) {
 				if p.buf[i+1] == 'E' {
 					p.docBuf = append(p.docBuf,
@@ -212,7 +234,7 @@ func (p *Printer) feedDocument() bool {
 // emitDocument calls the handler with the completed document.
 func (p *Printer) emitDocument() {
 	if p.handler != nil && len(p.docBuf) > 0 {
-		p.handler(p.format, p.docBuf)
+		p.handler(p.format, p.params, p.docBuf)
 	}
 	p.docBuf = nil
 	p.format = DocFormatUnknown

@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
+// Copyright (C) 2024 and up by Mohammad Arman(officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // Print job stream parser tests
@@ -245,6 +245,81 @@ func TestParserChunkedUEL(t *testing.T) {
 	if !bytes.Equal(results[0].data, []byte(psContent)) {
 		t.Errorf("document data mismatch:\ngot:  %q\nwant: %q",
 			results[0].data, psContent)
+	}
+}
+
+// TestParserPlainText tests that plain ASCII text is detected
+// as DocFormatPlainText and emitted via Flush().
+func TestParserPlainText(t *testing.T) {
+	ctx := newTestContext()
+	var results []docResult
+	p := NewPrinter(ctx, testHandler(&results))
+
+	plainText := "Hello, World!\n"
+	p.Write([]byte(plainText))
+	p.Flush()
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 document, got %d", len(results))
+	}
+	if results[0].format != DocFormatPlainText {
+		t.Errorf("format = %v, want Plain Text",
+			results[0].format)
+	}
+	if !bytes.Equal(results[0].data, []byte(plainText)) {
+		t.Errorf("data = %q, want %q",
+			results[0].data, plainText)
+	}
+}
+
+// TestParserPlainTextCtrlD tests that plain text terminated
+// with Ctrl-D is properly extracted.
+func TestParserPlainTextCtrlD(t *testing.T) {
+	ctx := newTestContext()
+	var results []docResult
+	p := NewPrinter(ctx, testHandler(&results))
+
+	plainText := "Hello, World!\n"
+	data := []byte(plainText + "\x04")
+	p.Write(data)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 document, got %d", len(results))
+	}
+	if results[0].format != DocFormatPlainText {
+		t.Errorf("format = %v, want Plain Text",
+			results[0].format)
+	}
+	if !bytes.Equal(results[0].data, []byte(plainText)) {
+		t.Errorf("data = %q, want %q",
+			results[0].data, plainText)
+	}
+}
+
+// TestParserEnterLanguageExtraSpaces tests that ENTER LANGUAGE
+// with multiple spaces between words is still recognized.
+func TestParserEnterLanguageExtraSpaces(t *testing.T) {
+	ctx := newTestContext()
+	var results []docResult
+	p := NewPrinter(ctx, testHandler(&results))
+
+	psContent := "%!PS-Adobe-3.0\nshowpage\n%%EOF\n"
+
+	var job bytes.Buffer
+	job.WriteString(uel + "@PJL\r\n")
+	job.WriteString("@PJL  ENTER   LANGUAGE = POSTSCRIPT\r\n")
+	job.WriteString(psContent)
+	job.WriteByte(0x04)
+	job.WriteString(uel)
+
+	writeInChunks(t, p, job.Bytes(), 512)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 document, got %d", len(results))
+	}
+	if results[0].format != DocFormatPostScript {
+		t.Errorf("format = %v, want PostScript",
+			results[0].format)
 	}
 }
 

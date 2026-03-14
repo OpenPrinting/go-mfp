@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-//Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// Copyright (C) 2024 and up by Mohammad Arman(officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // IEEE 1284 printer
@@ -26,6 +26,7 @@ type Printer struct {
 	docBuf  []byte          // Accumulated document content
 	handler DocumentHandler // Called when document is complete
 	model   string          // Printer model name for PJL INFO ID
+	params  JobParams       // PJL-negotiated job parameters
 
 	mu      sync.Mutex // Protects respBuf and closed
 	cond    *sync.Cond // Signaled when respBuf has data or closed
@@ -36,7 +37,7 @@ type Printer struct {
 // NewPrinter creates a new printer.
 func NewPrinter(ctx context.Context, handler DocumentHandler) *Printer {
 	p := &Printer{
-		ctx:     ctx,
+		ctx:     log.WithPrefix(ctx, "ieee1284"),
 		handler: handler,
 	}
 	p.cond = sync.NewCond(&p.mu)
@@ -51,7 +52,7 @@ func (p *Printer) SetModel(name string) {
 // Write consumes data sent to the Printer from the host.
 // It implements the [io.Writer] interface.
 func (p *Printer) Write(data []byte) (int, error) {
-	log.Debug(p.ctx, "ieee1284: Write: %d bytes", len(data))
+	log.Debug(p.ctx, "Write: %d bytes", len(data))
 	log.Dump(p.ctx, log.LevelTrace, data)
 	p.feed(data)
 	return len(data), nil

@@ -1,7 +1,7 @@
 // MFP - Miulti-Function Printers and scanners toolkit
 // IEEE 1284 definitions
 //
-// Copyright (C) 2024 and up by Mohammad Arman (officialmdarman@gmail.com)
+// Copyright (C) 2024 and up by Mohammad Arman(officialmdarman@gmail.com)
 // See LICENSE for license terms and conditions
 //
 // PJL command handling tests
@@ -177,6 +177,48 @@ func TestPJLFullJob(t *testing.T) {
 	}
 }
 
+// TestPJLJobParams tests that @PJL JOB and @PJL SET commands
+// are captured and passed to the DocumentHandler.
+func TestPJLJobParams(t *testing.T) {
+	ctx := newTestContext()
+	var results []docResult
+	p := NewPrinter(ctx, testHandler(&results))
+
+	psContent := "%!PS-Adobe-3.0\nshowpage\n%%EOF\n"
+
+	var job bytes.Buffer
+	job.WriteString(uel + "@PJL\r\n")
+	job.WriteString("@PJL JOB NAME = \"My Print Job\"\r\n")
+	job.WriteString("@PJL SET SMOOTHING=ON\r\n")
+	job.WriteString("@PJL SET ECONOMODE = OFF\r\n")
+	job.WriteString("@PJL SET USERNAME = \"alice\"\r\n")
+	job.WriteString("@PJL ENTER LANGUAGE=POSTSCRIPT\r\n")
+	job.WriteString(psContent)
+	job.WriteByte(0x04)
+	job.WriteString(uel)
+
+	writeInChunks(t, p, job.Bytes(), 512)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 document, got %d", len(results))
+	}
+
+	params := results[0].params
+	if params.JobName != "My Print Job" {
+		t.Errorf("JobName = %q, want %q",
+			params.JobName, "My Print Job")
+	}
+	if v := params.Variables["SMOOTHING"]; v != "ON" {
+		t.Errorf("SMOOTHING = %q, want %q", v, "ON")
+	}
+	if v := params.Variables["ECONOMODE"]; v != "OFF" {
+		t.Errorf("ECONOMODE = %q, want %q", v, "OFF")
+	}
+	if v := params.Variables["USERNAME"]; v != "alice" {
+		t.Errorf("USERNAME = %q, want %q", v, "alice")
+	}
+}
+
 // TestReadBlocksUntilData verifies that Read() blocks when no
 // data is available and unblocks when a response is queued.
 func TestReadBlocksUntilData(t *testing.T) {
@@ -231,6 +273,129 @@ func TestReadAfterClose(t *testing.T) {
 	}
 	if err != io.EOF {
 		t.Errorf("expected io.EOF, got %v", err)
+	}
+}
+
+// TestParsePJLCommand tests parsing of PJL command lines,
+// including commands with multiple spaces between words.
+func TestParsePJLCommand(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		expect pjlCommand
+	}{
+		{
+			"INFO ID single space",
+			" INFO ID",
+			pjlCommand{"INFO ID", ""},
+		},
+		{
+			"INFO ID multiple spaces",
+			" INFO   ID",
+			pjlCommand{"INFO ID", ""},
+		},
+		{
+			"INFO STATUS multiple spaces",
+			" INFO   STATUS",
+			pjlCommand{"INFO STATUS", ""},
+		},
+		{
+			"ENTER LANGUAGE with args",
+			" ENTER LANGUAGE=POSTSCRIPT",
+			pjlCommand{"ENTER LANGUAGE", "=POSTSCRIPT"},
+		},
+		{
+			"ENTER LANGUAGE multiple spaces",
+			" ENTER   LANGUAGE=POSTSCRIPT",
+			pjlCommand{"ENTER LANGUAGE", "=POSTSCRIPT"},
+		},
+		{
+			"ECHO with text",
+			" ECHO hello world",
+			pjlCommand{"ECHO", "hello world"},
+		},
+		{
+			"SET with value",
+			" SET COPIES=2",
+			pjlCommand{"SET", "COPIES=2"},
+		},
+		{
+			"bare empty",
+			"",
+			pjlCommand{},
+		},
+		{
+			"USTATUS DEVICE multiple spaces",
+			" USTATUS   DEVICE  ON",
+			pjlCommand{"USTATUS DEVICE", "ON"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parsePJLCommand(tt.input)
+			if got.name != tt.expect.name ||
+				got.args != tt.expect.args {
+				t.Errorf("parsePJLCommand(%q):\n"+
+					"  got  {name:%q, args:%q}\n"+
+					"  want {name:%q, args:%q}",
+					tt.input,
+					got.name, got.args,
+					tt.expect.name, tt.expect.args)
+			}
+		})
+	}
+}
+
+// TestParsePJLKeyValue tests parsing of PJL SET key=value pairs.
+func TestParsePJLKeyValue(t *testing.T) {
+	tests := []struct {
+		input     string
+		wantKey   string
+		wantValue string
+	}{
+		{"COPIES=1", "COPIES", "1"},
+		{"SMOOTHING = ON", "SMOOTHING", "ON"},
+		{"USERNAME = \"alice\"", "USERNAME", "alice"},
+		{"ECONOMODE=OFF", "ECONOMODE", "OFF"},
+		{"", "", ""},
+		{"NOVALUE", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			k, v := parsePJLKeyValue(tt.input)
+			if k != tt.wantKey || v != tt.wantValue {
+				t.Errorf("parsePJLKeyValue(%q) = (%q, %q), want (%q, %q)",
+					tt.input, k, v, tt.wantKey, tt.wantValue)
+			}
+		})
+	}
+}
+
+// TestParsePJLQuotedValue tests extraction of named parameters.
+func TestParsePJLQuotedValue(t *testing.T) {
+	tests := []struct {
+		args string
+		key  string
+		want string
+	}{
+		{`NAME = "test job"`, "NAME", "test job"},
+		{`NAME = "job1" DISPLAY = "hello"`, "NAME", "job1"},
+		{`NAME = "job1" DISPLAY = "hello"`, "DISPLAY", "hello"},
+		{`NAME=unquoted`, "NAME", "unquoted"},
+		{`FOO = "bar"`, "MISSING", ""},
+		{``, "NAME", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.key+"_"+tt.args, func(t *testing.T) {
+			got := parsePJLQuotedValue(tt.args, tt.key)
+			if got != tt.want {
+				t.Errorf("parsePJLQuotedValue(%q, %q) = %q, want %q",
+					tt.args, tt.key, got, tt.want)
+			}
+		})
 	}
 }
 
