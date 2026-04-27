@@ -87,6 +87,92 @@ func (c *Client) GetJobElements(
 	return rsp, nil
 }
 
+// CreateScanJob asks the WS-Scan server to create a scan job from the
+// given ticket. req must be non-nil and have ScanTicket populated;
+// DestinationToken and ScanIdentifier are optional and used only for
+// device-initiated scans.
+func (c *Client) CreateScanJob(
+	ctx context.Context,
+	req *CreateScanJobRequest,
+) (*CreateScanJobResponse, error) {
+
+	msg, err := c.sendSOAP(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, ok := msg.Body.(*CreateScanJobResponse)
+	if !ok {
+		return nil,
+			fmt.Errorf("wsscan: unexpected response type %T", msg.Body)
+	}
+
+	return rsp, nil
+}
+
+// CancelJob cancels the scan job identified by jobID.
+func (c *Client) CancelJob(
+	ctx context.Context,
+	jobID int,
+) (*CancelJobResponse, error) {
+
+	req := CancelJobRequest{
+		JobID: jobID,
+	}
+	msg, err := c.sendSOAP(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, ok := msg.Body.(*CancelJobResponse)
+	if !ok {
+		return nil,
+			fmt.Errorf("wsscan: unexpected response type %T", msg.Body)
+	}
+
+	return rsp, nil
+}
+
+// GetActiveJobs returns a summary of all currently-active scan jobs.
+func (c *Client) GetActiveJobs(
+	ctx context.Context,
+) (*GetActiveJobsResponse, error) {
+
+	req := GetActiveJobsRequest{}
+	msg, err := c.sendSOAP(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, ok := msg.Body.(*GetActiveJobsResponse)
+	if !ok {
+		return nil,
+			fmt.Errorf("wsscan: unexpected response type %T", msg.Body)
+	}
+
+	return rsp, nil
+}
+
+// GetJobHistory returns a summary of completed scan jobs.
+func (c *Client) GetJobHistory(
+	ctx context.Context,
+) (*GetJobHistoryResponse, error) {
+
+	req := GetJobHistoryRequest{}
+	msg, err := c.sendSOAP(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, ok := msg.Body.(*GetJobHistoryResponse)
+	if !ok {
+		return nil,
+			fmt.Errorf("wsscan: unexpected response type %T", msg.Body)
+	}
+
+	return rsp, nil
+}
+
 // sendSOAP wraps body in a SOAP envelope, POSTs it to the server,
 // and returns the decoded response [Message].
 func (c *Client) sendSOAP(ctx context.Context, body Body) (Message, error) {
