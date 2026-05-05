@@ -1,7 +1,7 @@
 // MFP - Multi-Function Printers and scanners toolkit
 // CPython binding.
 //
-// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// Copyright (C) 2026 and up by Abhishrestha Tiwari
 // See LICENSE for license terms and conditions
 //
 // Tests for error types
