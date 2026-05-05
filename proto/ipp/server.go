@@ -218,6 +218,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	if err != nil {
 		log.Error(ctx, "IPP error sending response: %s", err)
 	}
+
+	query.Finish()
 }
 
 // RegisterHandler adds the request [Handler].
