@@ -81,8 +81,10 @@ func (writer *Writer) Close() {
 func (writer *Writer) OnRequest(query *transport.ServerQuery,
 	msg Message, body io.Reader) {
 
-	name := fmt.Sprintf("%8.8d/00-%s.%s", query.ID(), msg.Name(), msg.Ext())
-	writer.Send(name, msg.MarshalTrace())
+	name := fmt.Sprintf("%8.8d/00-%s", query.ID(), msg.Name())
+
+	writer.Send(name+".http", query.DumpRequest())
+	writer.Send(name+"."+msg.Ext(), msg.MarshalTrace())
 
 	writer.donewait.Add(1)
 	go func() {
