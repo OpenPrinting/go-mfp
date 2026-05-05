@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"sync/atomic"
@@ -38,12 +39,14 @@ var nextQueryID atomic.Uint64
 // the corresponding [http.ResponseWriter], passed to the
 // [http.Handler.ServeHTTP].
 type ServerQuery struct {
-	log       *log.Record         // Log record for the query
-	id        uint64              // Query ID
-	logprefix string              // Log prefix
-	rq        *http.Request       // Incoming request
-	w         http.ResponseWriter // Underlying http.ResponseWriter
-	status    atomic.Int32        // HTTP status, 0 if not known yet
+	log          *log.Record          // Log record for the query
+	id           uint64               // Query ID
+	logprefix    string               // Log prefix
+	rq           *http.Request        // Incoming request
+	w            http.ResponseWriter  // Underlying http.ResponseWriter
+	status       atomic.Int32         // HTTP status, 0 if not known yet
+	finished     atomic.Bool          // True if query already finished
+	oncompletion []func(*ServerQuery) // Called on query completion
 }
 
 // NewServerQuery returns the new [ServerQuery].
@@ -75,6 +78,16 @@ func (query *ServerQuery) ID() uint64 {
 // during the [ServerQuery] processing. Default is "HTTP-SRVR".
 func (query *ServerQuery) SetLogPrefix(prefix string) {
 	query.logprefix = prefix
+}
+
+// OnCompletion registers a callback to be invoked when the [ServerQuery] completes.
+//
+// Multiple callbacks can be registered and are executed in reverse order of
+// their registration (last registered, first called).
+//
+// The callback must not modify the query.
+func (query *ServerQuery) OnCompletion(cb func(*ServerQuery)) {
+	query.oncompletion = append(query.oncompletion, cb)
 }
 
 // Request returns the underlying Request.
@@ -140,9 +153,37 @@ func (query *ServerQuery) RequestHeader() http.Header {
 	return query.rq.Header
 }
 
-// Finish must be called when query processing is finished
+// Finish is called when query processing is finished.
+//
+// The following simple query completion methods call
+// it automatically:
+//   - [ServerQuery.Reject]
+//   - [ServerQuery.Created]
+//   - [ServerQuery.SendXML]
+//   - [ServerQuery.SendData]
 func (query *ServerQuery) Finish() {
+	// Don't allow query to be finished twice.
+	//
+	// FIXME. The present API is unclear and overcomplicated.
+	// It requires Finish to be called on some paths and
+	// implies the automatic finish on others.
+	if !query.finished.CompareAndSwap(false, true) {
+		return
+	}
+
+	// Call OnCompletion callbacks
+	for i := len(query.oncompletion) - 1; i >= 0; i-- {
+		query.oncompletion[i](query)
+	}
+
+	// Commit the log message
 	query.log.Commit()
+}
+
+// DumpRequest creates a request dump, for logging.
+func (query *ServerQuery) DumpRequest() []byte {
+	dump, _ := httputil.DumpRequest(query.Request(), false)
+	return dump
 }
 
 // RequestBody returns body of the http.Request
@@ -226,6 +267,8 @@ func (query *ServerQuery) Reject(status int, err error) {
 	s := fmt.Sprintf("%3.3d %s\n", status, err)
 	query.Write([]byte(s))
 	query.Write([]byte("\n"))
+
+	query.Finish()
 }
 
 // Created completes request with the http.StatusCreated
@@ -240,22 +283,29 @@ func (query *ServerQuery) Created(location string) {
 
 	query.ResponseHeader().Set("Location", location)
 	query.WriteHeader(http.StatusCreated)
+
+	query.Finish()
 }
 
-// SendXML sends the XML response.
+// SendXML sends the XML response and completes the request.
 func (query *ServerQuery) SendXML(
 	status int, ns xmldoc.Namespace, xml xmldoc.Element) {
 
 	query.ResponseHeader().Set("Content-Type", "text/xml")
 	query.WriteHeader(status)
 	xml.EncodeIndent(query, ns, "  ")
+
+	query.Finish()
 }
 
-// SendData sends the binary data, represented as [io.Reader].
+// SendData sends the binary data, represented as [io.Reader]
+// and completes the request.
 func (query *ServerQuery) SendData(
 	status int, contentType string, data io.Reader) {
 
 	query.ResponseHeader().Set("Content-Type", contentType)
 	query.WriteHeader(status)
 	io.Copy(query, data)
+
+	query.Finish()
 }
