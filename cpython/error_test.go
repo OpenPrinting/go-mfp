@@ -14,20 +14,22 @@ import (
 )
 
 // TestErrPython verifies that ErrPython implements the error
-// interface and returns a non-empty message.
+// interface and returns a correctly formatted message.
 func TestErrPython(t *testing.T) {
-	e := ErrPython{msg: "something went wrong"}
-	if e.Error() != "something went wrong" {
+	e := ErrPython{except: "RuntimeError", msg: "something went wrong"}
+	want := "RuntimeError: something went wrong"
+	if e.Error() != want {
 		t.Fatalf("ErrPython.Error() = %q, want %q",
-			e.Error(), "something went wrong")
+			e.Error(), want)
 	}
 }
 
-// TestErrPythonEmpty verifies that ErrPython works with empty message.
+// TestErrPythonEmpty verifies that ErrPython works with empty fields.
 func TestErrPythonEmpty(t *testing.T) {
-	e := ErrPython{msg: ""}
-	if e.Error() != "" {
-		t.Fatalf("ErrPython.Error() = %q, want empty string", e.Error())
+	e := ErrPython{except: "", msg: ""}
+	want := ": "
+	if e.Error() != want {
+		t.Fatalf("ErrPython.Error() = %q, want %q", e.Error(), want)
 	}
 }
 
