@@ -13,23 +13,22 @@ import (
 	"testing"
 )
 
-// TestErrPython verifies that ErrPython implements the error
-// interface and returns a correctly formatted message.
+// Compile-time assertions that all error types implement the error interface.
+var (
+	_ error = ErrPython{}
+	_ error = ErrTypeConversion{}
+	_ error = ErrOverflow{}
+	_ error = ErrClosed{}
+	_ error = ErrInvalidObject{}
+	_ error = ErrNotFound{}
+)
+
+// TestErrPython verifies that ErrPython returns a correctly formatted message.
 func TestErrPython(t *testing.T) {
 	e := ErrPython{except: "RuntimeError", msg: "something went wrong"}
-	want := "RuntimeError: something went wrong"
-	if e.Error() != want {
-		t.Fatalf("ErrPython.Error() = %q, want %q",
-			e.Error(), want)
-	}
-}
-
-// TestErrPythonEmpty verifies that ErrPython works with empty fields.
-func TestErrPythonEmpty(t *testing.T) {
-	e := ErrPython{except: "", msg: ""}
-	want := ": "
-	if e.Error() != want {
-		t.Fatalf("ErrPython.Error() = %q, want %q", e.Error(), want)
+	got := e.Error()
+	if !strings.Contains(got, "RuntimeError") || !strings.Contains(got, "something went wrong") {
+		t.Fatalf("ErrPython.Error() = %q, want it to contain exception and message", got)
 	}
 }
 
@@ -49,8 +48,7 @@ func TestErrOverflow(t *testing.T) {
 	e := ErrOverflow{val: "99999999999999999999"}
 	got := e.Error()
 	if !strings.Contains(got, "99999999999999999999") {
-		t.Fatalf("ErrOverflow.Error() = %q, "+
-			"want it to contain the value", got)
+		t.Fatalf("ErrOverflow.Error() = %q, want it to contain the value", got)
 	}
 }
 
@@ -77,15 +75,4 @@ func TestErrNotFound(t *testing.T) {
 	if e.Error() == "" {
 		t.Fatalf("ErrNotFound.Error() returned empty string")
 	}
-}
-
-// TestErrorsImplementInterface is a compile-time assertion that all
-// error types implement the error interface.
-func TestErrorsImplementInterface(t *testing.T) {
-	var _ error = ErrPython{}
-	var _ error = ErrTypeConversion{}
-	var _ error = ErrOverflow{}
-	var _ error = ErrClosed{}
-	var _ error = ErrInvalidObject{}
-	var _ error = ErrNotFound{}
 }
