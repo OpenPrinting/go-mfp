@@ -16,3 +16,5 @@ cmd/mfp-virtual/mfp-virtual
 tools/ipp-registrations-generate/ipp-registrations-generate
 
 .vscode
+coverage.txt
+cpython.test
