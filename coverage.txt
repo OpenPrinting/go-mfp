@@ -1,0 +1,146 @@
+ok  	github.com/OpenPrinting/go-mfp/abstract	0.003s	coverage: 39.7% of statements
+ok  	github.com/OpenPrinting/go-mfp/argv	0.007s	coverage: 85.3% of statements
+?   	github.com/OpenPrinting/go-mfp/cmd	[no test files]
+	github.com/OpenPrinting/go-mfp/cmd/mfp-cups/cups		coverage: 0.0% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp	0.008s	coverage: 0.6% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-cups	0.002s	coverage: 3.8% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-discover	0.003s	coverage: 0.5% of statements
+	github.com/OpenPrinting/go-mfp/cmd/mfp-discover/discover		coverage: 0.0% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-model	0.019s	coverage: 1.1% of statements
+	github.com/OpenPrinting/go-mfp/cmd/mfp-model/model		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/cmd/mfp-ppd/ppd		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/cmd/mfp-proxy/proxy		coverage: 0.0% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-ppd	0.006s	coverage: 2.0% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-proxy	0.003s	coverage: 1.2% of statements
+	github.com/OpenPrinting/go-mfp/cmd/mfp-usb/usb		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/cmd/mfp-virtual/virtual		coverage: 0.0% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-usb	0.002s	coverage: 0.8% of statements
+ok  	github.com/OpenPrinting/go-mfp/cmd/mfp-virtual	0.022s	coverage: 1.2% of statements
+	github.com/OpenPrinting/go-mfp/discovery/dnssd		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/internal/env		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/internal/assert		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/internal/random		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/modeling/defaults		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/proto/trace		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/proto/usb		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/proto/usbhost		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/proto/usbip		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/tools/ipp-registrations-generate		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/util/generic		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/util/missed		coverage: 0.0% of statements
+	github.com/OpenPrinting/go-mfp/util/optional		coverage: 0.0% of statements
+coverage: 39.6% of statements
+panic: test timed out after 10m0s
+running tests:
+	TestObjectFromPython (10m0s)
+
+goroutine 9 [running]:
+testing.(*M).startAlarm.func1()
+	/usr/lib/go-1.22/src/testing/testing.go:2366 +0x30c
+created by time.goFunc
+	/usr/lib/go-1.22/src/time/sleep.go:177 +0x38
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0x40001244e0, {0x6856f6?, 0x400013db38?}, 0x694810)
+	/usr/lib/go-1.22/src/testing/testing.go:1750 +0x32c
+testing.runTests.func1(0x40001244e0)
+	/usr/lib/go-1.22/src/testing/testing.go:2161 +0x40
+testing.tRunner(0x40001244e0, 0x400013dc58)
+	/usr/lib/go-1.22/src/testing/testing.go:1689 +0xec
+testing.runTests(0x400000e120, {0x877440, 0xf, 0xf}, {0x400013dd18?, 0x553ae0?, 0x92eba0?})
+	/usr/lib/go-1.22/src/testing/testing.go:2159 +0x3b0
+testing.(*M).Run(0x400007e320)
+	/usr/lib/go-1.22/src/testing/testing.go:2027 +0x5a4
+main.main()
+	_testmain.go:109 +0x18c
+
+goroutine 6 [chan receive, locked to thread]:
+github.com/OpenPrinting/go-mfp/cpython.pyInterpThread(0x40000101d0)
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:112 +0x214
+created by github.com/OpenPrinting/go-mfp/cpython.init.1 in goroutine 1
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:141 +0x9c
+
+goroutine 8 [syscall]:
+github.com/OpenPrinting/go-mfp/cpython._Cfunc_py_interp_close(0xf607ab1ef940)
+	_cgo_gotypes.go:317 +0x30
+github.com/OpenPrinting/go-mfp/cpython.(*Python).Close.pyInterpDelete.func1(0xf607ab1ef940)
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:64 +0x44
+github.com/OpenPrinting/go-mfp/cpython.pyInterpDelete(...)
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:64
+github.com/OpenPrinting/go-mfp/cpython.(*Python).Close(0x4000012280)
+	/home/abhishrestha.linux/go-mfp/cpython/python.go:87 +0x12c
+github.com/OpenPrinting/go-mfp/cpython.TestObjectFromPython(0x4000124680)
+	/home/abhishrestha.linux/go-mfp/cpython/object_test.go:169 +0xc48
+testing.tRunner(0x4000124680, 0x694810)
+	/usr/lib/go-1.22/src/testing/testing.go:1689 +0xec
+created by testing.(*T).Run in goroutine 1
+	/usr/lib/go-1.22/src/testing/testing.go:1742 +0x318
+FAIL	github.com/OpenPrinting/go-mfp/cpython	600.136s
+ok  	github.com/OpenPrinting/go-mfp/cups	0.004s	coverage: 16.9% of statements
+ok  	github.com/OpenPrinting/go-mfp/discovery	0.611s	coverage: 45.9% of statements
+ok  	github.com/OpenPrinting/go-mfp/discovery/wsdd	0.002s	coverage: 3.1% of statements
+ok  	github.com/OpenPrinting/go-mfp/imgconv	0.309s	coverage: 77.4% of statements
+ok  	github.com/OpenPrinting/go-mfp/internal/netstate	0.002s	coverage: 39.7% of statements
+ok  	github.com/OpenPrinting/go-mfp/internal/testutils	0.001s	coverage: 73.5% of statements
+ok  	github.com/OpenPrinting/go-mfp/internal/zone	0.003s	coverage: 100.0% of statements
+ok  	github.com/OpenPrinting/go-mfp/log	0.001s	coverage: 2.5% of statements
+coverage: 33.0% of statements
+panic: test timed out after 10m0s
+running tests:
+	TestKyoceraESCLScannerCapabilities (10m0s)
+
+goroutine 34 [running]:
+testing.(*M).startAlarm.func1()
+	/usr/lib/go-1.22/src/testing/testing.go:2366 +0x30c
+created by time.goFunc
+	/usr/lib/go-1.22/src/time/sleep.go:177 +0x38
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0x40000a0680, {0x7bfa94?, 0x40000e5b38?}, 0x7e8410)
+	/usr/lib/go-1.22/src/testing/testing.go:1750 +0x32c
+testing.runTests.func1(0x40000a0680)
+	/usr/lib/go-1.22/src/testing/testing.go:2161 +0x40
+testing.tRunner(0x40000a0680, 0x40000e5c58)
+	/usr/lib/go-1.22/src/testing/testing.go:1689 +0xec
+testing.runTests(0x40000ac1f8, {0xa61d80, 0x1, 0x1}, {0x40000e5d18?, 0x5577b0?, 0xb47a60?})
+	/usr/lib/go-1.22/src/testing/testing.go:2159 +0x3b0
+testing.(*M).Run(0x40000b68c0)
+	/usr/lib/go-1.22/src/testing/testing.go:2027 +0x5a4
+main.main()
+	_testmain.go:81 +0x18c
+
+goroutine 6 [chan receive, locked to thread]:
+github.com/OpenPrinting/go-mfp/cpython.pyInterpThread(0x4000169850)
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:112 +0x184
+created by github.com/OpenPrinting/go-mfp/cpython.init.1 in goroutine 1
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:141 +0x70
+
+goroutine 19 [syscall]:
+github.com/OpenPrinting/go-mfp/cpython._Cfunc_py_interp_close(0xfa52d77ef940)
+	_cgo_gotypes.go:317 +0x30
+github.com/OpenPrinting/go-mfp/cpython.(*Python).Close.pyInterpDelete.func1(0xfa52d77ef940)
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:64 +0x44
+github.com/OpenPrinting/go-mfp/cpython.pyInterpDelete(...)
+	/home/abhishrestha.linux/go-mfp/cpython/cpython.go:64
+github.com/OpenPrinting/go-mfp/cpython.(*Python).Close(0x4000314000)
+	/home/abhishrestha.linux/go-mfp/cpython/python.go:87 +0x7c
+github.com/OpenPrinting/go-mfp/modeling.(*Model).Close(...)
+	/home/abhishrestha.linux/go-mfp/modeling/model.go:131
+github.com/OpenPrinting/go-mfp/modeling.TestKyoceraESCLScannerCapabilities(0x40000a0820)
+	/home/abhishrestha.linux/go-mfp/modeling/model_test.go:79 +0x580
+testing.tRunner(0x40000a0820, 0x7e8410)
+	/usr/lib/go-1.22/src/testing/testing.go:1689 +0xec
+created by testing.(*T).Run in goroutine 1
+	/usr/lib/go-1.22/src/testing/testing.go:1742 +0x318
+FAIL	github.com/OpenPrinting/go-mfp/modeling	600.074s
+ok  	github.com/OpenPrinting/go-mfp/proto/escl	0.112s	coverage: 84.8% of statements
+ok  	github.com/OpenPrinting/go-mfp/proto/ieee1284	0.052s	coverage: 58.8% of statements
+ok  	github.com/OpenPrinting/go-mfp/proto/ipp	0.010s	coverage: 40.4% of statements
+ok  	github.com/OpenPrinting/go-mfp/proto/ipp/iana	0.002s	coverage: 41.4% of statements
+ok  	github.com/OpenPrinting/go-mfp/proto/ppd	0.007s	coverage: 76.7% of statements
+ok  	github.com/OpenPrinting/go-mfp/proto/wsd	0.003s	coverage: 67.2% of statements
+ok  	github.com/OpenPrinting/go-mfp/proto/wsscan	0.004s	coverage: 84.4% of statements
+ok  	github.com/OpenPrinting/go-mfp/transport	0.067s	coverage: 65.2% of statements
+ok  	github.com/OpenPrinting/go-mfp/util/uuid	0.001s	coverage: 95.9% of statements
+ok  	github.com/OpenPrinting/go-mfp/util/xmldoc	0.001s	coverage: 43.1% of statements
+FAIL
