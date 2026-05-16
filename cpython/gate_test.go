@@ -184,7 +184,7 @@ func TestGateSetItem(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------
-// Added tests below — target gate.go lines reported at low/0% coverage.
+// Added tests below — target gate.go functions reported at low coverage.
 // NOTE: method names (Keys, HasAttr, ContainsItem, Bool, Uint64, etc.)
 // are inferred from the pattern of existing tests above (Set/Get/Del/
 // SetItem/GetItem/ContainsItem all visible there). I do not have
@@ -193,7 +193,7 @@ func TestGateSetItem(t *testing.T) {
 // run `go vet ./cpython/...` and fix any mismatches.
 // ---------------------------------------------------------------------
 
-// TestGateKeys covers keys() (0% coverage at gate.go:289).
+// TestGateKeys covers keys().
 func TestGateKeys(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -215,8 +215,7 @@ func TestGateKeys(t *testing.T) {
 	}
 }
 
-// TestGateHasAttrFalse covers the false branch of hasattr
-// (gate.go:320, currently 80%).
+// TestGateHasAttrFalse covers the false branch of hasattr.
 func TestGateHasAttrFalse(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -238,8 +237,7 @@ func TestGateHasAttrFalse(t *testing.T) {
 	}
 }
 
-// TestGateGetAttrMissing covers the error branch of getattr
-// (gate.go:307, currently 83.3%).
+// TestGateGetAttrMissing covers the error branch of getattr.
 func TestGateGetAttrMissing(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -254,8 +252,8 @@ func TestGateGetAttrMissing(t *testing.T) {
 	}
 }
 
-// TestGateSetAttrError covers the error branch of setattr
-// (gate.go:333, currently 66.7%) — int objects reject attribute sets.
+// TestGateSetAttrError covers the error branch of setattr —
+// int objects reject attribute sets.
 func TestGateSetAttrError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -273,8 +271,7 @@ func TestGateSetAttrError(t *testing.T) {
 	}
 }
 
-// TestGateHasItemFalse covers the false branch of hasitem
-// (gate.go:370, currently 50%).
+// TestGateHasItemFalse covers the false branch of hasitem.
 func TestGateHasItemFalse(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -296,8 +293,7 @@ func TestGateHasItemFalse(t *testing.T) {
 	}
 }
 
-// TestGateDelItemMissing covers the error branch of delitem
-// (gate.go:347, currently 50%).
+// TestGateDelItemMissing covers the error branch of delitem.
 func TestGateDelItemMissing(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -319,9 +315,9 @@ func TestGateDelItemMissing(t *testing.T) {
 	}
 }
 
-// TestGateGetSeqItem covers getSeqItem (gate.go:777, currently 50%)
-// via a generic sequence type (string) rather than list/tuple, which
-// have their own dedicated get* paths.
+// TestGateGetSeqItem covers getSeqItem via a generic sequence type
+// (string) rather than list/tuple, which have their own dedicated
+// get* paths.
 func TestGateGetSeqItem(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -348,7 +344,7 @@ func TestGateGetSeqItem(t *testing.T) {
 	}
 }
 
-// TestGateSetListItem covers setListItem (gate.go:769, currently 0%).
+// TestGateSetListItem covers setListItem.
 func TestGateSetListItem(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -379,8 +375,8 @@ func TestGateSetListItem(t *testing.T) {
 	}
 }
 
-// TestGateGetTupleItemError covers the error branch of getTupleItem
-// (gate.go:783, currently 0%) — out-of-range index.
+// TestGateGetTupleItemError covers the error branch of getTupleItem —
+// out-of-range index.
 func TestGateGetTupleItemError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -399,7 +395,7 @@ func TestGateGetTupleItemError(t *testing.T) {
 	}
 }
 
-// TestGateMakeBool covers makeBool (gate.go:695, currently 0%).
+// TestGateMakeBool covers makeBool.
 func TestGateMakeBool(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -431,7 +427,7 @@ func TestGateMakeBool(t *testing.T) {
 	}
 }
 
-// TestGateMakeDict covers makeDict (gate.go:719, currently 0%).
+// TestGateMakeDict covers makeDict.
 func TestGateMakeDict(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -455,7 +451,7 @@ func TestGateMakeDict(t *testing.T) {
 	}
 }
 
-// TestGateMakeFloat covers makeFloat (gate.go:725, currently 0%).
+// TestGateMakeFloat covers makeFloat.
 func TestGateMakeFloat(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -487,7 +483,7 @@ func TestGateMakeFloat(t *testing.T) {
 	}
 }
 
-// TestGateMakeTuple covers makeTuple (gate.go:751, currently 0%).
+// TestGateMakeTuple covers makeTuple.
 func TestGateMakeTuple(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -511,9 +507,9 @@ func TestGateMakeTuple(t *testing.T) {
 	}
 }
 
-// TestGateMakeUintError covers the overflow branch of makeUint
-// (gate.go:757, currently 50%) by round-tripping a negative-overflow
-// case through decode, and the success path via a large uint64.
+// TestGateMakeUintLarge covers the overflow branch of makeUint by
+// round-tripping a negative-overflow case through decode, and the
+// success path via a large uint64.
 func TestGateMakeUintLarge(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -546,8 +542,8 @@ func TestGateMakeUintLarge(t *testing.T) {
 	}
 }
 
-// TestGateDecodeUint64Negative covers decodeUint64's overflow branch
-// (gate.go:570, currently 66.7%) — negative int cannot become uint64.
+// TestGateDecodeUint64Negative covers decodeUint64's overflow branch —
+// negative int cannot become uint64.
 func TestGateDecodeUint64Negative(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -567,7 +563,7 @@ func TestGateDecodeUint64Negative(t *testing.T) {
 }
 
 // TestGateDecodeExactComplexError covers decodeExactComplex's type
-// error branch (gate.go:588, currently 66.7%).
+// error branch.
 func TestGateDecodeExactComplexError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -587,7 +583,7 @@ func TestGateDecodeExactComplexError(t *testing.T) {
 }
 
 // TestGateDecodeExactFloatError covers decodeExactFloat's type error
-// branch (gate.go:605, currently 85.7%).
+// branch.
 func TestGateDecodeExactFloatError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -607,7 +603,7 @@ func TestGateDecodeExactFloatError(t *testing.T) {
 }
 
 // TestGateDecodeExactInt64Overflow covers decodeExactInt64's overflow
-// branch (gate.go:622, currently 87.5%).
+// branch.
 func TestGateDecodeExactInt64Overflow(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -626,8 +622,8 @@ func TestGateDecodeExactInt64Overflow(t *testing.T) {
 	}
 }
 
-// TestGateLoad covers load() error branch (gate.go:830, currently 83.3%)
-// by importing a module that does not exist.
+// TestGateLoadError covers load()'s error branch by importing a
+// module that does not exist.
 func TestGateLoadError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -642,9 +638,8 @@ func TestGateLoadError(t *testing.T) {
 }
 
 // TestGateLastErrorLocationNested covers the multi-frame traceback walk in
-// lastErrorLocation (gate.go:120, currently 76.5%) by raising an error
-// from inside a nested function call, producing a traceback with more
-// than one frame.
+// lastErrorLocation by raising an error from inside a nested function
+// call, producing a traceback with more than one frame.
 func TestGateLastErrorLocationNested(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -664,9 +659,9 @@ func TestGateLastErrorLocationNested(t *testing.T) {
 	}
 }
 
-// TestGateSlice covers objSlice's getSeqItem call path (gate.go:777)
-// via the exported Object.Slice() method, distinct from GetItem which
-// uses gate.getitem instead.
+// TestGateSlice covers objSlice's getSeqItem call path via the
+// exported Object.Slice() method, distinct from GetItem which uses
+// gate.getitem instead.
 func TestGateSlice(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -689,8 +684,8 @@ func TestGateSlice(t *testing.T) {
 }
 
 // TestGateCallPositionalArgs covers setTupleItem's success path
-// (gate.go:790) via Object.Call with positional arguments, and
-// binop's tuple construction (gate.go:790 too, via Add).
+// via Object.Call with positional arguments, and binop's tuple
+// construction via Add.
 func TestGateCallPositionalArgs(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -733,7 +728,7 @@ func TestGateCallPositionalArgs(t *testing.T) {
 }
 
 // TestGateDecodeBigintError covers decodeBigint's type-check error
-// branch (gate.go:459) for a non-PyLong object.
+// branch for a non-PyLong object.
 func TestGateDecodeBigintError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
@@ -753,8 +748,8 @@ func TestGateDecodeBigintError(t *testing.T) {
 }
 
 // TestGateDecodeBytesError covers decodeBytes' final fallthrough
-// error branch (gate.go:477) for an object that is neither
-// PyBytes_Type nor PyByteArray_Type.
+// error branch for an object that is neither PyBytes_Type nor
+// PyByteArray_Type.
 func TestGateDecodeBytesError(t *testing.T) {
 	py, err := NewPython()
 	if err != nil {
