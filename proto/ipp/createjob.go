@@ -86,7 +86,7 @@ func (rq *CreateJobRequest) Decode(
 		return err
 	}
 
-	rq.Job, err = DecodeJobAttributes(msg.Printer, opt)
+	rq.Job, err = DecodeJobAttributes(msg.Job, opt)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (rsp *CreateJobResponse) Decode(
 	rsp.UnsupportedAttributes = msg.Unsupported
 
 	var err error
-	rsp.Job, err = DecodeJobStatusAttributes(msg.Printer, opt)
+	rsp.Job, err = DecodeJobStatusAttributes(msg.Job, opt)
 	if err != nil {
 		return err
 	}

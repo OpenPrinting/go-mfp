@@ -77,7 +77,7 @@ func (rq *ValidateJobRequest) Decode(
 		return err
 	}
 
-	rq.Job, err = DecodeJobAttributes(msg.Printer, opt)
+	rq.Job, err = DecodeJobAttributes(msg.Job, opt)
 	if err != nil {
 		return err
 	}

@@ -168,9 +168,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		}
 	}
 
-	// Notify tracer, if present
-	trace.OnResponse(query, goippResponse{rsp}, nil)
-
 	// Log the response
 	buf.Reset()
 	rsp.Print(&buf, false)
@@ -180,6 +177,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	// Send response
 	query.ResponseHeader().Set("Content-Type", "application/ipp")
 	query.WriteHeader(http.StatusOK) // At HTTP level everything OK.
+
+	// Notify tracer, if present (must be after WriteHeader so
+	// DumpResponse can read the correct response status).
+	trace.OnResponse(query, goippResponse{rsp}, nil)
 
 	err = rsp.Encode(query)
 	if err != nil {

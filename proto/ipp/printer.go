@@ -19,10 +19,11 @@ import (
 
 // Printer implements the IPP printer.
 type Printer struct {
-	options PrinterOptions     // Printer options
-	server  *Server            // Underlying IPP server
-	attrs   *PrinterAttributes // Printer attributes
-	q       *queue             // Job queue
+	options  PrinterOptions     // Printer options
+	server   *Server            // Underlying IPP server
+	attrs    *PrinterAttributes // Printer attributes
+	q        *queue             // Job queue
+	receiver DocumentReceiver   // Document capture callback
 }
 
 // PrinterOptions extends [ServerOptions] with printer-specific
@@ -167,16 +168,23 @@ func (printer *Printer) handleSendDocument(
 	}
 
 	// Consume the document body
-	//
-	// FIXME -- this is just stub
 	j.SendDocumentActive = true
 	j.Unlock()
 
-	n, err := io.Copy(io.Discard, rq.Body)
+	data, err := io.ReadAll(rq.Body)
 	if err == nil {
-		log.Debug(ctx, "Send-Document: %d bytes received", n)
+		log.Debug(ctx, "Send-Document: %d bytes received", len(data))
 	} else {
 		log.Error(ctx, "Send-Document: %s", err)
+	}
+
+	// Invoke document receiver callback if installed
+	if err == nil && printer.receiver != nil {
+		format := ""
+		if rq.DocumentFormat != nil {
+			format = *rq.DocumentFormat
+		}
+		printer.receiver(j.JobID, format, data)
 	}
 
 	j.Lock()
