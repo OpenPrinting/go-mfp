@@ -26,6 +26,24 @@ const (
 	DocFormatPlainText                   // Plain text
 )
 
+// MIME returns the MIME type string for the document format.
+func (f DocFormat) MIME() string {
+	switch f {
+	case DocFormatPostScript:
+		return "application/postscript"
+	case DocFormatPDF:
+		return "application/pdf"
+	case DocFormatPCL:
+		return "application/vnd.hp-pcl"
+	case DocFormatPCLXL:
+		return "application/vnd.hp-pclxl"
+	case DocFormatPlainText:
+		return "text/plain"
+	default:
+		return "application/octet-stream"
+	}
+}
+
 // String returns a human-readable name for the format.
 func (f DocFormat) String() string {
 	switch f {

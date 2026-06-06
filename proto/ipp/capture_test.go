@@ -12,12 +12,30 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 )
+
+// testBackend is a test implementation of abstract.PrintBackend.
+type testBackend struct {
+	called bool
+	params abstract.PrintJobParams
+	data   []byte
+	err    error
+}
+
+func (b *testBackend) PrintDocument(
+	params abstract.PrintJobParams, body io.Reader) error {
+	b.called = true
+	b.params = params
+	b.data, b.err = io.ReadAll(body)
+	return b.err
+}
 
 // testNewCaptPrinter creates a minimal Printer for capture testing.
 func testNewCaptPrinter(t *testing.T) *Printer {
@@ -32,24 +50,12 @@ func testCaptPrinterURL(srv *httptest.Server) (*url.URL, string) {
 	return httpURL, ippURI
 }
 
-// TestDocumentReceiverCalled verifies that the DocumentReceiver callback
-// is invoked with the correct jobID, format, and data.
+// TestDocumentReceiverCalled verifies that the PrintBackend is invoked
+// with the correct format and data.
 func TestDocumentReceiverCalled(t *testing.T) {
 	printer := testNewCaptPrinter(t)
-
-	var (
-		gotJobID  int
-		gotFormat string
-		gotData   []byte
-		called    bool
-	)
-
-	printer.SetDocumentReceiver(func(jobID int, format string, data []byte) {
-		called = true
-		gotJobID = jobID
-		gotFormat = format
-		gotData = append([]byte(nil), data...)
-	})
+	backend := &testBackend{}
+	printer.SetPrintBackend(backend)
 
 	srv := httptest.NewServer(printer)
 	defer srv.Close()
@@ -71,8 +77,6 @@ func TestDocumentReceiverCalled(t *testing.T) {
 		t.Fatalf("Create-Job: %v", err)
 	}
 
-	wantJobID := createRsp.Job.JobID
-
 	// Step 2: Send-Document
 	wantData := []byte("Hello, virtual printer!")
 	wantFormat := "application/pdf"
@@ -80,7 +84,7 @@ func TestDocumentReceiverCalled(t *testing.T) {
 	sendRq := &SendDocumentRequest{
 		RequestHeader:  DefaultRequestHeader,
 		PrinterURI:     optional.New(ippURI),
-		JobID:          optional.New(wantJobID),
+		JobID:          optional.New(createRsp.Job.JobID),
 		DocumentFormat: optional.New(wantFormat),
 		LastDocument:   true,
 		Job:            &JobAttributes{},
@@ -92,26 +96,23 @@ func TestDocumentReceiverCalled(t *testing.T) {
 		t.Fatalf("Send-Document: %v", err)
 	}
 
-	// Verify receiver was called
-	if !called {
-		t.Fatal("DocumentReceiver was not called")
+	if !backend.called {
+		t.Fatal("PrintBackend was not called")
 	}
-	if gotJobID != wantJobID {
-		t.Errorf("jobID: got %d, want %d", gotJobID, wantJobID)
+	if backend.params.Format != wantFormat {
+		t.Errorf("format: got %q, want %q",
+			backend.params.Format, wantFormat)
 	}
-	if gotFormat != wantFormat {
-		t.Errorf("format: got %q, want %q", gotFormat, wantFormat)
-	}
-	if !bytes.Equal(gotData, wantData) {
-		t.Errorf("data: got %q, want %q", gotData, wantData)
+	if !bytes.Equal(backend.data, wantData) {
+		t.Errorf("data: got %q, want %q", backend.data, wantData)
 	}
 }
 
-// TestDocumentReceiverNilNoPanic verifies that a nil receiver
+// TestDocumentReceiverNilNoPanic verifies that a nil backend
 // does not panic when a document arrives.
 func TestDocumentReceiverNilNoPanic(t *testing.T) {
 	printer := testNewCaptPrinter(t)
-	// No SetDocumentReceiver — receiver stays nil
+	// No SetPrintBackend — backend stays nil
 
 	srv := httptest.NewServer(printer)
 	defer srv.Close()
@@ -143,20 +144,17 @@ func TestDocumentReceiverNilNoPanic(t *testing.T) {
 
 	sendRsp := &SendDocumentResponse{}
 	if err := client.Do(ctx, sendRq, sendRsp); err != nil {
-		t.Fatalf("Send-Document with nil receiver: %v", err)
+		t.Fatalf("Send-Document with nil backend: %v", err)
 	}
 	// reaching here without panic = success
 }
 
 // TestDocumentReceiverLargeDoc verifies that large documents
-// are captured fully without truncation.
+// are streamed fully without truncation.
 func TestDocumentReceiverLargeDoc(t *testing.T) {
 	printer := testNewCaptPrinter(t)
-
-	var gotData []byte
-	printer.SetDocumentReceiver(func(_ int, _ string, data []byte) {
-		gotData = append([]byte(nil), data...)
-	})
+	backend := &testBackend{}
+	printer.SetPrintBackend(backend)
 
 	srv := httptest.NewServer(printer)
 	defer srv.Close()
@@ -194,10 +192,11 @@ func TestDocumentReceiverLargeDoc(t *testing.T) {
 		t.Fatalf("Send-Document: %v", err)
 	}
 
-	if len(gotData) != len(wantData) {
-		t.Errorf("data length: got %d, want %d", len(gotData), len(wantData))
+	if len(backend.data) != len(wantData) {
+		t.Errorf("data length: got %d, want %d",
+			len(backend.data), len(wantData))
 	}
-	if !bytes.Equal(gotData, wantData) {
+	if !bytes.Equal(backend.data, wantData) {
 		t.Error("large document data mismatch")
 	}
 }

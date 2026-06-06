@@ -13,20 +13,21 @@ import (
 	"io"
 	"sync"
 
+	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
 // Printer implements the IEEE-1284 printer.
 type Printer struct {
-	ctx     context.Context // Logging context
-	state   parserState     // Current parser state
-	format  DocFormat       // Detected format of current document
-	buf     []byte          // Parser input buffer
-	lineBuf []byte          // Partial PJL line buffer
-	docBuf  []byte          // Accumulated document content
-	handler DocumentHandler // Called when document is complete
-	model   string          // Printer model name for PJL INFO ID
-	params  JobParams       // PJL-negotiated job parameters
+	ctx     context.Context      // Logging context
+	state   parserState          // Current parser state
+	format  DocFormat            // Detected format of current document
+	buf     []byte               // Parser input buffer
+	lineBuf []byte               // Partial PJL line buffer
+	docBuf  []byte               // Accumulated document content
+	backend abstract.PrintBackend // Called when document is complete
+	model   string               // Printer model name for PJL INFO ID
+	params  JobParams            // PJL-negotiated job parameters
 
 	mu      sync.Mutex // Protects respBuf and closed
 	cond    *sync.Cond // Signaled when respBuf has data or closed
@@ -35,10 +36,10 @@ type Printer struct {
 }
 
 // NewPrinter creates a new printer.
-func NewPrinter(ctx context.Context, handler DocumentHandler) *Printer {
+func NewPrinter(ctx context.Context, backend abstract.PrintBackend) *Printer {
 	p := &Printer{
 		ctx:     log.WithPrefix(ctx, "ieee1284"),
-		handler: handler,
+		backend: backend,
 	}
 	p.cond = sync.NewCond(&p.mu)
 	return p

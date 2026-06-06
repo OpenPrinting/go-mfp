@@ -13,17 +13,18 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/goipp"
 )
 
 // Printer implements the IPP printer.
 type Printer struct {
-	options  PrinterOptions     // Printer options
-	server   *Server            // Underlying IPP server
-	attrs    *PrinterAttributes // Printer attributes
-	q        *queue             // Job queue
-	receiver DocumentReceiver   // Document capture callback
+	options PrinterOptions       // Printer options
+	server  *Server              // Underlying IPP server
+	attrs   *PrinterAttributes   // Printer attributes
+	q       *queue               // Job queue
+	backend abstract.PrintBackend // Print backend
 }
 
 // PrinterOptions extends [ServerOptions] with printer-specific
@@ -171,20 +172,44 @@ func (printer *Printer) handleSendDocument(
 	j.SendDocumentActive = true
 	j.Unlock()
 
-	data, err := io.ReadAll(rq.Body)
-	if err == nil {
-		log.Debug(ctx, "Send-Document: %d bytes received", len(data))
-	} else {
-		log.Error(ctx, "Send-Document: %s", err)
-	}
+	if printer.backend != nil {
+		// Build protocol-independent job parameters
+		params := abstract.PrintJobParams{}
 
-	// Invoke document receiver callback if installed
-	if err == nil && printer.receiver != nil {
-		format := ""
 		if rq.DocumentFormat != nil {
-			format = *rq.DocumentFormat
+			params.Format = *rq.DocumentFormat
 		}
-		printer.receiver(j.JobID, format, data)
+		if rq.DocumentName != nil {
+			params.JobName = *rq.DocumentName
+		} else if j.JobStatus.JobName != nil {
+			params.JobName = *j.JobStatus.JobName
+		}
+		if rq.Job != nil {
+			if rq.Job.Copies != nil {
+				params.Copies = *rq.Job.Copies
+			}
+			if rq.Job.Sides != nil {
+				params.Sides = string(*rq.Job.Sides)
+			}
+			if rq.Job.PrintColorMode != nil {
+				params.ColorMode = *rq.Job.PrintColorMode
+			}
+			if rq.Job.Media != nil {
+				params.Media = string(*rq.Job.Media)
+			}
+		}
+
+		if err := printer.backend.PrintDocument(params, rq.Body); err != nil {
+			log.Error(ctx, "Send-Document: backend error: %s", err)
+		}
+	} else {
+		// No backend — drain the body so the connection stays clean
+		n, err := io.Copy(io.Discard, rq.Body)
+		if err != nil {
+			log.Error(ctx, "Send-Document: %s", err)
+		} else {
+			log.Debug(ctx, "Send-Document: %d bytes discarded (no backend)", n)
+		}
 	}
 
 	j.Lock()

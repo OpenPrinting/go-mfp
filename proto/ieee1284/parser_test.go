@@ -41,8 +41,8 @@ func TestParserPJLPostScript(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPostScript {
-		t.Errorf("format = %v, want PostScript", results[0].format)
+	if docFormat(results[0]) != DocFormatPostScript {
+		t.Errorf("format = %v, want PostScript", docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(psContent)) {
 		t.Errorf("document data mismatch:\ngot:  %q\nwant: %q",
@@ -79,8 +79,8 @@ func TestParserPJLPDF(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPDF {
-		t.Errorf("format = %v, want PDF", results[0].format)
+	if docFormat(results[0]) != DocFormatPDF {
+		t.Errorf("format = %v, want PDF", docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(pdfContent)) {
 		t.Errorf("document data mismatch:\ngot:  %q\nwant: %q",
@@ -111,8 +111,8 @@ func TestParserRawPostScript(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPostScript {
-		t.Errorf("format = %v, want PostScript", results[0].format)
+	if docFormat(results[0]) != DocFormatPostScript {
+		t.Errorf("format = %v, want PostScript", docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(psContent)) {
 		t.Errorf("document data mismatch:\ngot:  %q\nwant: %q",
@@ -161,18 +161,18 @@ func TestParserMultipleJobs(t *testing.T) {
 		t.Fatalf("expected 2 documents, got %d", len(results))
 	}
 
-	if results[0].format != DocFormatPostScript {
+	if docFormat(results[0]) != DocFormatPostScript {
 		t.Errorf("job 1: format = %v, want PostScript",
-			results[0].format)
+			docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(psContent)) {
 		t.Errorf("job 1: data mismatch:\ngot:  %q\nwant: %q",
 			results[0].data, psContent)
 	}
 
-	if results[1].format != DocFormatPDF {
+	if docFormat(results[1]) != DocFormatPDF {
 		t.Errorf("job 2: format = %v, want PDF",
-			results[1].format)
+			docFormat(results[1]))
 	}
 	if !bytes.Equal(results[1].data, []byte(pdfContent)) {
 		t.Errorf("job 2: data mismatch:\ngot:  %q\nwant: %q",
@@ -239,8 +239,8 @@ func TestParserChunkedUEL(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPostScript {
-		t.Errorf("format = %v, want PostScript", results[0].format)
+	if docFormat(results[0]) != DocFormatPostScript {
+		t.Errorf("format = %v, want PostScript", docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(psContent)) {
 		t.Errorf("document data mismatch:\ngot:  %q\nwant: %q",
@@ -262,9 +262,9 @@ func TestParserPlainText(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPlainText {
+	if docFormat(results[0]) != DocFormatPlainText {
 		t.Errorf("format = %v, want Plain Text",
-			results[0].format)
+			docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(plainText)) {
 		t.Errorf("data = %q, want %q",
@@ -286,9 +286,9 @@ func TestParserPlainTextCtrlD(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPlainText {
+	if docFormat(results[0]) != DocFormatPlainText {
 		t.Errorf("format = %v, want Plain Text",
-			results[0].format)
+			docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(plainText)) {
 		t.Errorf("data = %q, want %q",
@@ -317,9 +317,9 @@ func TestParserEnterLanguageExtraSpaces(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPostScript {
+	if docFormat(results[0]) != DocFormatPostScript {
 		t.Errorf("format = %v, want PostScript",
-			results[0].format)
+			docFormat(results[0]))
 	}
 }
 
@@ -372,8 +372,8 @@ func TestParserChunkedPJLLine(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPostScript {
-		t.Errorf("format = %v, want PostScript", results[0].format)
+	if docFormat(results[0]) != DocFormatPostScript {
+		t.Errorf("format = %v, want PostScript", docFormat(results[0]))
 	}
 	if !bytes.Equal(results[0].data, []byte(psContent)) {
 		t.Errorf("document data mismatch:\ngot:  %q\nwant: %q",

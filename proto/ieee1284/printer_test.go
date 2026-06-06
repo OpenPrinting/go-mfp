@@ -9,9 +9,12 @@
 package ieee1284
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"testing"
 
+	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
@@ -23,21 +26,34 @@ func newTestContext() context.Context {
 	return log.NewContext(context.Background(), logger)
 }
 
-// docResult captures a single handler invocation.
+// docResult captures a single backend invocation.
 type docResult struct {
-	format DocFormat
-	params JobParams
+	params abstract.PrintJobParams
 	data   []byte
 }
 
-// testHandler returns a DocumentHandler that appends results
-// to the provided slice.
-func testHandler(results *[]docResult) DocumentHandler {
-	return func(format DocFormat, params JobParams, data []byte) {
-		cp := make([]byte, len(data))
-		copy(cp, data)
-		*results = append(*results, docResult{format, params, cp})
+// testBackend is a test implementation of abstract.PrintBackend
+// that captures all PrintDocument calls.
+type testBackend struct {
+	results *[]docResult
+}
+
+func (b *testBackend) PrintDocument(
+	params abstract.PrintJobParams, body io.Reader) error {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return err
 	}
+	cp := make([]byte, len(data))
+	copy(cp, data)
+	*b.results = append(*b.results, docResult{params, cp})
+	return nil
+}
+
+// testHandler returns a testBackend that appends results
+// to the provided slice.
+func testHandler(results *[]docResult) *testBackend {
+	return &testBackend{results: results}
 }
 
 // writeInChunks writes data to the printer in fixed-size chunks,
@@ -58,5 +74,37 @@ func writeInChunks(t *testing.T, p *Printer, data []byte, chunkSize int) {
 			t.Fatalf("Write: got %d, want %d", n, chunk)
 		}
 		data = data[n:]
+	}
+}
+
+// docBytes extracts the raw bytes from a docResult.
+func docBytes(r docResult) []byte {
+	return r.data
+}
+
+// docFormat extracts the DocFormat from a docResult by reverse-mapping
+// the MIME type.
+func docFormat(r docResult) DocFormat {
+	switch r.params.Format {
+	case "application/postscript":
+		return DocFormatPostScript
+	case "application/pdf":
+		return DocFormatPDF
+	case "application/vnd.hp-pcl":
+		return DocFormatPCL
+	case "application/vnd.hp-pclxl":
+		return DocFormatPCLXL
+	case "text/plain":
+		return DocFormatPlainText
+	default:
+		return DocFormatUnknown
+	}
+}
+
+// mustContain checks that got contains want as a substring.
+func mustContain(t *testing.T, got, want []byte) {
+	t.Helper()
+	if !bytes.Contains(got, want) {
+		t.Errorf("expected %q to contain %q", got, want)
 	}
 }
