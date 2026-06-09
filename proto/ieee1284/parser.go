@@ -235,27 +235,26 @@ func (p *Printer) feedDocument() bool {
 func (p *Printer) emitDocument() {
 	if p.backend != nil && len(p.docBuf) > 0 {
 		params := abstract.PrintJobParams{
-			Format:    p.format.MIME(),
-			JobName:   p.params.JobName,
-			Variables: p.params.Variables,
+			Format:  p.format.MIME(),
+			JobName: p.params.JobName,
 		}
 
-		// Map common PJL SET variables to standard PrintJobParams fields.
+		// Map PJL SET variables to typed PrintJobParams fields.
 		// Keys are stored uppercase by the PJL parser.
 		if v, ok := p.params.Variables["DUPLEX"]; ok {
 			switch strings.ToUpper(v) {
 			case "ON":
-				params.Sides = "two-sided-long-edge"
+				params.Sides = abstract.SidesTwoSidedLongEdge
 			case "OFF":
-				params.Sides = "one-sided"
+				params.Sides = abstract.SidesOneSided
 			}
 		}
 		if v, ok := p.params.Variables["COLORMODE"]; ok {
 			switch strings.ToUpper(v) {
 			case "COLOR":
-				params.ColorMode = "color"
+				params.ColorMode = abstract.ColorModeColor
 			case "MONO", "MONOCHROME", "GRAYSCALE":
-				params.ColorMode = "monochrome"
+				params.ColorMode = abstract.ColorModeMono
 			}
 		}
 

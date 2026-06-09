@@ -208,15 +208,6 @@ func TestPJLJobParams(t *testing.T) {
 		t.Errorf("JobName = %q, want %q",
 			params.JobName, "My Print Job")
 	}
-	if v := params.Variables["SMOOTHING"]; v != "ON" {
-		t.Errorf("Variables[SMOOTHING] = %q, want %q", v, "ON")
-	}
-	if v := params.Variables["ECONOMODE"]; v != "OFF" {
-		t.Errorf("Variables[ECONOMODE] = %q, want %q", v, "OFF")
-	}
-	if v := params.Variables["USERNAME"]; v != "alice" {
-		t.Errorf("Variables[USERNAME] = %q, want %q", v, "alice")
-	}
 }
 
 // TestReadBlocksUntilData verifies that Read() blocks when no
