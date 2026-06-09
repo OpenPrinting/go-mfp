@@ -28,25 +28,16 @@ type PrintJobParams struct {
 	Copies int
 
 	// Sides controls duplex printing.
-	// Common values: "one-sided", "two-sided-long-edge",
-	// "two-sided-short-edge". Empty string means unset.
-	Sides string
+	// SidesUnset means the parameter was not provided.
+	Sides Sides
 
 	// ColorMode is the requested color mode.
-	// Common values: "color", "monochrome", "auto".
-	// Empty string means unset.
-	ColorMode string
+	// ColorModeUnset means the parameter was not provided.
+	ColorMode ColorMode
 
-	// Media is the requested media size or type
-	// (e.g., "iso_a4_210x297mm", "na_letter_8.5x11in").
-	// Empty string means unset.
-	Media string
-
-	// Variables holds protocol-specific key=value parameters that
-	// do not map to the standard fields above.
-	// For IEEE 1284/PJL, these are @PJL SET key=value pairs.
-	// Keys are stored in uppercase.
-	Variables map[string]string
+	// Media is the requested media size.
+	// A zero-value MediaSize means the parameter was not provided.
+	Media MediaSize
 }
 
 // PrintBackend is the protocol-independent interface for receiving
