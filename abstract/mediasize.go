@@ -15,3 +15,8 @@ type MediaSize struct {
 	Width  Dimension // Media width
 	Height Dimension // Media height
 }
+
+// IsZero reports whether the MediaSize is unset (both dimensions are zero).
+func (ms MediaSize) IsZero() bool {
+	return ms.Width == 0 && ms.Height == 0
+}
