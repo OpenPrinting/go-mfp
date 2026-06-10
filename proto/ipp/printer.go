@@ -96,46 +96,6 @@ func (printer *Printer) handleValidateJob(
 	return rsp.Encode(), nil
 }
 
-// ippSides maps a KwSides IPP keyword to abstract.Sides.
-func ippSides(kw KwSides) abstract.Sides {
-	switch kw {
-	case KwSidesOneSided:
-		return abstract.SidesOneSided
-	case KwSidesTwoSidedLongEdge:
-		return abstract.SidesTwoSidedLongEdge
-	case KwSidesTwoSidedShortEdge:
-		return abstract.SidesTwoSidedShortEdge
-	}
-	return abstract.SidesUnset
-}
-
-// ippColorMode maps an IPP print-color-mode string to abstract.ColorMode.
-func ippColorMode(s string) abstract.ColorMode {
-	switch s {
-	case "color":
-		return abstract.ColorModeColor
-	case "monochrome", "auto-monochrome", "process-monochrome",
-		"highlight-monochrome":
-		return abstract.ColorModeMono
-	case "bi-level":
-		return abstract.ColorModeBinary
-	}
-	return abstract.ColorModeUnset
-}
-
-// ippMedia maps a KwMedia IPP keyword to abstract.MediaSize.
-// KwMedia.Size() returns dimensions in 1/100 mm, matching Dimension units.
-func ippMedia(kw KwMedia) abstract.MediaSize {
-	wid, hei := kw.Size()
-	if wid < 0 {
-		return abstract.MediaSize{}
-	}
-	return abstract.MediaSize{
-		Width:  abstract.Dimension(wid),
-		Height: abstract.Dimension(hei),
-	}
-}
-
 // handleCreateJob handles Create-Job request.
 func (printer *Printer) handleCreateJob(
 	ctx context.Context,
@@ -235,13 +195,13 @@ func (printer *Printer) handleSendDocument(
 				params.Copies = *rq.Job.Copies
 			}
 			if rq.Job.Sides != nil {
-				params.Sides = ippSides(*rq.Job.Sides)
+				params.Sides = sidesToAbstract(*rq.Job.Sides)
 			}
 			if rq.Job.PrintColorMode != nil {
-				params.ColorMode = ippColorMode(*rq.Job.PrintColorMode)
+				params.ColorMode = colorModeToAbstract(*rq.Job.PrintColorMode)
 			}
 			if rq.Job.Media != nil {
-				params.Media = ippMedia(*rq.Job.Media)
+				params.Media = mediaSizeToAbstract(*rq.Job.Media)
 			}
 		}
 
