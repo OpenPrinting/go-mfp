@@ -25,7 +25,7 @@ type Printer struct {
 	buf     []byte               // Parser input buffer
 	lineBuf []byte               // Partial PJL line buffer
 	docBuf  []byte               // Accumulated document content
-	backend abstract.PrintBackend // Called when document is complete
+	backend abstract.Printer // Called when document is complete
 	model   string               // Printer model name for PJL INFO ID
 	params  JobParams            // PJL-negotiated job parameters
 
@@ -36,7 +36,7 @@ type Printer struct {
 }
 
 // NewPrinter creates a new printer.
-func NewPrinter(ctx context.Context, backend abstract.PrintBackend) *Printer {
+func NewPrinter(ctx context.Context, backend abstract.Printer) *Printer {
 	p := &Printer{
 		ctx:     log.WithPrefix(ctx, "ieee1284"),
 		backend: backend,

@@ -24,7 +24,7 @@ type Printer struct {
 	server  *Server              // Underlying IPP server
 	attrs   *PrinterAttributes   // Printer attributes
 	q       *queue               // Job queue
-	backend abstract.PrintBackend // Print backend
+	backend abstract.Printer // Print backend
 }
 
 // PrinterOptions extends [ServerOptions] with printer-specific
@@ -66,7 +66,7 @@ func NewPrinter(attrs *PrinterAttributes, options PrinterOptions) *Printer {
 
 // SetPrintBackend installs backend as the handler for incoming
 // print documents. Pass nil to clear a previously set backend.
-func (printer *Printer) SetPrintBackend(backend abstract.PrintBackend) {
+func (printer *Printer) SetPrintBackend(backend abstract.Printer) {
 	printer.backend = backend
 }
 
@@ -180,7 +180,7 @@ func (printer *Printer) handleSendDocument(
 
 	if printer.backend != nil {
 		// Build protocol-independent job parameters
-		params := abstract.PrintJobParams{}
+		params := abstract.PrinterRequest{}
 
 		if rq.DocumentFormat != nil {
 			params.Format = *rq.DocumentFormat

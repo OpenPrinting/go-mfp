@@ -21,16 +21,16 @@ import (
 	"github.com/OpenPrinting/go-mfp/util/optional"
 )
 
-// testBackend is a test implementation of abstract.PrintBackend.
+// testBackend is a test implementation of abstract.Printer.
 type testBackend struct {
 	called bool
-	params abstract.PrintJobParams
+	params abstract.PrinterRequest
 	data   []byte
 	err    error
 }
 
 func (b *testBackend) PrintDocument(
-	params abstract.PrintJobParams, body io.Reader) error {
+	params abstract.PrinterRequest, body io.Reader) error {
 	b.called = true
 	b.params = params
 	b.data, b.err = io.ReadAll(body)

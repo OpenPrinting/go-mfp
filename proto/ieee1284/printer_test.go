@@ -28,18 +28,18 @@ func newTestContext() context.Context {
 
 // docResult captures a single backend invocation.
 type docResult struct {
-	params abstract.PrintJobParams
+	params abstract.PrinterRequest
 	data   []byte
 }
 
-// testBackend is a test implementation of abstract.PrintBackend
+// testBackend is a test implementation of abstract.Printer
 // that captures all PrintDocument calls.
 type testBackend struct {
 	results *[]docResult
 }
 
 func (b *testBackend) PrintDocument(
-	params abstract.PrintJobParams, body io.Reader) error {
+	params abstract.PrinterRequest, body io.Reader) error {
 	data, err := io.ReadAll(body)
 	if err != nil {
 		return err

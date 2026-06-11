@@ -234,7 +234,7 @@ func (p *Printer) feedDocument() bool {
 // emitDocument calls the backend with the completed document.
 func (p *Printer) emitDocument() {
 	if p.backend != nil && len(p.docBuf) > 0 {
-		params := abstract.PrintJobParams{
+		params := abstract.PrinterRequest{
 			Format:  p.format.MIME(),
 			JobName: p.params.JobName,
 		}
