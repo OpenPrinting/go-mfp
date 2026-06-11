@@ -50,7 +50,7 @@ func testCaptPrinterURL(srv *httptest.Server) (*url.URL, string) {
 	return httpURL, ippURI
 }
 
-// TestDocumentReceiverCalled verifies that the PrintBackend is invoked
+// TestDocumentReceiverCalled verifies that the Printer backend is invoked
 // with the correct format and data.
 func TestDocumentReceiverCalled(t *testing.T) {
 	printer := testNewCaptPrinter(t)
@@ -97,7 +97,7 @@ func TestDocumentReceiverCalled(t *testing.T) {
 	}
 
 	if !backend.called {
-		t.Fatal("PrintBackend was not called")
+		t.Fatal("Printer backend was not called")
 	}
 	if backend.params.Format != wantFormat {
 		t.Errorf("format: got %q, want %q",
@@ -112,7 +112,7 @@ func TestDocumentReceiverCalled(t *testing.T) {
 // does not panic when a document arrives.
 func TestDocumentReceiverNilNoPanic(t *testing.T) {
 	printer := testNewCaptPrinter(t)
-	// No SetPrintBackend — backend stays nil
+	// No SetPrintBackend — Printer backend stays nil
 
 	srv := httptest.NewServer(printer)
 	defer srv.Close()

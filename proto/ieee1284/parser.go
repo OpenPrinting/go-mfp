@@ -239,7 +239,7 @@ func (p *Printer) emitDocument() {
 			JobName: p.params.JobName,
 		}
 
-		// Map PJL SET variables to typed PrintJobParams fields.
+		// Map PJL SET variables to typed PrinterRequest fields.
 		// Keys are stored uppercase by the PJL parser.
 		if v, ok := p.params.Variables["DUPLEX"]; ok {
 			switch strings.ToUpper(v) {
