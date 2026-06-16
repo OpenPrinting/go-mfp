@@ -8,5 +8,8 @@
 
 package main
 
+import "github.com/OpenPrinting/go-mfp/cmd/mfp-test/test"
+
 func main() {
+	test.Command.Main(nil)
 }
