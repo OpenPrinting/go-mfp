@@ -13,6 +13,7 @@ import (
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
+	"github.com/OpenPrinting/go-mfp/modeling"
 )
 
 // DefaultTCPPort is the default IPP server TCP port.
@@ -102,8 +103,25 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	logger := log.NewLogger(level, log.Console)
 	ctx = log.NewContext(ctx, logger)
 
-	// Tasks 11-14 will wire model loading, virtual printer,
-	// CUPS queue, and test execution here.
+	// Model file is required: without it, NewIPPServer() returns nil.
+	modelfile, ok := inv.Get("-m")
+	if !ok {
+		return fmt.Errorf("model file required: use -m <file>")
+	}
+
+	model, err := modeling.NewModel()
+	if err != nil {
+		return err
+	}
+	defer model.Close()
+
+	if err := model.Load(modelfile); err != nil {
+		return fmt.Errorf("load model %q: %w", modelfile, err)
+	}
+
+	// Tasks 12-14 will wire virtual printer, CUPS queue,
+	// and test execution here.
+	_ = model
 	<-ctx.Done()
 	return nil
 }
