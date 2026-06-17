@@ -11,7 +11,10 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os/exec"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
@@ -175,8 +178,30 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
 
-	// Task 14 will wire test execution here.
-	_ = capture
+	// Send a minimal test document through the full pipeline
+	log.Info(ctx, "sending test document via lp...")
+	lpCmd := exec.CommandContext(ctx, "lp", "-d", queueName)
+	lpCmd.Stdin = strings.NewReader("mfp-test sanity check\n")
+	if out, err := lpCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("lp -d %s: %w: %s", queueName, err, out)
+	}
+
+	// Wait for the document to arrive at the capture backend
+	select {
+	case <-capture.OnDocument():
+	case <-time.After(30 * time.Second):
+		return fmt.Errorf("timeout: no document received after 30s")
+	case <-ctx.Done():
+		return nil
+	}
+
+	// Report what was captured
+	docs := capture.Docs()
+	for i, d := range docs {
+		log.Info(ctx, "captured doc %d: %d bytes, format=%q, job=%q",
+			i+1, len(d.Data), d.Params.Format, d.Params.JobName)
+	}
+
 	<-ctx.Done()
 	return nil
 }
