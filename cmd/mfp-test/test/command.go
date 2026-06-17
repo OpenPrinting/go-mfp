@@ -158,7 +158,24 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	go srvr.Serve(ln)
 	defer srvr.Close()
 
-	// Task 13 will wire CUPS queue here.
+	// Get CUPS queue name
+	queueName := DefaultQueueName
+	if name, ok := inv.Get("-n"); ok {
+		queueName = name
+	}
+
+	// Register virtual printer with CUPS
+	ippURL := fmt.Sprintf("ipp://localhost:%d/ipp/print", port)
+	if err := CreateCUPSQueue(ctx, queueName, ippURL); err != nil {
+		return err
+	}
+	// Use background context for cleanup: main ctx is already
+	// cancelled by the time deferred calls run.
+	defer RemoveCUPSQueue(context.Background(), queueName)
+
+	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
+
+	// Task 14 will wire test execution here.
 	_ = capture
 	<-ctx.Done()
 	return nil
