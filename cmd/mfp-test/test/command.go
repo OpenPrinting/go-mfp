@@ -10,10 +10,13 @@ package test
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
+	"github.com/OpenPrinting/go-mfp/transport"
 )
 
 // DefaultTCPPort is the default IPP server TCP port.
@@ -119,9 +122,44 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		return fmt.Errorf("load model %q: %w", modelfile, err)
 	}
 
-	// Tasks 12-14 will wire virtual printer, CUPS queue,
-	// and test execution here.
-	_ = model
+	// Parse port number
+	port := DefaultTCPPort
+	if portStr, ok := inv.Get("-P"); ok {
+		p, err := strconv.Atoi(portStr)
+		if err != nil {
+			return fmt.Errorf("invalid port %q: %w", portStr, err)
+		}
+		port = p
+	}
+
+	// Create document capture backend
+	capture := NewDocumentCapture()
+
+	// Create virtual IPP printer from model and hook capture into it
+	ippPrinter := model.NewIPPServer()
+	if ippPrinter == nil {
+		return fmt.Errorf("model has no IPP printer attributes")
+	}
+	ippPrinter.SetPrintBackend(capture)
+
+	// Register IPP handler on the URL path /ipp/print
+	mux := transport.NewPathMux()
+	mux.Add("/ipp/print", ippPrinter)
+
+	// Open TCP port and start HTTP server (IPP runs over HTTP)
+	addr := fmt.Sprintf("localhost:%d", port)
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	srvr := transport.NewServer(ctx, nil, mux)
+	log.Info(ctx, "virtual IPP printer at ipp://%s/ipp/print", addr)
+	go srvr.Serve(ln)
+	defer srvr.Close()
+
+	// Task 13 will wire CUPS queue here.
+	_ = capture
 	<-ctx.Done()
 	return nil
 }
