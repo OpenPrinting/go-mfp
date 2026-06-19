@@ -96,6 +96,7 @@ nobool = NoBool()
 func TestObjectGC(t *testing.T) {
 	py, err := NewPython()
 	assert.NoError(err)
+	defer py.Close()
 
 	runtime.GC()
 	base := py.countObjID()
@@ -158,4 +159,3 @@ func TestObjectFinalizerAfterClose(t *testing.T) {
 	runtime.GC()
 	// Reaching here without panic means the branch is covered.
 }
-
