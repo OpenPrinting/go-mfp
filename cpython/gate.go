@@ -35,7 +35,7 @@ type pyGate struct{}
 //
 // It returns the pyGate object, that must be released after
 // use with the [pyGate.release] call.
-func pyGateAcquire(interp pyThreadState) pyGate {
+func pyGateAcquire(interp pyInterpState) pyGate {
 	runtime.LockOSThread()
 	C.py_enter(interp)
 	return pyGate{}

@@ -28,6 +28,9 @@ type (
 	// pyThreadState is the Go name for the *C.PyThreadState
 	pyThreadState = *C.PyThreadState
 
+	// pyInterpState is the Go name for the *C.PyInterpreterState
+	pyInterpState = *C.PyInterpreterState
+
 	// pyObject is the Go name for the *C.PyObject
 	pyObject = *C.PyObject
 
@@ -44,26 +47,35 @@ var (
 // new Python sub-interpretes are sent to.
 //
 // These requests are handled by the dedicated thread. The request
-// itself is the channel of pyThreadState, where response is sent.
-var pyInterpNewRequestChan = make(chan chan pyThreadState)
+// itself is the channel of pyInterpHandles, where response is sent.
+var pyInterpNewRequestChan = make(chan chan pyInterpHandles)
+
+var pyInterpDeleteRequestChan = make(chan pyInterpHandles)
+
+// pyInterpHandles contains pointer to PyInterpreterState
+// and its main PyThreadState
+type pyInterpHandles struct {
+	tstate pyThreadState
+	interp pyInterpState
+}
 
 // pyNewInterp creates a new Python sub-interpreter and returns
 // pointer to its main thread state.
-func pyNewInterp() (pyThreadState, error) {
+func pyNewInterp() (pyThreadState, pyInterpState, error) {
 	if pyInitError != nil {
-		return nil, pyInitError
+		return nil, nil, pyInitError
 	}
 
-	rsp := make(chan pyThreadState)
+	rsp := make(chan pyInterpHandles)
 	pyInterpNewRequestChan <- rsp
-	interp := <-rsp
+	response := <-rsp
 
-	return interp, nil
+	return response.tstate, response.interp, nil
 }
 
 // pyInterpDelete releases the Python sub-interpreter
-func pyInterpDelete(interp pyThreadState) {
-	C.py_interp_close(interp)
+func pyInterpDelete(tstate pyThreadState, interp pyInterpState) {
+	pyInterpDeleteRequestChan <- pyInterpHandles{tstate, interp}
 }
 
 // pyLocateLibPython locates the full path to the libpython3.XX.so library
@@ -127,9 +139,17 @@ func pyInterpThread(initilized *sync.WaitGroup) {
 
 	// If no error, serve incoming requests
 	if pyInitError == nil {
-		for rq := range pyInterpNewRequestChan {
-			interp := C.py_new_interp()
-			rq <- interp
+		for {
+			select {
+			case rq := <-pyInterpNewRequestChan:
+				var tstate pyThreadState
+				var interp pyInterpState
+				C.py_new_interp(&tstate, &interp)
+				rq <- pyInterpHandles{tstate, interp}
+
+			case rq := <-pyInterpDeleteRequestChan:
+				C.py_interp_close(rq.tstate, rq.interp)
+			}
 		}
 	}
 }

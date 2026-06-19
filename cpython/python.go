@@ -25,7 +25,8 @@ import (
 // Each has its own namespace and isolated from others.
 type Python struct {
 	closelock sync.RWMutex  // Sync between Python.gate() and Python.Close()
-	interp    pyThreadState // Python sub-interpreter (its main thread state)
+	interp    pyInterpState // Python sub-interpreter
+	tstate    pyThreadState // its main thread state
 	objects   *objmap       // Objects owned by the interpreter
 	pyNone    pyObject      // Cached None pyObject
 	pyTrue    pyObject      // Cached True pyObject
@@ -39,10 +40,11 @@ type Python struct {
 
 // NewPython creates a new Python interpreter.
 func NewPython() (py *Python, err error) {
-	interp, err := pyNewInterp()
+	tstate, interp, err := pyNewInterp()
 	if err == nil {
 		py = &Python{
 			interp:  interp,
+			tstate:  tstate,
 			objects: newObjmap(),
 		}
 
@@ -89,8 +91,8 @@ func (py *Python) Close() {
 	// acquire pyGate via pyGateAcquire(), partially duplicating
 	// py.gate() logic for this specific case.
 	py.closelock.Lock()
-	interp := py.interp
-	py.interp = nil
+	tstate, interp := py.tstate, py.interp
+	py.tstate, py.interp = nil, nil
 	py.closelock.Unlock()
 
 	if interp == nil {
@@ -122,7 +124,7 @@ func (py *Python) Close() {
 	gate.release()
 
 	// And finally delete the interpreter
-	pyInterpDelete(interp)
+	pyInterpDelete(tstate, interp)
 
 	// Update statistics counter
 	pythonInstancesCount.Add(-1)
