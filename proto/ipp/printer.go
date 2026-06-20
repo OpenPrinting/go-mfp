@@ -79,27 +79,27 @@ func (printer *Printer) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 // handleGetPrinterAttributes handles Get-Printer-Attributes request.
 func (printer *Printer) handleGetPrinterAttributes(
 	ctx context.Context,
-	rq *GetPrinterAttributesRequest) (*goipp.Message, error) {
+	rq *GetPrinterAttributesRequest) (*goipp.Message, io.ReadCloser, error) {
 
-	return rq.Apply(printer.attrs, printer.options.UseRawPrinterAttributes), nil
+	return rq.Apply(printer.attrs, printer.options.UseRawPrinterAttributes), nil, nil
 }
 
 // handleValidateJob handles Validate-Job request.
 func (printer *Printer) handleValidateJob(
 	ctx context.Context,
-	rq *ValidateJobRequest) (*goipp.Message, error) {
+	rq *ValidateJobRequest) (*goipp.Message, io.ReadCloser, error) {
 
 	rsp := ValidateJobResponse{
 		ResponseHeader: rq.ResponseHeader(goipp.StatusOk),
 	}
 
-	return rsp.Encode(), nil
+	return rsp.Encode(), nil, nil
 }
 
 // handleCreateJob handles Create-Job request.
 func (printer *Printer) handleCreateJob(
 	ctx context.Context,
-	rq *CreateJobRequest) (*goipp.Message, error) {
+	rq *CreateJobRequest) (*goipp.Message, io.ReadCloser, error) {
 
 	// Create new job
 	j := newJob(&rq.JobCreateOperation, rq.Job)
@@ -119,13 +119,13 @@ func (printer *Printer) handleCreateJob(
 		},
 	}
 
-	return rsp.Encode(), nil
+	return rsp.Encode(), nil, nil
 }
 
 // handleCreateJob handles Send-Document request.
 func (printer *Printer) handleSendDocument(
 	ctx context.Context,
-	rq *SendDocumentRequest) (*goipp.Message, error) {
+	rq *SendDocumentRequest) (*goipp.Message, io.ReadCloser, error) {
 
 	// Lookup the job
 	var j *job
@@ -137,7 +137,7 @@ func (printer *Printer) handleSendDocument(
 			err := NewErrIPPFromRequest(rq,
 				goipp.StatusErrorNotFound,
 				"job not found (job-id=%d)", *rq.JobID)
-			return nil, err
+			return nil, nil, err
 		}
 
 	case rq.JobURI != nil:
@@ -146,14 +146,14 @@ func (printer *Printer) handleSendDocument(
 			err := NewErrIPPFromRequest(rq,
 				goipp.StatusErrorNotFound,
 				"job not found (job-uri=%q)", *rq.JobURI)
-			return nil, err
+			return nil, nil, err
 		}
 
 	default:
 		err := NewErrIPPFromRequest(rq,
 			goipp.StatusErrorBadRequest,
 			"missed job-id and job-uri attributes")
-		return nil, err
+		return nil, nil, err
 	}
 
 	j.Lock()
@@ -164,14 +164,14 @@ func (printer *Printer) handleSendDocument(
 		err := NewErrIPPFromRequest(rq,
 			goipp.StatusErrorNotPossible,
 			"job is not in pending-held state")
-		return nil, err
+		return nil, nil, err
 	}
 
 	if j.SendDocumentActive {
 		err := NewErrIPPFromRequest(rq,
 			goipp.StatusErrorNotPossible,
 			"Send-Document already in progress")
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Consume the document body
@@ -231,5 +231,5 @@ func (printer *Printer) handleSendDocument(
 		},
 	}
 
-	return rsp.Encode(), nil
+	return rsp.Encode(), nil, nil
 }

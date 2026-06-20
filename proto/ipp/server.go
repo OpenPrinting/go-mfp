@@ -11,6 +11,7 @@ package ipp
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"mime"
 	"net/http"
 	"net/http/httputil"
@@ -146,7 +147,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	}
 
 	// Handle the message
-	rsp, err := handler.handle(ctx, msg, body)
+	rsp, rspBody, err := handler.handle(ctx, msg, body)
 	if err != nil {
 		s.httpError(query, err)
 		return
@@ -185,6 +186,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	err = rsp.Encode(query)
 	if err != nil {
 		log.Error(ctx, "IPP error sending response: %s", err)
+	}
+
+	if rspBody != nil {
+		if _, err = io.Copy(query, rspBody); err != nil {
+			log.Error(ctx, "IPP error sending response body: %s", err)
+		}
+		rspBody.Close()
 	}
 
 	query.Finish()
