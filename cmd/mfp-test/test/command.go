@@ -172,9 +172,9 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	if err := CreateCUPSQueue(ctx, queueName, ippURL); err != nil {
 		return err
 	}
-	// Use background context for cleanup: main ctx is already
-	// cancelled by the time deferred calls run.
-	defer RemoveCUPSQueue(context.Background(), queueName)
+	// WithoutCancel preserves logging and values from ctx but
+	// prevents cancellation from stopping the cleanup operation.
+	defer RemoveCUPSQueue(context.WithoutCancel(ctx), queueName)
 
 	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
 
