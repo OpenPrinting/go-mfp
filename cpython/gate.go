@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"runtime"
+	"strings"
 	"unsafe"
 
 	"github.com/OpenPrinting/go-mfp/internal/assert"
@@ -251,7 +252,8 @@ func (gate pyGate) typename(pyobj pyObject) string {
 		}
 	}
 
-	return module + "." + name
+	name, _ = strings.CutPrefix(module+"."+name, "builtins.")
+	return name
 }
 
 // typemodulename returns name of the module where PyObject's
