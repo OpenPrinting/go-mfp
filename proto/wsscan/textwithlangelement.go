@@ -37,7 +37,7 @@ func (t TextWithLangElement) Unwrap() any {
 	if !t.HasOptions() {
 		return t.Text
 	}
-	return t.Text
+	return t
 }
 
 // Wrap wraps the simple value into the Wrapper
