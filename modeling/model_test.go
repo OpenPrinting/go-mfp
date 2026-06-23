@@ -16,6 +16,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
+	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
 )
 
@@ -147,4 +148,79 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 	if diff != "" {
 		t.Errorf("Model.Write/Model.Read:\n%s", diff)
 	}
+}
+
+func TestWSDTextWithLang(t *testing.T) {
+	type testData struct {
+		name string
+		in   any
+	}
+
+	tests := []testData{
+		testData{
+			name: "Single TextWithLangList, no language",
+			in: wsscan.ScannerDescription{
+				ScannerInfo: wsscan.TextWithLangList{
+					wsscan.TextWithLangElement{
+						Text: "Sample scanner",
+					},
+				},
+			},
+		},
+
+		testData{
+			name: "Single TextWithLangList with language",
+			in: wsscan.ScannerDescription{
+				ScannerInfo: wsscan.TextWithLangList{
+					wsscan.TextWithLangElement{
+						Text: "Sample scanner",
+						Lang: optional.New("en"),
+					},
+				},
+			},
+		},
+
+		testData{
+			name: "Multiple TextWithLangList with language",
+			in: wsscan.ScannerDescription{
+				ScannerInfo: wsscan.TextWithLangList{
+					wsscan.TextWithLangElement{
+						Text: "Sample scanner",
+						Lang: optional.New("en"),
+					},
+					wsscan.TextWithLangElement{
+						Text: "Простой сканер",
+						Lang: optional.New("ru"),
+					},
+				},
+			},
+		},
+
+		testData{
+			name: "Multiple TextWithLangList with mixed language",
+			in: wsscan.ScannerDescription{
+				ScannerInfo: wsscan.TextWithLangList{
+					wsscan.TextWithLangElement{
+						Text: "Sample scanner",
+					},
+					wsscan.TextWithLangElement{
+						Text: "Простой сканер",
+						Lang: optional.New("ru"),
+					},
+				},
+			},
+		},
+	}
+
+	model, err := NewModel()
+	assert.NoError(err)
+
+	defer model.Close()
+
+	for _, test := range tests {
+		obj := structExport(model.py, keywordMapWSD, test.in)
+		println("===", test.name, "===")
+		println(obj.String())
+	}
+
 }

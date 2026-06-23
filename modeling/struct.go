@@ -114,6 +114,10 @@ func structExportValue(py *cpython.Python,
 	kwmap map[string]string, v reflect.Value) *cpython.Object {
 
 	// Unwrap wrapped values where possible.
+	if v2, ok := v.Interface().(wsscan.TextWithLangList); ok && len(v2) == 1 {
+		v = reflect.ValueOf(v2[0])
+	}
+
 	if wrapper, ok := v.Interface().(wsscan.Wrapper); ok {
 		v = reflect.ValueOf(wrapper.Unwrap())
 	}
@@ -125,6 +129,14 @@ func structExportValue(py *cpython.Python,
 		return py.NewObject(v.String())
 	case uuid.UUID:
 		return py.Get("UUID").Call(v.String())
+
+	case wsscan.TextWithLangElement:
+		if v.Lang != nil {
+			kw := map[string]any{"lang": *v.Lang}
+			return py.Eval("wsd.WithLang").CallKW(kw, v.Text)
+		}
+
+		return py.Eval("wsd.WithLang").Call(v.Text)
 
 	// fmt.Stringer becomes Python string
 	case fmt.Stringer:

@@ -7,6 +7,7 @@
 # WS-Scan definitions
 
 from helper import collection
+from dataclasses import dataclass
 
 # WS-Scan types
 class ActiveJobs(collection): pass
@@ -61,6 +62,20 @@ class ScannerElemData(collection): pass
 class ScannerStatus(collection): pass
 class ScanRegion(collection): pass
 class ScanTicket(collection): pass
+
+@dataclass(repr=False, init=False)
+class WithLang(str):
+    lang: str = None
+
+    def __new__(cls, value: str, lang: str = None):
+        v = super().__new__(cls, value)
+        v.lang = lang
+        return v
+
+    def __repr__(self) -> str:
+        if self.lang is None:
+            return f"'{self}'"
+        return f"wsd.WithLang('{self}', lang='{self.lang}')"
 
 # caps is the model-settable variable that defines the
 # WS-Scan scanner capabilities
