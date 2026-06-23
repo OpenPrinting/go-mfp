@@ -440,6 +440,8 @@ func structDecodeEnum[T comparable](obj *cpython.Object,
 
 // structDecodeEnum decodes wsscan.TextWithLangElement value from the
 // Python object.
+//
+// Python Object can be of the 'str' or 'wsd.WithLang' type.
 func structDecodeTextWithLangElement(obj *cpython.Object, v reflect.Value) error {
 	text, err := obj.Unicode()
 	if err != nil {
@@ -474,19 +476,13 @@ func structDecodeTextWithLangElement(obj *cpython.Object, v reflect.Value) error
 // Python object.
 func structDecodeTextWithLangList(obj *cpython.Object, v reflect.Value) error {
 	switch obj.TypeName() {
-	case "str":
-		s, err := obj.Unicode()
-		if err != nil {
-			return err
-		}
-
-		v.Set(reflect.ValueOf(wsscan.TextWithLangList{
-			wsscan.TextWithLangElement{Text: s},
-		}))
-
-		return nil
-
-	case "wsd.WithLang":
+	case "str", "wsd.WithLang":
+		// wsscan.TextWithLangList containing a single
+		// element can be represented by a single value
+		// of the str or wsd.WithLang type (not by list
+		// of values).
+		//
+		// Handle it here.
 		out := wsscan.TextWithLangElement{}
 		err := structDecodeTextWithLangElement(obj,
 			reflect.ValueOf(&out).Elem())
