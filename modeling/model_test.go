@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/OpenPrinting/go-mfp/cpython"
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
@@ -151,9 +152,18 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 }
 
 func TestWSDTextWithLang(t *testing.T) {
+	model, err := NewModel()
+	assert.NoError(err)
+	py := model.py
+	defer model.Close()
+
+	pyScannerDescription := py.Eval("wsd.ScannerDescription")
+	pyWithLang := py.Eval("wsd.WithLang")
+
 	type testData struct {
-		name string
-		in   any
+		name string          // Test name
+		in   any             // Input data (Go struct)
+		obj  *cpython.Object // Expected Python output
 	}
 
 	tests := []testData{
@@ -166,6 +176,11 @@ func TestWSDTextWithLang(t *testing.T) {
 					},
 				},
 			},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": "Sample scanner",
+				},
+			),
 		},
 
 		testData{
@@ -178,6 +193,16 @@ func TestWSDTextWithLang(t *testing.T) {
 					},
 				},
 			},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": pyWithLang.CallKW(
+						map[string]any{
+							"lang": "en",
+						},
+						"Sample scanner",
+					),
+				},
+			),
 		},
 
 		testData{
@@ -194,6 +219,24 @@ func TestWSDTextWithLang(t *testing.T) {
 					},
 				},
 			},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": []any{
+						pyWithLang.CallKW(
+							map[string]any{
+								"lang": "en",
+							},
+							"Sample scanner",
+						),
+						pyWithLang.CallKW(
+							map[string]any{
+								"lang": "ru",
+							},
+							"Простой сканер",
+						),
+					},
+				},
+			),
 		},
 
 		testData{
@@ -209,18 +252,33 @@ func TestWSDTextWithLang(t *testing.T) {
 					},
 				},
 			},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": []any{
+						"Sample scanner",
+						pyWithLang.CallKW(
+							map[string]any{
+								"lang": "ru",
+							},
+							"Простой сканер",
+						),
+					},
+				},
+			),
 		},
 	}
 
-	model, err := NewModel()
-	assert.NoError(err)
-
-	defer model.Close()
-
 	for _, test := range tests {
+		// Encode Go->Python and check result against expectation
 		obj := structExport(model.py, keywordMapWSD, test.in)
-		println("===", test.name, "===")
-		println(obj.String())
+
+		expected := test.obj.String()
+		present := obj.String()
+
+		if expected != present {
+			t.Errorf("%s: encode error\n%s",
+				test.name, testutils.Diff(expected, present))
+		}
 	}
 
 }
