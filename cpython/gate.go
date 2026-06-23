@@ -228,9 +228,20 @@ func (gate pyGate) repr(pyobj pyObject) (s string, err error) {
 
 // typename returns name of the PyObject's type
 func (gate pyGate) typename(pyobj pyObject) string {
+	module := "unknown"
 	name := "unknown"
 
 	t := pyObject(unsafe.Pointer(C.py_obj_type(pyobj)))
+
+	if tmp, err := gate.getattr(t, "__module__"); err == nil {
+		s, err := gate.str(tmp)
+		C.py_obj_unref(tmp)
+
+		if err == nil {
+			module = s
+		}
+	}
+
 	if tmp, err := gate.getattr(t, "__name__"); err == nil {
 		s, err := gate.str(tmp)
 		C.py_obj_unref(tmp)
@@ -240,7 +251,7 @@ func (gate pyGate) typename(pyobj pyObject) string {
 		}
 	}
 
-	return name
+	return module + "." + name
 }
 
 // typemodulename returns name of the module where PyObject's

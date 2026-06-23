@@ -37,7 +37,7 @@ func TestObjectMiscMethods(t *testing.T) {
 		t.Errorf("Object.Repr:\nexpected: 42\npresent:  %s", r)
 	}
 
-	if tn := obj.TypeName(); tn != "int" {
+	if tn := obj.TypeName(); tn != "builtins.int" {
 		t.Errorf("Object.TypeName:\nexpected: int\npresent:  %s", tn)
 	}
 
