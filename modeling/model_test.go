@@ -10,6 +10,7 @@ package modeling
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
 
 	"github.com/OpenPrinting/go-mfp/cpython"
@@ -276,8 +277,24 @@ func TestWSDTextWithLang(t *testing.T) {
 		present := obj.String()
 
 		if expected != present {
-			t.Errorf("%s: encode error\n%s",
+			t.Errorf("%s: export error\n%s",
 				test.name, testutils.Diff(expected, present))
+			continue
+		}
+
+		// Decode Python->Go
+		out := reflect.New(reflect.TypeOf(test.in)).Interface()
+		err := structImport(obj, keywordMapWSD, out)
+		if err != nil {
+			t.Errorf("%s: import error\n%s", test.name, err)
+			continue
+		}
+
+		diff := testutils.Diff(test.in,
+			reflect.ValueOf(out).Elem().Interface())
+
+		if diff != "" {
+			t.Errorf("%s: import error\n%s", test.name, diff)
 		}
 	}
 

@@ -17,6 +17,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
+	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
@@ -365,6 +366,12 @@ func structImportValueInt(obj *cpython.Object,
 	case wsscan.Severity:
 		return structDecodeEnum(obj, v, wsscan.DecodeSeverity)
 
+	case wsscan.TextWithLangElement:
+		return structDecodeTextWithLangElement(obj, v)
+
+	case wsscan.TextWithLangList:
+		return structDecodeTextWithLangList(obj, v)
+
 	// other types
 	case uuid.UUID:
 		s, err := obj.Str()
@@ -406,7 +413,7 @@ func structImportValueInt(obj *cpython.Object,
 	return nil
 }
 
-// structDecodeEnum enum-alike value from the Python str object,
+// structDecodeEnum decodes enum-alike value from the Python str object,
 // using the supplied parse function.
 //
 // The parse function assumed to return the zero value of the
@@ -429,4 +436,68 @@ func structDecodeEnum[T comparable](obj *cpython.Object,
 
 	v.Set(reflect.ValueOf(val))
 	return nil
+}
+
+// structDecodeEnum decodes wsscan.TextWithLangElement value from the
+// Python object.
+func structDecodeTextWithLangElement(obj *cpython.Object, v reflect.Value) error {
+	text, err := obj.Unicode()
+	if err != nil {
+		return err
+	}
+
+	langobj := obj.Get("lang")
+	var lang optional.Val[string]
+
+	switch {
+	case langobj.NotFound():
+	case langobj.Err() != nil:
+		return langobj.Err()
+	case langobj.IsNone():
+	default:
+		s, err := langobj.Unicode()
+		if err != nil {
+			return err
+		}
+
+		lang = optional.New(s)
+	}
+
+	v.Set(reflect.ValueOf(
+		wsscan.TextWithLangElement{Text: text, Lang: lang},
+	))
+
+	return nil
+}
+
+// structDecodeEnum decodes wsscan.TextWithLangList value from the
+// Python object.
+func structDecodeTextWithLangList(obj *cpython.Object, v reflect.Value) error {
+	switch obj.TypeName() {
+	case "str":
+		s, err := obj.Unicode()
+		if err != nil {
+			return err
+		}
+
+		v.Set(reflect.ValueOf(wsscan.TextWithLangList{
+			wsscan.TextWithLangElement{Text: s},
+		}))
+
+		return nil
+
+	case "wsd.WithLang":
+		out := wsscan.TextWithLangElement{}
+		err := structDecodeTextWithLangElement(obj,
+			reflect.ValueOf(&out).Elem())
+		if err != nil {
+			return err
+		}
+
+		v.Set(reflect.ValueOf(wsscan.TextWithLangList{out}))
+
+		return nil
+	}
+
+	return structImportSlice(obj, keywordMapWSD, v)
 }
