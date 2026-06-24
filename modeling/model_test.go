@@ -152,6 +152,9 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 	}
 }
 
+// TestWSDTextWithLang tests Go<->Python export/import conversions
+// for structures that contain wsscan.WSDTextWithLangList and
+// wsscan.WSDTextWithLangElement fields
 func TestWSDTextWithLang(t *testing.T) {
 	model, err := NewModel()
 	assert.NoError(err)
@@ -298,4 +301,73 @@ func TestWSDTextWithLang(t *testing.T) {
 		}
 	}
 
+}
+
+// TestWSDTextWithLangDecodeErrors tests Python->Go import errors,
+// specific for  wsscan.WSDTextWithLangList and wsscan.WSDTextWithLangElement
+func TestWSDTextWithLangDecodeErrors(t *testing.T) {
+	model, err := NewModel()
+	assert.NoError(err)
+	py := model.py
+	defer model.Close()
+
+	pyScannerDescription := py.Eval("wsd.ScannerDescription")
+
+	type testData struct {
+		name string          // Test name
+		out  any             // Output data (empty Go struct)
+		obj  *cpython.Object // Expected Python output
+		err  string          // Expected error
+	}
+
+	tests := []testData{
+		testData{
+			name: "Single invalid element",
+			out:  &wsscan.ScannerDescription{},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": 25,
+				},
+			),
+			err: `ScannerInfo: can't convert int to wsscan.TextWithLangList`,
+		},
+
+		testData{
+			name: "Multiple invalid elements",
+			out:  &wsscan.ScannerDescription{},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": []any{1, 2},
+				},
+			),
+			err: `ScannerInfo[0]: can't convert int to wsscan.TextWithLangElement`,
+		},
+
+		testData{
+			name: "Mixed valid/invalid elements",
+			out:  &wsscan.ScannerDescription{},
+			obj: pyScannerDescription.CallKW(
+				map[string]any{
+					"ScannerInfo": []any{"OK", 2.5},
+				},
+			),
+			err: `ScannerInfo[1]: can't convert float to wsscan.TextWithLangElement`,
+		},
+	}
+
+	for _, test := range tests {
+		err = structImport(test.obj, keywordMapWSD, test.out)
+
+		expected := test.err
+		present := ""
+		if err != nil {
+			present = err.Error()
+		}
+
+		if present != expected {
+			t.Errorf("%s: error mismatch:\n"+
+				"expected: %q\n"+
+				"present:  %q\n", test.name, expected, present)
+		}
+	}
 }
