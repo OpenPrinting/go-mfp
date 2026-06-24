@@ -32,6 +32,8 @@ const char *py_init (const char *libpython3);
 void py_new_interp (PyThreadState **tstate_p, PyInterpreterState **interp_p);
 
 // py_interp_close closes the Python interpreter.
+//
+// This function MUST be called by the main Python thread only.
 void py_interp_close (PyThreadState *tstate, PyInterpreterState *interp);
 
 // py_enter temporary attaches the calling thread to the
