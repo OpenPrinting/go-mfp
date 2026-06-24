@@ -45,6 +45,10 @@ It requires the following development packages to be installed:
   * Golang compiler
   * gcc compiler
   * avahi-libs for the DNS-SD
+  * libjpeg, libpng for image conversion
+  * libusb
+  * libppd
+  * Python3 (cpython) development package
 
 It also requires some external Go libraries, but if your build computer
 is connected to the network, they will be downloaded and cached
