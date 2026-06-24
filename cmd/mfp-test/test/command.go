@@ -8,18 +8,18 @@
 package test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"net"
-	"os/exec"
-	"strconv"
-	"strings"
+	"net/url"
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
+	"github.com/OpenPrinting/go-mfp/proto/ipp"
 	"github.com/OpenPrinting/go-mfp/transport"
+	"github.com/OpenPrinting/go-mfp/util/optional"
 )
 
 // DefaultTCPPort is the default IPP server TCP port.
@@ -125,16 +125,6 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		return fmt.Errorf("load model %q: %w", modelfile, err)
 	}
 
-	// Parse port number
-	port := DefaultTCPPort
-	if portStr, ok := inv.Get("-P"); ok {
-		p, err := strconv.Atoi(portStr)
-		if err != nil {
-			return fmt.Errorf("invalid port %q: %w", portStr, err)
-		}
-		port = p
-	}
-
 	// Create document capture backend
 	capture := NewDocumentCapture()
 
@@ -145,48 +135,54 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 	ippPrinter.SetPrintBackend(capture)
 
-	// Register IPP handler on the URL path /ipp/print
+	// Create in-process loopback — no real TCP socket needed
+	tr, loopback := transport.NewLoopback()
+
 	mux := transport.NewPathMux()
 	mux.Add("/ipp/print", ippPrinter)
 
-	// Open TCP port and start HTTP server (IPP runs over HTTP)
-	addr := fmt.Sprintf("localhost:%d", port)
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-
 	srvr := transport.NewServer(ctx, nil, mux)
-	log.Info(ctx, "virtual IPP printer at ipp://%s/ipp/print", addr)
-	go srvr.Serve(ln)
+	log.Info(ctx, "virtual IPP printer started (in-process loopback)")
+	go srvr.Serve(loopback)
 	defer srvr.Close()
 
-	// Get CUPS queue name
-	queueName := DefaultQueueName
-	if name, ok := inv.Get("-n"); ok {
-		queueName = name
+	// Send test document via in-process IPP client
+	log.Info(ctx, "sending test document...")
+
+	printerURL, _ := url.Parse("ipp://loopback/ipp/print")
+	ippURI := "ipp://loopback/ipp/print"
+	client := ipp.NewClient(printerURL, tr)
+
+	// Step 1: Create-Job
+	createRq := &ipp.CreateJobRequest{
+		RequestHeader: ipp.DefaultRequestHeader,
+		JobCreateOperation: ipp.JobCreateOperation{
+			PrinterURI: ippURI,
+		},
+		Job: &ipp.JobAttributes{},
+	}
+	createRsp := &ipp.CreateJobResponse{}
+	if err := client.Do(ctx, createRq, createRsp); err != nil {
+		return fmt.Errorf("Create-Job: %w", err)
 	}
 
-	// Register virtual printer with CUPS
-	ippURL := fmt.Sprintf("ipp://localhost:%d/ipp/print", port)
-	if err := CreateCUPSQueue(ctx, queueName, ippURL); err != nil {
-		return err
+	// Step 2: Send-Document
+	sendRq := &ipp.SendDocumentRequest{
+		RequestHeader:  ipp.DefaultRequestHeader,
+		PrinterURI:     optional.New(ippURI),
+		JobID:          optional.New(createRsp.Job.JobID),
+		DocumentFormat: optional.New("text/plain"),
+		LastDocument:   true,
+		Job:            &ipp.JobAttributes{},
 	}
-	// WithoutCancel preserves logging and values from ctx but
-	// prevents cancellation from stopping the cleanup operation.
-	defer RemoveCUPSQueue(context.WithoutCancel(ctx), queueName)
+	sendRq.Body = bytes.NewReader([]byte("mfp-test sanity check\n"))
 
-	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
-
-	// Send a minimal test document through the full pipeline
-	log.Info(ctx, "sending test document via lp...")
-	lpCmd := exec.CommandContext(ctx, "lp", "-d", queueName)
-	lpCmd.Stdin = strings.NewReader("mfp-test sanity check\n")
-	if out, err := lpCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("lp -d %s: %w: %s", queueName, err, out)
+	sendRsp := &ipp.SendDocumentResponse{}
+	if err := client.Do(ctx, sendRq, sendRsp); err != nil {
+		return fmt.Errorf("Send-Document: %w", err)
 	}
 
-	// Wait for the document to arrive at the capture backend
+	// Wait for the document to arrive at capture backend
 	select {
 	case <-capture.OnDocument():
 	case <-time.After(30 * time.Second):
@@ -195,7 +191,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		return nil
 	}
 
-	// Report what was captured
+	// Report captured result
 	docs := capture.Docs()
 	for i, d := range docs {
 		log.Info(ctx, "captured doc %d: %d bytes, format=%q, job=%q",
