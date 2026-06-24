@@ -329,7 +329,7 @@ func TestWSDTextWithLangDecodeErrors(t *testing.T) {
 					"ScannerInfo": 25,
 				},
 			),
-			err: `ScannerInfo: can't convert int to wsscan.TextWithLangList`,
+			err: `ScannerDescription.ScannerInfo: can't convert int to wsscan.TextWithLangList`,
 		},
 
 		testData{
@@ -340,7 +340,7 @@ func TestWSDTextWithLangDecodeErrors(t *testing.T) {
 					"ScannerInfo": []any{1, 2},
 				},
 			),
-			err: `ScannerInfo[0]: can't convert int to wsscan.TextWithLangElement`,
+			err: `ScannerDescription.ScannerInfo[0]: can't convert int to wsscan.TextWithLangElement`,
 		},
 
 		testData{
@@ -351,7 +351,7 @@ func TestWSDTextWithLangDecodeErrors(t *testing.T) {
 					"ScannerInfo": []any{"OK", 2.5},
 				},
 			),
-			err: `ScannerInfo[1]: can't convert float to wsscan.TextWithLangElement`,
+			err: `ScannerDescription.ScannerInfo[1]: can't convert float to wsscan.TextWithLangElement`,
 		},
 	}
 

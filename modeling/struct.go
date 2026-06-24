@@ -169,7 +169,16 @@ func structImport(obj *cpython.Object, kwmap map[string]string, p any) error {
 		return legacyStructImport(obj, kwmap, p)
 	}
 
-	return structImportInt(obj, kwmap, p)
+	err := structImportInt(obj, kwmap, p)
+	if err != nil {
+		name := reflect.TypeOf(p).Elem().String()
+		if i := strings.IndexByte(name, '.'); i >= 0 {
+			name = name[i+1:]
+		}
+		return errImportWrap(name, err)
+	}
+
+	return nil
 }
 
 // structImportInt is the internal function behind structImport.
