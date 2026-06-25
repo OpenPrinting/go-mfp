@@ -371,3 +371,189 @@ func TestWSDTextWithLangDecodeErrors(t *testing.T) {
 		}
 	}
 }
+
+// TestWSDValWithOptions Go<->Python export/import conversions
+// for structures that contain wsscan.WSDValWithOptins fields
+func TestWSDValWithOptions(t *testing.T) {
+	model, err := NewModel()
+	assert.NoError(err)
+	py := model.py
+	defer model.Close()
+
+	pyDocumentParameters := py.Eval("wsd.DocumentParameters")
+	pyWithOptions := py.Eval("wsd.WithOptions")
+
+	type testData struct {
+		name string          // Test name
+		in   any             // Input data (Go struct)
+		obj  *cpython.Object // Expected Python output
+	}
+
+	tests := []testData{
+		testData{
+			name: "wsscan.ValWithOptions[int], no options",
+			in: wsscan.DocumentParameters{
+				CompressionQualityFactor: optional.New(
+					wsscan.ValWithOptions[int]{Val: 5}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": 5,
+				},
+			),
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[int], MustHonor = true",
+			in: wsscan.DocumentParameters{
+				CompressionQualityFactor: optional.New(
+					wsscan.ValWithOptions[int]{
+						Val:       5,
+						MustHonor: optional.New(wsscan.BooleanElement("true")),
+					}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": pyWithOptions.CallKW(
+						map[string]any{
+							"MustHonor": "true",
+						},
+						5,
+					),
+				},
+			),
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[int], Override = true",
+			in: wsscan.DocumentParameters{
+				CompressionQualityFactor: optional.New(
+					wsscan.ValWithOptions[int]{
+						Val:      5,
+						Override: optional.New(wsscan.BooleanElement("true")),
+					}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": pyWithOptions.CallKW(
+						map[string]any{
+							"Override": "true",
+						},
+						5,
+					),
+				},
+			),
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[int], UsedDefault = true",
+			in: wsscan.DocumentParameters{
+				CompressionQualityFactor: optional.New(
+					wsscan.ValWithOptions[int]{
+						Val:         5,
+						UsedDefault: optional.New(wsscan.BooleanElement("true")),
+					}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": pyWithOptions.CallKW(
+						map[string]any{
+							"UsedDefault": "true",
+						},
+						5,
+					),
+				},
+			),
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[int], MustHonor = 1, Override = 1, UsedDefault = 1",
+			in: wsscan.DocumentParameters{
+				CompressionQualityFactor: optional.New(
+					wsscan.ValWithOptions[int]{
+						Val:         5,
+						MustHonor:   optional.New(wsscan.BooleanElement("1")),
+						Override:    optional.New(wsscan.BooleanElement("1")),
+						UsedDefault: optional.New(wsscan.BooleanElement("1")),
+					}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": pyWithOptions.CallKW(
+						map[string]any{
+							"MustHonor":   "1",
+							"Override":    "1",
+							"UsedDefault": "1",
+						},
+						5,
+					),
+				},
+			),
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[ContentTypeValue], no options",
+			in: wsscan.DocumentParameters{
+				ContentType: optional.New(
+					wsscan.ValWithOptions[wsscan.ContentTypeValue]{
+						Val: wsscan.Text,
+					}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"ContentType": "Text",
+				},
+			),
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[ContentTypeValue], MustHonor = True",
+			in: wsscan.DocumentParameters{
+				ContentType: optional.New(
+					wsscan.ValWithOptions[wsscan.ContentTypeValue]{
+						Val:       wsscan.Text,
+						MustHonor: optional.New(wsscan.BooleanElement("True")),
+					}),
+			},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"ContentType": pyWithOptions.CallKW(
+						map[string]any{
+							"MustHonor": "True",
+						},
+						"Text",
+					),
+				},
+			),
+		},
+	}
+
+	for _, test := range tests {
+		// Encode Go->Python and check result against expectation
+		obj := structExport(model.py, keywordMapWSD, test.in)
+
+		expected := test.obj.String()
+		present := obj.String()
+
+		if expected != present {
+			t.Errorf("%s: export error\n%s",
+				test.name, testutils.Diff(expected, present))
+			continue
+		}
+
+		// Decode Python->Go
+		out := reflect.New(reflect.TypeOf(test.in)).Interface()
+		err := structImport(obj, keywordMapWSD, out)
+		if err != nil {
+			t.Errorf("%s: import error\n%s", test.name, err)
+			continue
+		}
+
+		diff := testutils.Diff(test.in,
+			reflect.ValueOf(out).Elem().Interface())
+
+		if diff != "" {
+			t.Errorf("%s: import error\n%s", test.name, diff)
+		}
+	}
+}

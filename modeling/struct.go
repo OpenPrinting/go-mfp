@@ -76,7 +76,7 @@ func structExportInt(py *cpython.Python,
 			f = f.Elem()
 		}
 
-		// Convert into the Python Object and add to the dict,
+		// Convert into the Python Object and add to the kw map
 		item := structExportValue(py, kwmap, f)
 		kw[keywordNormalize(kwmap, fld.Name)] = item
 	}
@@ -114,13 +114,10 @@ func structExportSlice(py *cpython.Python,
 func structExportValue(py *cpython.Python,
 	kwmap map[string]string, v reflect.Value) *cpython.Object {
 
-	// Unwrap wrapped values where possible.
+	// wsscan.TextWithLangList with the single element exported as
+	// a single wsscan.TextWithLangElement
 	if v2, ok := v.Interface().(wsscan.TextWithLangList); ok && len(v2) == 1 {
 		v = reflect.ValueOf(v2[0])
-	}
-
-	if wrapper, ok := v.Interface().(wsscan.Wrapper); ok {
-		v = reflect.ValueOf(wrapper.Unwrap())
 	}
 
 	// Handle known types
@@ -132,12 +129,32 @@ func structExportValue(py *cpython.Python,
 		return py.Get("UUID").Call(v.String())
 
 	case wsscan.TextWithLangElement:
-		if v.Lang != nil {
-			kw := map[string]any{"lang": *v.Lang}
-			return py.Eval("wsd.WithLang").CallKW(kw, v.Text)
+		if v.Lang == nil {
+			return py.NewObject(v.Text)
 		}
 
-		return py.Eval("wsd.WithLang").Call(v.Text)
+		kw := map[string]any{"lang": *v.Lang}
+		return py.Eval("wsd.WithLang").CallKW(kw, v.Text)
+
+	case wsscan.WithOptionsGetter:
+		kw := map[string]any{}
+		if opt := v.GetMustHonor(); opt != nil {
+			kw["MustHonor"] = *opt
+		}
+		if opt := v.GetOverride(); opt != nil {
+			kw["Override"] = *opt
+		}
+		if opt := v.GetUsedDefault(); opt != nil {
+			kw["UsedDefault"] = *opt
+		}
+
+		obj := structExportValue(py, kwmap,
+			reflect.ValueOf(v.GetValue()))
+		if len(kw) == 0 {
+			return obj
+		}
+
+		return py.Eval("wsd.WithOptions").CallKW(kw, obj)
 
 	// fmt.Stringer becomes Python string
 	case fmt.Stringer:
@@ -199,46 +216,24 @@ func structImportInt(obj *cpython.Object, kwmap map[string]string, p any) error 
 	// Create a new instance of the target structure
 	v := reflect.New(t).Elem()
 
-	// Import the object
-	if wrapper, ok := v.Interface().(wsscan.Wrapper); ok {
-		// Handle wsscan.Wrapper
-		t2 := reflect.TypeOf(wrapper.Unwrap())
-		v2 := reflect.New(t2).Elem()
+	// Import structure, field by field
+	for _, fld := range reflect.VisibleFields(t) {
+		// Lookup Python attribute
+		kw := keywordNormalize(kwmap, fld.Name)
+		item := obj.Get(kw)
 
-		// Import its value from Python
-		err := structImportValue(obj, kwmap, v2)
+		if err := item.Err(); err != nil {
+			if item.NotFound() {
+				continue
+			}
+			return errImportWrap(fld.Name, err)
+		}
+
+		// Decode the item, if found
+		fldval := v.FieldByIndex(fld.Index)
+		err := structImportValue(item, kwmap, fldval)
 		if err != nil {
-			return err
-		}
-
-		// Wrap the value
-		wrapped := wrapper.Wrap(v2.Interface())
-		if wrapped == nil {
-			return errPy2Go(obj, v)
-		}
-
-		// Replace v with the wrapped value
-		v = reflect.ValueOf(wrapped)
-	} else {
-		// Import structure, field by field
-		for _, fld := range reflect.VisibleFields(t) {
-			// Lookup python dictionary
-			kw := keywordNormalize(kwmap, fld.Name)
-			item := obj.Get(kw)
-
-			if err := item.Err(); err != nil {
-				if item.NotFound() {
-					continue
-				}
-				return errImportWrap(fld.Name, err)
-			}
-
-			// Decode the item, if found
-			fldval := v.FieldByIndex(fld.Index)
-			err := structImportValue(item, kwmap, fldval)
-			if err != nil {
-				return errImportWrap(fld.Name, err)
-			}
+			return errImportWrap(fld.Name, err)
 		}
 	}
 
@@ -396,6 +391,12 @@ func structImportValueInt(obj *cpython.Object,
 		return err
 	}
 
+	// Handle interface types with pointer receiver
+	switch p := v.Addr().Interface().(type) {
+	case wsscan.WithOptions:
+		return structDecodeValWithOptions(obj, p)
+	}
+
 	// Switch by reflect.Kind
 	switch v.Kind() {
 	case reflect.Struct:
@@ -447,8 +448,8 @@ func structDecodeEnum[T comparable](obj *cpython.Object,
 	return nil
 }
 
-// structDecodeEnum decodes wsscan.TextWithLangElement value from the
-// Python object.
+// structDecodeTextWithLangElement decodes wsscan.TextWithLangElement value
+// from the Python object.
 //
 // Python Object can be of the 'str' or 'wsd.WithLang' type.
 func structDecodeTextWithLangElement(obj *cpython.Object, v reflect.Value) error {
@@ -481,7 +482,7 @@ func structDecodeTextWithLangElement(obj *cpython.Object, v reflect.Value) error
 	return nil
 }
 
-// structDecodeEnum decodes wsscan.TextWithLangList value from the
+// structDecodeTextWithLangList decodes wsscan.TextWithLangList value from the
 // Python object.
 func structDecodeTextWithLangList(obj *cpython.Object, v reflect.Value) error {
 	switch obj.TypeName() {
@@ -505,4 +506,58 @@ func structDecodeTextWithLangList(obj *cpython.Object, v reflect.Value) error {
 	}
 
 	return structImportSlice(obj, keywordMapWSD, v)
+}
+
+// structDecodeEnum decodes wsscan.ValWithOptions value from the
+// Python object.
+func structDecodeValWithOptions(obj *cpython.Object, v wsscan.WithOptions) error {
+	// Obtain reflect.Type and reflect.Value for underlying value
+	t2 := reflect.TypeOf(v.GetValue())
+	v2 := reflect.New(t2).Elem()
+
+	// Import its value from Python
+	err := structImportValue(obj, keywordMapWSD, v2)
+	if err != nil {
+		return err
+	}
+
+	// Save the value
+	if !v.SetValue(v2.Interface()) {
+		return errPy2Go(obj, reflect.ValueOf(v))
+	}
+
+	// Import options
+	type option struct {
+		name string
+		set  func(optional.Val[wsscan.BooleanElement])
+	}
+
+	options := []option{
+		{name: "MustHonor", set: v.SetMustHonor},
+		{name: "Override", set: v.SetOverride},
+		{name: "UsedDefault", set: v.SetUsedDefault},
+	}
+
+	for _, opt := range options {
+		optobj := obj.Get(opt.name)
+
+		switch {
+		case optobj.NotFound():
+		case optobj.Err() != nil:
+			err = optobj.Err()
+		case optobj.IsNone():
+		default:
+			var s string
+			s, err = optobj.Unicode()
+			if err == nil {
+				opt.set(optional.New(wsscan.BooleanElement(s)))
+			}
+		}
+
+		if err != nil {
+			return errImportWrap(opt.name, err)
+		}
+	}
+
+	return nil
 }
