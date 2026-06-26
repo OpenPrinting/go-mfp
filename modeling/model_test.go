@@ -557,3 +557,78 @@ func TestWSDValWithOptions(t *testing.T) {
 		}
 	}
 }
+
+// TestWSDValWithOptinsDecodeErrors tests Python->Go import errors,
+// specific for wsscan.WSDValWithOptins
+func TestWSDValWithOptinsDecodeErrors(t *testing.T) {
+	model, err := NewModel()
+	assert.NoError(err)
+	py := model.py
+	defer model.Close()
+
+	pyDocumentParameters := py.Eval("wsd.DocumentParameters")
+	pyWithOptions := py.Eval("wsd.WithOptions")
+
+	type testData struct {
+		name string          // Test name
+		out  any             // Output data (empty Go struct)
+		obj  *cpython.Object // Expected Python output
+		err  string          // Expected error
+	}
+
+	tests := []testData{
+		testData{
+			name: "wsscan.ValWithOptions[int]: mismatching value type",
+			out:  &wsscan.DocumentParameters{},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": "xxx",
+				},
+			),
+			err: `DocumentParameters.CompressionQualityFactor: can't convert str to int`,
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[int]: mismatching MustHonor type",
+			out:  &wsscan.DocumentParameters{},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"CompressionQualityFactor": pyWithOptions.CallKW(
+						map[string]any{
+							"MustHonor": 12345,
+						},
+						5,
+					),
+				},
+			),
+			err: `DocumentParameters.CompressionQualityFactor.MustHonor: can't convert int to string`,
+		},
+
+		testData{
+			name: "wsscan.ValWithOptions[ContentTypeValue]: mismatching value type",
+			out:  &wsscan.DocumentParameters{},
+			obj: pyDocumentParameters.CallKW(
+				map[string]any{
+					"ContentType": "bad value",
+				},
+			),
+			err: `DocumentParameters.ContentType: bad value: invalid wsscan.ContentTypeValue`,
+		},
+	}
+
+	for _, test := range tests {
+		err = structImport(test.obj, keywordMapWSD, test.out)
+
+		expected := test.err
+		present := ""
+		if err != nil {
+			present = err.Error()
+		}
+
+		if present != expected {
+			t.Errorf("%s: error mismatch:\n"+
+				"expected: %q\n"+
+				"present:  %q\n", test.name, expected, present)
+		}
+	}
+}
