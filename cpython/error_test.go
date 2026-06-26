@@ -107,5 +107,4 @@ func TestErrNotFound(t *testing.T) {
 	if e.Error() == "" {
 		t.Fatalf("ErrNotFound.Error() returned empty string")
 	}
-} 
-
+}

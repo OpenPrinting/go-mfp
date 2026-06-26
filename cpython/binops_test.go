@@ -19,11 +19,11 @@ import (
 // TestBinops tests binary operations on Objects
 func TestBinops(t *testing.T) {
 	type testData struct {
-		name string                     // Operation name
-		in1, in2 any                    // Operands
-		op   func(*Object, any) *Object // Operation
-		out  any                        // Expected output
-		err  string                     // Expected error
+		name     string                     // Operation name
+		in1, in2 any                        // Operands
+		op       func(*Object, any) *Object // Operation
+		out      any                        // Expected output
+		err      string                     // Expected error
 	}
 
 	tests := []testData{
@@ -84,8 +84,6 @@ func TestBinops(t *testing.T) {
 		},
 
 		{
-			// NOTE: original file had this case wired to Pow
-			// instead of Mod, which is why Mod showed 0% coverage.
 			name: "%",
 			in1:  10,
 			in2:  3,
@@ -228,7 +226,6 @@ func TestBinops(t *testing.T) {
 			op:   (*Object).Ne,
 			out:  "True",
 		},
-
 	}
 
 	py, err := NewPython()
@@ -364,4 +361,3 @@ func TestBinopNewPyObjectError(t *testing.T) {
 		t.Fatalf("expected an error Object, got: %v", res)
 	}
 }
-

@@ -281,4 +281,3 @@ func TestCallbackCallGateError(t *testing.T) {
 		t.Error("call after interpreter close: expected error, got nil")
 	}
 }
-
