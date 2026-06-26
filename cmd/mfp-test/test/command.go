@@ -210,7 +210,6 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 			i+1, len(d.Data), d.Params.Format, d.Params.JobName)
 	}
 
-	<-ctx.Done()
 	return nil
 }
 
