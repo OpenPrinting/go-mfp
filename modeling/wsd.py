@@ -6,7 +6,7 @@
 #
 # WS-Scan definitions
 
-from helper import collection
+from helpers import collection
 from dataclasses import dataclass
 
 # WS-Scan types

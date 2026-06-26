@@ -34,11 +34,11 @@ type Model struct {
 	wsdScanCaps     *wsscan.GetScannerElementsResponse
 
 	// Modules
-	modHelper *cpython.Object // helper.py
-	modQuery  *cpython.Object // query.py
-	modIPP    *cpython.Object // ipp.py
-	modEscl   *cpython.Object // escl.py
-	modWSScan *cpython.Object // wsd.py
+	modHelpers *cpython.Object // helpers.py
+	modQuery   *cpython.Object // query.py
+	modIPP     *cpython.Object // ipp.py
+	modEscl    *cpython.Object // escl.py
+	modWSScan  *cpython.Object // wsd.py
 
 	// Important Python class constructors
 	clsHTTPMessage     *cpython.Object // query.HTTPMessage
@@ -78,8 +78,8 @@ func NewModel() (*Model, error) {
 	}
 
 	// Load modules
-	model.modHelper = py.Load(embedPyHelper, "helper", "helper.py")
-	if err := model.modHelper.Err(); err != nil {
+	model.modHelpers = py.Load(embedPyHelpers, "helpers", "helpers.py")
+	if err := model.modHelpers.Err(); err != nil {
 		return nil, err
 	}
 

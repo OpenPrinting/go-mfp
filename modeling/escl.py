@@ -8,7 +8,7 @@
 
 from uuid import UUID
 from typing import TypedDict
-from helper import collection
+from helpers import collection
 
 # eSCL types
 class Adf(collection): pass

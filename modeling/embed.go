@@ -16,8 +16,8 @@ var embedPyModel string
 //go:embed init.py
 var embedPyInit string
 
-//go:embed helper.py
-var embedPyHelper string
+//go:embed helpers.py
+var embedPyHelpers string
 
 //go:embed query.py
 var embedPyQuery string
