@@ -1,0 +1,3338 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cpython: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/OpenPrinting/go-mfp/cpython/binops.go (94.4%)</option>
+				
+				<option value="file1">github.com/OpenPrinting/go-mfp/cpython/callback.go (79.4%)</option>
+				
+				<option value="file2">github.com/OpenPrinting/go-mfp/cpython/cpython.go (84.1%)</option>
+				
+				<option value="file3">github.com/OpenPrinting/go-mfp/cpython/error.go (50.0%)</option>
+				
+				<option value="file4">github.com/OpenPrinting/go-mfp/cpython/except.go (100.0%)</option>
+				
+				<option value="file5">github.com/OpenPrinting/go-mfp/cpython/float.go (100.0%)</option>
+				
+				<option value="file6">github.com/OpenPrinting/go-mfp/cpython/gate.go (90.4%)</option>
+				
+				<option value="file7">github.com/OpenPrinting/go-mfp/cpython/object.go (98.8%)</option>
+				
+				<option value="file8">github.com/OpenPrinting/go-mfp/cpython/objid.go (100.0%)</option>
+				
+				<option value="file9">github.com/OpenPrinting/go-mfp/cpython/python.go (95.6%)</option>
+				
+				<option value="file10">github.com/OpenPrinting/go-mfp/cpython/reflect.go (100.0%)</option>
+				
+				<option value="file11">github.com/OpenPrinting/go-mfp/cpython/unops.go (94.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Binary operations on objects
+
+package cpython
+
+// Add adds value to Object:
+//
+//        ret = obj + val
+func (obj *Object) Add(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__add__", val)
+}</span>
+
+// Sub subtracts value from Object:
+//
+//        ret = obj - val
+func (obj *Object) Sub(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__sub__", val)
+}</span>
+
+// Mul multiplies Object by value:
+//
+//        ret = obj * val
+func (obj *Object) Mul(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__mul__", val)
+}</span>
+
+// TrueDiv divides Object to value, returning a float:
+//
+//        ret = obj / val
+func (obj *Object) TrueDiv(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__truediv__", val)
+}</span>
+
+// FloorDiv divides Object to value and returns integer part of the quotient:
+//
+//        ret = obj // val
+func (obj *Object) FloorDiv(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__floordiv__", val)
+}</span>
+
+// Mod computes the remainder of Object divided by val:
+//
+//        ret = obj % val
+func (obj *Object) Mod(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__mod__", val)
+}</span>
+
+// Pow returns Object raised to the power of val:
+//
+//        ret = obj ** val
+func (obj *Object) Pow(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__pow__", val)
+}</span>
+
+// Lt tells if Object is less that val:
+//
+//        ret = obj &lt; val
+func (obj *Object) Lt(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__lt__", val)
+}</span>
+
+// Gt tells if Object is greater that val:
+//
+//        ret = obj &gt; val
+func (obj *Object) Gt(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__gt__", val)
+}</span>
+
+// Le tells if Object is less or equal that val:
+//
+//        ret = obj &lt;= val
+func (obj *Object) Le(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__le__", val)
+}</span>
+
+// Ge tells if Object is less or equal that val:
+//
+//        ret = obj &gt;= val
+func (obj *Object) Ge(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__ge__", val)
+}</span>
+
+// Eq tells if Object is equal to val:
+//
+//        ret = obj == val
+func (obj *Object) Eq(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__eq__", val)
+}</span>
+
+// Ne tells if Object is not equal to val:
+//
+//        ret = obj != val
+func (obj *Object) Ne(val any) *Object <span class="cov8" title="1">{
+        return obj.binop("__ne__", val)
+}</span>
+
+// binop performs the named binary operation on two objects.
+func (obj *Object) binop(name string, val any) *Object <span class="cov8" title="1">{
+        // Acquire the gate and obtain the first *C.PyObject
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain the second *C.PyObject
+        pyobj2, err := obj.py.newPyObject(gate, val)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyobj2)
+
+        // Obtain callable *C.PyObject for the operation
+        pyop, err := gate.getattr(pyobj, name)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyop)
+
+        // Construct arguments
+        pyargs, err := gate.makeTuple(1)
+        if err != nil </span><span class="cov0" title="0">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyargs)
+
+        err = gate.setTupleItem(pyargs, pyobj2, 0)
+        if err != nil </span><span class="cov0" title="0">{
+                return newErrorObject(obj.py, err)
+        }</span>
+
+        // Call the operation
+        <span class="cov8" title="1">pyres, err := gate.call(pyop, pyargs, nil)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+
+        // Create the result object
+        <span class="cov8" title="1">return newObjectFromPython(obj.py, gate, pyres)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Python-&gt;Go callbacks
+
+package cpython
+
+import (
+        "reflect"
+        "runtime/cgo"
+        "unsafe"
+
+        "github.com/OpenPrinting/go-mfp/internal/assert"
+)
+
+// #include "cpython.h"
+//
+// void callbackDestroy(PyObject *self);
+// PyObject *callbackCall(PyObject *self, PyObject *args);
+import "C"
+
+// callbackFunc is the Go function called from callback
+type callbackFunc func(args pyObject) pyObject
+
+var callbackCapsuleName = C.CString("go.function")
+
+// callback implements Python-&gt;Go callbacks
+type callback struct {
+        py       *Python        // interpreter that owns the callback
+        def      *C.PyMethodDef // Python method definition
+        function reflect.Value  // Go function to be called
+}
+
+// newCallback creates a new callback.
+//
+// function must be the Go function that accepts arguments,
+// convertible from the Python values and returns none, a single
+// value or single value plus error.
+func newCallback(py *Python, name string, function any) *callback <span class="cov8" title="1">{
+        rv := reflect.ValueOf(function)
+        rt := rv.Type()
+        assert.Must(rt.Kind() == reflect.Func)
+
+        // Check types of return values.
+        //
+        // We only accept functions that:
+        //   - returns no value
+        //   - returns a single value
+        //   - returns a single value plus error
+        switch </span>{
+        case rt.NumOut() &lt;= 1:<span class="cov8" title="1"></span>
+        case rt.NumOut() == 2 &amp;&amp; rt.Out(1).Implements(reflectErrorType):<span class="cov8" title="1"></span>
+        default:<span class="cov8" title="1">
+                return nil</span>
+        }
+
+        // Create callback structure
+        <span class="cov8" title="1">sz := C.size_t(unsafe.Sizeof(C.PyMethodDef{}))
+        def := (*C.PyMethodDef)(C.malloc(sz))
+
+        def.ml_name = C.CString(name)
+        def.ml_meth = C.PyCFunction(C.callbackCall)
+        def.ml_flags = C.METH_VARARGS
+
+        cb := &amp;callback{
+                py:       py,
+                def:      def,
+                function: reflect.ValueOf(function),
+        }
+
+        return cb</span>
+}
+
+// object creates Python object for the callback.
+// This function requires pyGate to be acquired by the caller.
+func (cb *callback) object(gate pyGate) (pyObject, error) <span class="cov8" title="1">{
+        // Wrap callback into the PyCapsule_Type
+        handle := cgo.NewHandle(cb)
+        capsule, err := gate.makeCapsule(
+                unsafe.Pointer(&amp;handle), callbackCapsuleName,
+                C.PyCapsule_Destructor(C.callbackDestroy))
+        if err != nil </span><span class="cov0" title="0">{
+                handle.Delete()
+                return nil, err
+        }</span>
+
+        // Create PyCFunction_Type
+        <span class="cov8" title="1">cfunction, err := gate.makeCfunction(cb.def, capsule)
+        if err != nil </span><span class="cov0" title="0">{
+                C.py_obj_unref(capsule)
+        }</span>
+
+        <span class="cov8" title="1">return cfunction, nil</span>
+}
+
+// call performs Python-&gt;Go call
+func (cb *callback) call(args pyObject) (pyObject, error) <span class="cov8" title="1">{
+        // Handle special case: void function w/o arguments
+        rt := cb.function.Type()
+        if rt.NumIn() == 0 &amp;&amp; rt.NumOut() == 0 </span><span class="cov8" title="1">{
+                cb.function.Call(nil)
+                return cb.py.pyNone, nil
+        }</span>
+
+        // Acquire pyGate
+        <span class="cov8" title="1">gate, err := cb.py.gate()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Translate input arguments
+        //
+        // TODO
+
+        // Call the function. Translate returned values
+        ret := cb.function.Call(nil)
+        switch len(ret) </span>{
+        case 0:<span class="cov0" title="0">
+                // No return value
+                return cb.py.pyNone, nil</span>
+
+        case 2:<span class="cov8" title="1">
+                // Returns value and error
+                err = ret[1].Interface().(error)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">fallthrough</span>
+
+        case 1:<span class="cov8" title="1">
+                // Single return value
+                return cb.py.newPyObject(gate, ret[0].Interface())</span>
+        }
+
+        <span class="cov0" title="0">return nil, nil</span>
+}
+
+// Delete is the callback destructor.
+func (cb *callback) Delete() <span class="cov8" title="1">{
+        C.free(unsafe.Pointer(cb.def.ml_name))
+        C.free(unsafe.Pointer(cb.def))
+}</span>
+
+// callbackDestroy wraps callback.Delete into the C-callable function.
+//
+//export callbackDestroy
+func callbackDestroy(capsule pyObject) <span class="cov0" title="0">{
+        p := C.py_capsule_get_ptr(capsule, callbackCapsuleName)
+        if p != nil </span><span class="cov0" title="0">{
+                handle := *(*cgo.Handle)(p)
+                cb := handle.Value().(*callback)
+                cb.Delete()
+                handle.Delete()
+        }</span>
+}
+
+// callbackCall wraps callback.call into the C-callable function.
+//
+//export callbackCall
+func callbackCall(capsule, args pyObject) pyObject <span class="cov8" title="1">{
+        p := C.py_capsule_get_ptr(capsule, callbackCapsuleName)
+        if p != nil </span><span class="cov8" title="1">{
+                handle := *(*cgo.Handle)(p)
+                cb := handle.Value().(*callback)
+                pyobj, err := cb.call(args)
+                if err != nil </span><span class="cov8" title="1">{
+                        callbackSetError(err)
+                }</span>
+                <span class="cov8" title="1">return pyobj</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+// callbackSetError reports error to the Python side by
+// raising Python exception
+func callbackSetError(err error) <span class="cov8" title="1">{
+        except := Except("")
+        msg := ""
+
+        if err2, ok := err.(ErrPython); ok </span><span class="cov8" title="1">{
+                except, msg = err2.except, err2.msg
+        }</span> else<span class="cov8" title="1"> {
+                msg = err.Error()
+        }</span>
+
+        <span class="cov8" title="1">cmsg := C.CString(msg)
+        C.py_set_err(except.object(), cmsg)
+        C.free(unsafe.Pointer(cmsg))</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// CPython glue -- the Go side
+
+package cpython
+
+import (
+        "bytes"
+        "errors"
+        "os/exec"
+        "runtime"
+        "sync"
+        "unsafe"
+)
+
+// #cgo pkg-config: python3
+// #cgo LDFLAGS: -l dl
+//
+// #include "cpython.h"
+import "C"
+
+type (
+        // pyThreadState is the Go name for the *C.PyThreadState
+        pyThreadState = *C.PyThreadState
+
+        // pyObject is the Go name for the *C.PyObject
+        pyObject = *C.PyObject
+
+        // pyObject is the Go name for the *C.PyTypeObject
+        pyTypeObject = *C.PyTypeObject
+)
+
+var (
+        // pyInitError holds Python initialization error, if any.
+        pyInitError error
+)
+
+// pyInterpNewRequestChan is the channel where requests to create
+// new Python sub-interpretes are sent to.
+//
+// These requests are handled by the dedicated thread. The request
+// itself is the channel of pyThreadState, where response is sent.
+var pyInterpNewRequestChan = make(chan chan pyThreadState)
+
+// pyNewInterp creates a new Python sub-interpreter and returns
+// pointer to its main thread state.
+func pyNewInterp() (pyThreadState, error) <span class="cov8" title="1">{
+        if pyInitError != nil </span><span class="cov0" title="0">{
+                return nil, pyInitError
+        }</span>
+
+        <span class="cov8" title="1">rsp := make(chan pyThreadState)
+        pyInterpNewRequestChan &lt;- rsp
+        interp := &lt;-rsp
+
+        return interp, nil</span>
+}
+
+// pyInterpDelete releases the Python sub-interpreter
+func pyInterpDelete(interp pyThreadState) <span class="cov8" title="1">{
+        C.py_interp_close(interp)
+}</span>
+
+// pyLocateLibPython locates the full path to the libpython3.XX.so library
+func pyLocateLibPython() (string, error) <span class="cov8" title="1">{
+        script := ""
+        script += "import sysconfig;"
+        script += "import os;"
+        script += "dir=sysconfig.get_config_var('LIBDIR');"
+        script += "lib=sysconfig.get_config_var('INSTSONAME');"
+        script += "print(os.path.join(dir,lib),end='');"
+
+        cmd := exec.Command("python3", "-c", script)
+        out, err := cmd.Output()
+
+        if err != nil </span><span class="cov0" title="0">{
+                if ee, ok := err.(*exec.ExitError); ok &amp;&amp; len(ee.Stderr) &gt; 0 </span><span class="cov0" title="0">{
+                        err = errors.New(string(bytes.TrimSpace(ee.Stderr)))
+                }</span>
+        }
+
+        <span class="cov8" title="1">return string(out), err</span>
+}
+
+// pyInterpThread runs Python dedicated thread.
+//
+// We need this thread, because CPython pollutes the thread local
+// storage with its own stuff while doing operations like Python
+// initialization and new interpreter creation, and we don't want
+// this litter to be distributed across all Go threads.
+//
+// Once initialization is completed, pyInterpThread signals it
+// over the supplied sync.WaitGroup parameter.
+func pyInterpThread(initilized *sync.WaitGroup) <span class="cov8" title="1">{
+        // We need the dedicated thread...
+        runtime.LockOSThread()
+        defer runtime.UnlockOSThread()
+
+        // Locate and initialize Python library
+        var lib string
+        lib, pyInitError = pyLocateLibPython()
+        if pyInitError == nil </span><span class="cov8" title="1">{
+                clib := C.CString(lib)
+                msg := C.py_init(clib)
+                C.free(unsafe.Pointer(clib))
+
+                pyInitErrorCheck(msg)
+        }</span>
+
+        // Initialize exceptions
+        <span class="cov8" title="1">if pyInitError == nil </span><span class="cov8" title="1">{
+                exceptInit()
+        }</span>
+
+        // Notify caller that initialization is completed
+        <span class="cov8" title="1">initilized.Done()
+
+        // If no error, serve incoming requests
+        if pyInitError == nil </span><span class="cov8" title="1">{
+                for rq := range pyInterpNewRequestChan </span><span class="cov8" title="1">{
+                        interp := C.py_new_interp()
+                        rq &lt;- interp
+                }</span>
+        }
+}
+
+// pyInitErrorCheck sets the pyInitError, if error message is not nil.
+func pyInitErrorCheck(msg *C.char) <span class="cov8" title="1">{
+        if msg != nil </span><span class="cov0" title="0">{
+                pyInitError = errors.New(C.GoString(msg))
+        }</span>
+}
+
+// pyInitErrorCheckTest is the test interface to the pyInitErrorCheck
+// function. We cannot call pyInitErrorCheck directly from tests, because
+// CGo is not available in the _test.go files, so we cannot construct
+// *C.char string out of there.
+func pyInitErrorCheckTest(s string) <span class="cov0" title="0">{
+        msg := C.CString(s)
+        defer C.free(unsafe.Pointer(msg))
+        pyInitErrorCheck(msg)
+}</span>
+
+// init starts a dedicated Python thread.
+func init() <span class="cov8" title="1">{
+        var initilized sync.WaitGroup
+
+        initilized.Add(1)
+        go pyInterpThread(&amp;initilized)
+        initilized.Wait()
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Package documentation
+
+package cpython
+
+import (
+        "fmt"
+)
+
+// ErrPython represents a Python exception.
+type ErrPython struct {
+        except Except
+        msg    string
+}
+
+// Error returns error message. It implements the [error] interface.
+func (e ErrPython) Error() string <span class="cov8" title="1">{
+        return string(e.except) + ": " + e.msg
+}</span>
+
+// Is reports if ErrPython matches the target error.
+//
+// ErrPython matches on the following cases:
+//   - target is ErrPython with the same exception type and message
+//   - target is [Except] and exception type is the same
+func (e ErrPython) Is(target error) bool <span class="cov8" title="1">{
+        switch target := target.(type) </span>{
+        case Except:<span class="cov8" title="1">
+                return e.except == target</span>
+        case ErrPython:<span class="cov0" title="0">
+                return e == target</span>
+        }
+
+        <span class="cov0" title="0">return false</span>
+}
+
+// ErrTypeConversion represents Go&lt;-&gt;Python type conversion error.
+type ErrTypeConversion struct {
+        from, to string // from/to types that can't be converted
+}
+
+// Error returns error message. It implements the [error] interface.
+func (e ErrTypeConversion) Error() string <span class="cov0" title="0">{
+        return fmt.Sprintf("can't convert %s to %s", e.from, e.to)
+}</span>
+
+// ErrOverflow represents the integer overflow error.
+type ErrOverflow struct {
+        val string
+}
+
+// Error returns error message. It implements the [error] interface.
+func (e ErrOverflow) Error() string <span class="cov0" title="0">{
+        return fmt.Sprintf("integer overflow: %s", e.val)
+}</span>
+
+// ErrClosed represent the error that occurs when [Python]
+// interpreter or [Object] that it owns accessed after call
+// to [Python.Close].
+type ErrClosed struct{}
+
+// Error returns error message. It implements the [error] interface.
+func (e ErrClosed) Error() string <span class="cov0" title="0">{
+        return "use Python interpreter after Python.Close"
+}</span>
+
+// ErrInvalidObject represents the error that occurs when [Object]
+// accessed after call to [Object.Invalidate]
+type ErrInvalidObject struct{}
+
+// Error returns error message. It implements the [error] interface.
+func (e ErrInvalidObject) Error() string <span class="cov8" title="1">{
+        return "use Object after Object.Invalidate"
+}</span>
+
+// ErrNotFound represents the error that occurs when retrieving
+// value from container (dict, array, ...) fails because key was
+// not found in the container
+type ErrNotFound struct{}
+
+// Error returns error message. It implements the [error] interface.
+func (e ErrNotFound) Error() string <span class="cov8" title="1">{
+        return "item not found"
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Python exceptions
+
+package cpython
+
+// #include "cpython.h"
+import "C"
+
+// Except represents a Python exception by its name.
+//
+// Normally, Python values are bound to the [Python] interpreter,
+// but using full exception objects would be inconvenient.
+// Therefore, exceptions are represented by their Python name instead.
+type Except string
+
+// Standard exceptions
+const (
+        // Error exceptions
+        ArithmeticError        Except = "ArithmeticError"
+        AssertionError         Except = "AssertionError"
+        AttributeError         Except = "AttributeError"
+        BaseException          Except = "BaseExcept"
+        BlockingIOError        Except = "BlockingIOError"
+        BrokenPipeError        Except = "BrokenPipeError"
+        BufferError            Except = "BufferError"
+        ChildProcessError      Except = "ChildProcessError"
+        ConnectionAbortedError Except = "ConnectionAbortedError"
+        ConnectionError        Except = "ConnectionError"
+        ConnectionRefusedError Except = "ConnectionRefusedError"
+        ConnectionResetError   Except = "ConnectionResetError"
+        EOFError               Except = "EOFError"
+        Exception              Except = "Exception"
+        FileExistsError        Except = "FileExistsError"
+        FileNotFoundError      Except = "FileNotFoundError"
+        FloatingPointError     Except = "FloatingPointError"
+        GeneratorExit          Except = "GeneratorExit"
+        ImportError            Except = "ImportError"
+        IndentationError       Except = "IndentationError"
+        IndexError             Except = "IndexError"
+        InterruptedError       Except = "InterruptedError"
+        IsADirectoryError      Except = "IsADirectoryError"
+        KeyboardInterrupt      Except = "KeyboardInterrupt"
+        KeyError               Except = "KeyError"
+        LookupError            Except = "LookupError"
+        MemoryError            Except = "MemoryError"
+        ModuleNotFoundError    Except = "ModuleNotFoundError"
+        NameError              Except = "NameError"
+        NotADirectoryError     Except = "NotADirectoryError"
+        NotImplementedError    Except = "NotImplementedError"
+        OSError                Except = "OSError"
+        OverflowError          Except = "OverflowError"
+        PermissionError        Except = "PermissionError"
+        ProcessLookupError     Except = "ProcessLookupError"
+        RecursionError         Except = "RecursionError"
+        ReferenceError         Except = "ReferenceError"
+        RuntimeError           Except = "RuntimeError"
+        StopAsyncIteration     Except = "StopAsyncIteration"
+        StopIteration          Except = "StopIteration"
+        SyntaxError            Except = "SyntaxError"
+        SystemError            Except = "SystemError"
+        SystemExit             Except = "SystemExit"
+        TabError               Except = "TabError"
+        TimeoutError           Except = "TimeoutError"
+        TypeError              Except = "TypeError"
+        UnboundLocalError      Except = "UnboundLocalError"
+        UnicodeDecodeError     Except = "UnicodeDecodeError"
+        UnicodeEncodeError     Except = "UnicodeEncodeError"
+        UnicodeError           Except = "UnicodeError"
+        UnicodeTranslateError  Except = "UnicodeTranslateError"
+        ValueError             Except = "ValueError"
+        ZeroDivisionError      Except = "ZeroDivisionError"
+
+        // Warning exceptions
+        BytesWarning              Except = "BytesWarning"
+        DeprecationWarning        Except = "DeprecationWarning"
+        FutureWarning             Except = "FutureWarning"
+        ImportWarning             Except = "ImportWarning"
+        PendingDeprecationWarning Except = "PendingDeprecationWarning"
+        ResourceWarning           Except = "ResourceWarning"
+        RuntimeWarning            Except = "RuntimeWarning"
+        SyntaxWarning             Except = "SyntaxWarning"
+        UnicodeWarning            Except = "UnicodeWarning"
+        UserWarning               Except = "UserWarning"
+        Warning                   Except = "Warning"
+)
+
+// Error implements error interface for the exception.
+func (ex Except) Error() string <span class="cov8" title="1">{
+        return string(ex)
+}</span>
+
+// object returns Python object for the exception.
+func (ex Except) object() pyObject <span class="cov8" title="1">{
+        pyobj := exceptTable[ex]
+        if pyobj == nil </span><span class="cov8" title="1">{
+                // Fallback to the SystemError for unknown exception
+                pyobj = C.PyExc_SystemError_p
+        }</span>
+        <span class="cov8" title="1">return pyobj</span>
+}
+
+// exceptTable maps Except names of the standard exceptions to the
+// corresponding Python objects.
+var exceptTable map[Except]pyObject
+
+// exceptInit initializes exceptTable.
+//
+// It is called during libpython3.so initialization, when symbols
+// already loaded from the library.
+func exceptInit() <span class="cov8" title="1">{
+        exceptTable = map[Except]pyObject{
+                // Errors
+                ArithmeticError:        C.PyExc_ArithmeticError_p,
+                AssertionError:         C.PyExc_AssertionError_p,
+                AttributeError:         C.PyExc_AttributeError_p,
+                BaseException:          C.PyExc_BaseException_p,
+                BlockingIOError:        C.PyExc_BlockingIOError_p,
+                BrokenPipeError:        C.PyExc_BrokenPipeError_p,
+                BufferError:            C.PyExc_BufferError_p,
+                ChildProcessError:      C.PyExc_ChildProcessError_p,
+                ConnectionAbortedError: C.PyExc_ConnectionAbortedError_p,
+                ConnectionError:        C.PyExc_ConnectionError_p,
+                ConnectionRefusedError: C.PyExc_ConnectionRefusedError_p,
+                ConnectionResetError:   C.PyExc_ConnectionResetError_p,
+                EOFError:               C.PyExc_EOFError_p,
+                Exception:              C.PyExc_Exception_p,
+                FileExistsError:        C.PyExc_FileExistsError_p,
+                FileNotFoundError:      C.PyExc_FileNotFoundError_p,
+                FloatingPointError:     C.PyExc_FloatingPointError_p,
+                GeneratorExit:          C.PyExc_GeneratorExit_p,
+                ImportError:            C.PyExc_ImportError_p,
+                IndentationError:       C.PyExc_IndentationError_p,
+                IndexError:             C.PyExc_IndexError_p,
+                InterruptedError:       C.PyExc_InterruptedError_p,
+                IsADirectoryError:      C.PyExc_IsADirectoryError_p,
+                KeyboardInterrupt:      C.PyExc_KeyboardInterrupt_p,
+                KeyError:               C.PyExc_KeyError_p,
+                LookupError:            C.PyExc_LookupError_p,
+                MemoryError:            C.PyExc_MemoryError_p,
+                ModuleNotFoundError:    C.PyExc_ModuleNotFoundError_p,
+                NameError:              C.PyExc_NameError_p,
+                NotADirectoryError:     C.PyExc_NotADirectoryError_p,
+                NotImplementedError:    C.PyExc_NotImplementedError_p,
+                OSError:                C.PyExc_OSError_p,
+                OverflowError:          C.PyExc_OverflowError_p,
+                PermissionError:        C.PyExc_PermissionError_p,
+                ProcessLookupError:     C.PyExc_ProcessLookupError_p,
+                RecursionError:         C.PyExc_RecursionError_p,
+                ReferenceError:         C.PyExc_ReferenceError_p,
+                RuntimeError:           C.PyExc_RuntimeError_p,
+                StopAsyncIteration:     C.PyExc_StopAsyncIteration_p,
+                StopIteration:          C.PyExc_StopIteration_p,
+                SyntaxError:            C.PyExc_SyntaxError_p,
+                SystemError:            C.PyExc_SystemError_p,
+                SystemExit:             C.PyExc_SystemExit_p,
+                TabError:               C.PyExc_TabError_p,
+                TimeoutError:           C.PyExc_TimeoutError_p,
+                TypeError:              C.PyExc_TypeError_p,
+                UnboundLocalError:      C.PyExc_UnboundLocalError_p,
+                UnicodeDecodeError:     C.PyExc_UnicodeDecodeError_p,
+                UnicodeEncodeError:     C.PyExc_UnicodeEncodeError_p,
+                UnicodeError:           C.PyExc_UnicodeError_p,
+                UnicodeTranslateError:  C.PyExc_UnicodeTranslateError_p,
+                ValueError:             C.PyExc_ValueError_p,
+                ZeroDivisionError:      C.PyExc_ZeroDivisionError_p,
+
+                // Warnings
+                BytesWarning:              C.PyExc_BytesWarning_p,
+                DeprecationWarning:        C.PyExc_DeprecationWarning_p,
+                FutureWarning:             C.PyExc_FutureWarning_p,
+                ImportWarning:             C.PyExc_ImportWarning_p,
+                PendingDeprecationWarning: C.PyExc_PendingDeprecationWarning_p,
+                ResourceWarning:           C.PyExc_ResourceWarning_p,
+                RuntimeWarning:            C.PyExc_RuntimeWarning_p,
+                SyntaxWarning:             C.PyExc_SyntaxWarning_p,
+                UnicodeWarning:            C.PyExc_UnicodeWarning_p,
+                UserWarning:               C.PyExc_UserWarning_p,
+                Warning:                   C.PyExc_Warning_p,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Floating point limits.
+
+package cpython
+
+import "math"
+
+// The following variables define ranges of the float64
+// values that can be correctly converted into int64/uint64
+//
+// These ranges are machine-specific and guessed dynamically
+// at the initialization time
+var (
+        // maxInt64Float is the maximum float64 value that can be
+        // correctly converted into the int64
+        maxInt64Float float64
+
+        // minInt64Float is the minimum float64 value that can be
+        // correctly converted into the int64
+        minInt64Float float64
+
+        // maxUint64Float is the maximum float64 value that can be
+        // correctly converted into the uint64
+        maxUint64Float float64
+)
+
+// init initializes the maxInt64Float, minInt64Float and maxUint64Float
+// variables
+func init() <span class="cov8" title="1">{
+        var i64 int64
+        var u64 uint64
+
+        for i64 = int64(math.MaxInt64); int64(float64(i64)) != i64; i64-- </span>{<span class="cov0" title="0">
+        }</span>
+
+        <span class="cov8" title="1">maxInt64Float = float64(i64)
+
+        for i64 = int64(math.MinInt64); int64(float64(i64)) != i64; i64++ </span>{<span class="cov0" title="0">
+        }</span>
+
+        <span class="cov8" title="1">minInt64Float = float64(i64)
+
+        for u64 = uint64(math.MaxUint64); uint64(float64(u64)) != u64; u64-- </span>{<span class="cov0" title="0">
+        }</span>
+
+        <span class="cov8" title="1">maxUint64Float = float64(u64)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Call gate into the Python interpreter
+
+package cpython
+
+import (
+        "fmt"
+        "math/big"
+        "runtime"
+        "unsafe"
+
+        "github.com/OpenPrinting/go-mfp/internal/assert"
+)
+
+// #include "cpython.h"
+import "C"
+
+// pyGate represents the locked (attached to the current thread
+// and with the GIL acquired) state of the Python interpreter.
+//
+// It works as a call gate into the interpreter and implements
+// all interpreter operations that require locking.
+type pyGate struct{}
+
+// pyGateAcquire temporary attaches the calling thread to the
+// Python interpreter.
+//
+// The interpreter is represented by the reference to its
+// main thread state.
+//
+// It returns the pyGate object, that must be released after
+// use with the [pyGate.release] call.
+func pyGateAcquire(interp pyThreadState) pyGate <span class="cov8" title="1">{
+        runtime.LockOSThread()
+        C.py_enter(interp)
+        return pyGate{}
+}</span>
+
+// release detaches the calling thread from the Python interpreter.
+func (gate pyGate) release() <span class="cov8" title="1">{
+        gate.lastError() // Reset pending error condition, if any
+        C.py_leave()
+        runtime.UnlockOSThread()
+}</span>
+
+// lastError returns a last error, nil if none.
+func (gate pyGate) lastError() error <span class="cov8" title="1">{
+        return gate.lastErrorAt("", -1)
+}</span>
+
+// lastErrorAt returns a last error, nil if none.
+//
+// If file != "" and line &gt; 0, it overrides the error location information.
+func (gate pyGate) lastErrorAt(file string, line int) error <span class="cov8" title="1">{
+        var etype, evalue, trace pyObject
+
+        // Fetch Python error information
+        C.py_err_fetch(&amp;etype, &amp;evalue, &amp;trace)
+        if etype == nil &amp;&amp; evalue == nil &amp;&amp; trace == nil </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">defer C.py_obj_unref(etype)
+        defer C.py_obj_unref(evalue)
+        defer C.py_obj_unref(trace)
+
+        // Decode the error
+        except := SystemError // The default
+        msg := "Unknown Python exception"
+        var needLocation bool
+
+        if etype != nil </span><span class="cov8" title="1">{
+                var nm string
+                if tmp, _ := gate.getattr(etype, "__name__"); tmp != nil </span><span class="cov8" title="1">{
+                        nm, _ := gate.str(tmp)
+                        C.py_obj_unref(tmp)
+                        if nm != "" </span><span class="cov8" title="1">{
+                                except = Except(nm)
+                        }</span>
+                }
+
+                // Some exception types, like SyntaxError, already
+                // come with the file:line information. Others require
+                // additional effort...
+                <span class="cov8" title="1">switch nm </span>{
+                case "SyntaxError":<span class="cov0" title="0"></span>
+                default:<span class="cov8" title="1">
+                        needLocation = true</span>
+                }
+        }
+
+        <span class="cov8" title="1">if evalue != nil </span><span class="cov8" title="1">{
+                s, _ := gate.str(evalue)
+                if s != "" </span><span class="cov8" title="1">{
+                        msg = s
+                }</span>
+        }
+
+        <span class="cov8" title="1">if needLocation &amp;&amp; trace != nil </span><span class="cov8" title="1">{
+                var err error
+                if file == "" || line &lt; 0 </span><span class="cov8" title="1">{
+                        file, line, err = gate.lastErrorLocation(trace)
+                }</span>
+                <span class="cov8" title="1">if err == nil </span><span class="cov8" title="1">{
+                        msg += fmt.Sprintf(" (%s, line %d)", file, line)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return ErrPython{except, msg}</span>
+}
+
+// lastErrorLocation extracts file and line information out of the
+// traceback object.
+func (gate pyGate) lastErrorLocation(trace pyObject) (
+        file string, line int, err error) <span class="cov8" title="1">{
+
+        var lineno, frame, code, filename pyObject
+
+        // follow trace = trace.tb_next, until latest frame is reached.
+        for </span><span class="cov8" title="1">{
+                var next pyObject
+                next, err = gate.getattr(trace, "tb_next")
+                if err != nil </span><span class="cov0" title="0">{
+                        return
+                }</span>
+                <span class="cov8" title="1">defer C.py_obj_unref(next)
+
+                // Note, we don't have here a convenient access to
+                // the None object to compare, so just run the loop
+                // while trace.tb_next is of the same type as trace.
+                if C.py_obj_type(next) != C.py_obj_type(trace) </span><span class="cov8" title="1">{
+                        break</span>
+                }
+
+                <span class="cov0" title="0">trace = next</span>
+        }
+
+        // lineno = trace.tb_lineno
+        <span class="cov8" title="1">lineno, err = gate.getattr(trace, "tb_lineno")
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">defer C.py_obj_unref(lineno)
+
+        // frame = trace.tb_frame
+        frame, err = gate.getattr(trace, "tb_frame")
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">defer C.py_obj_unref(frame)
+
+        // code = frame.f_code
+        code, err = gate.getattr(frame, "f_code")
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">defer C.py_obj_unref(code)
+
+        // filename = code.co_filename
+        filename, err = gate.getattr(code, "co_filename")
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">defer C.py_obj_unref(filename)
+
+        // Now convert filename and lineno from Python to go
+        file, err = gate.decodeUnicode(filename)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">n, err := gate.decodeUint64(lineno)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">line = int(n)
+        return</span>
+}
+
+// objOrLastError returns pyobj, if it is not nil, or gate.lastError()
+func (gate pyGate) objOrLastError(pyobj pyObject) (pyObject, error) <span class="cov8" title="1">{
+        if pyobj != nil </span><span class="cov8" title="1">{
+                return pyobj, nil
+        }</span>
+
+        <span class="cov8" title="1">return nil, gate.lastError()</span>
+}
+
+// ref increments PyObject's reference count.
+func (gate pyGate) ref(pyobj pyObject) <span class="cov8" title="1">{
+        C.py_obj_ref(pyobj)
+}</span>
+
+// unref decrements PyObject's reference count.
+func (gate pyGate) unref(pyobj pyObject) <span class="cov8" title="1">{
+        C.py_obj_unref(pyobj)
+}</span>
+
+// str returns str(pyobj), decoded as Go string.
+func (gate pyGate) str(pyobj pyObject) (s string, err error) <span class="cov8" title="1">{
+        str := C.py_obj_str(pyobj)
+        if str != nil </span><span class="cov8" title="1">{
+                defer C.py_obj_unref(str)
+                s, err = gate.decodeUnicode(str)
+        }</span>
+
+        <span class="cov8" title="1">return</span>
+}
+
+// repr returns repr(pyobj), decoded as Go string.
+func (gate pyGate) repr(pyobj pyObject) (s string, err error) <span class="cov8" title="1">{
+        repr := C.py_obj_repr(pyobj)
+        if repr != nil </span><span class="cov8" title="1">{
+                defer C.py_obj_unref(repr)
+                s, err = gate.decodeUnicode(repr)
+        }</span>
+
+        <span class="cov8" title="1">return</span>
+}
+
+// typename returns name of the PyObject's type
+func (gate pyGate) typename(pyobj pyObject) string <span class="cov8" title="1">{
+        name := "unknown"
+
+        t := pyObject(unsafe.Pointer(C.py_obj_type(pyobj)))
+        if tmp, err := gate.getattr(t, "__name__"); err == nil </span><span class="cov8" title="1">{
+                s, err := gate.str(tmp)
+                C.py_obj_unref(tmp)
+
+                if err == nil </span><span class="cov8" title="1">{
+                        name = s
+                }</span>
+        }
+
+        <span class="cov8" title="1">return name</span>
+}
+
+// typemodulename returns name of the module where PyObject's
+// type is defined.
+func (gate pyGate) typemodulename(pyobj pyObject) string <span class="cov8" title="1">{
+        name := "unknown"
+
+        t := pyObject(unsafe.Pointer(C.py_obj_type(pyobj)))
+        if tmp, err := gate.getattr(t, "__module__"); err == nil </span><span class="cov8" title="1">{
+                s, err := gate.str(tmp)
+                C.py_obj_unref(tmp)
+
+                if err == nil </span><span class="cov8" title="1">{
+                        name = s
+                }</span>
+        }
+
+        <span class="cov8" title="1">return name</span>
+}
+
+// length returns length of container object (list, tuple, dict, ...)
+// in items.
+func (gate pyGate) length(pyobj pyObject) (int, error) <span class="cov8" title="1">{
+        l := int(C.py_obj_length(pyobj))
+        if l &lt; 0 </span><span class="cov8" title="1">{
+                return 0, gate.lastError()
+        }</span>
+        <span class="cov8" title="1">return l, nil</span>
+}
+
+// keys returns keys of the object that support mapping (dict, ...)
+// as a sequence object.
+func (gate pyGate) keys(pyobj pyObject) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_obj_keys(pyobj))
+}</span>
+
+// delattr deletes Object attribute with the specified name.
+func (gate pyGate) delattr(pyobj pyObject, name string) error <span class="cov8" title="1">{
+        cname := C.CString(name)
+        defer C.free(unsafe.Pointer(cname))
+
+        ok := bool(C.py_obj_delattr(pyobj, cname))
+        if !ok </span><span class="cov8" title="1">{
+                return gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// getattr returns Object attribute with the specified name.
+func (gate pyGate) getattr(pyobj pyObject, name string) (pyObject, error) <span class="cov8" title="1">{
+        cname := C.CString(name)
+        defer C.free(unsafe.Pointer(cname))
+
+        var attr pyObject
+        if !bool(C.py_obj_getattr(pyobj, cname, &amp;attr)) </span><span class="cov8" title="1">{
+                return nil, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return attr, nil</span>
+}
+
+// hasattr reports if Object has attribute with the specified name.
+func (gate pyGate) hasattr(pyobj pyObject, name string) (bool, error) <span class="cov8" title="1">{
+        cname := C.CString(name)
+        defer C.free(unsafe.Pointer(cname))
+
+        var found C.bool
+        if !bool(C.py_obj_hasattr(pyobj, cname, &amp;found)) </span><span class="cov0" title="0">{
+                return false, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return bool(found), nil</span>
+}
+
+// setattr sets Object attribute with the specified name.
+func (gate pyGate) setattr(pyobj pyObject, name string, val pyObject) error <span class="cov8" title="1">{
+        cname := C.CString(name)
+        defer C.free(unsafe.Pointer(cname))
+
+        if !bool(C.py_obj_setattr(pyobj, cname, val)) </span><span class="cov0" title="0">{
+                return gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// delitem deletes Object item with the specified key:
+//
+//        del(pyobj[key])
+func (gate pyGate) delitem(pyobj, key pyObject) error <span class="cov8" title="1">{
+        if !bool(C.py_obj_delitem(pyobj, key)) </span><span class="cov0" title="0">{
+                return gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// getitem returns Object item with the specified key.
+//
+//        pyobj[key]
+func (gate pyGate) getitem(pyobj, key pyObject) (pyObject, error) <span class="cov8" title="1">{
+        var item pyObject
+        if !bool(C.py_obj_getitem(pyobj, key, &amp;item)) </span><span class="cov0" title="0">{
+                return nil, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return item, nil</span>
+}
+
+// hasitem reports if Object has item with the specified key.
+//
+//        key in pyobj
+func (gate pyGate) hasitem(pyobj, key pyObject) (bool, error) <span class="cov8" title="1">{
+        var found C.bool
+        if !bool(C.py_obj_hasitem(pyobj, key, &amp;found)) </span><span class="cov8" title="1">{
+                return false, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return bool(found), nil</span>
+}
+
+// setitem sets Object item with the specified key.
+//
+//        pyobj[key] = val
+func (gate pyGate) setitem(pyobj, key, val pyObject) error <span class="cov8" title="1">{
+        if !bool(C.py_obj_setitem(pyobj, key, val)) </span><span class="cov0" title="0">{
+                return gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// call calls callable object as a function, with positional
+// arguments, defined by args (must be PyTuple_Type) and keyword
+// arguments, defined by kwargs (must be PyDict_Type or nil).
+//
+// It returns strong reference to result on success, nil on an error.
+func (gate pyGate) call(callable, args, kwargs pyObject) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_obj_call(callable, args, kwargs))
+}</span>
+
+// callable reports if object is callable.
+// This function always succeeds.
+func (gate pyGate) callable(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_callable(pyobj))
+}</span>
+
+// isBool reports if PyObject is bool.
+func (gate pyGate) isBool(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_bool(pyobj))
+}</span>
+
+// isByteArray reports if PyObject is bytearray.
+func (gate pyGate) isByteArray(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_byte_array(pyobj))
+}</span>
+
+// isBytes reports if PyObject is bytes.
+func (gate pyGate) isBytes(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_bytes(pyobj))
+}</span>
+
+// isComplex reports if PyObject is complex number.
+func (gate pyGate) isComplex(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_complex(pyobj))
+}</span>
+
+// isDict reports if PyObject is dict or similar.
+func (gate pyGate) isDict(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_map(pyobj))
+}</span>
+
+// isFloat reports if PyObject is floating point number.
+func (gate pyGate) isFloat(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_float(pyobj))
+}</span>
+
+// isLong reports if PyObject is long integer.
+func (gate pyGate) isLong(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_long(pyobj))
+}</span>
+
+// isSeq reports if PyObject is sequence.
+func (gate pyGate) isSeq(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_seq(pyobj))
+}</span>
+
+// isUnicode reports if PyObject is unicode string.
+func (gate pyGate) isUnicode(pyobj pyObject) bool <span class="cov8" title="1">{
+        return bool(C.py_obj_is_unicode(pyobj))
+}</span>
+
+// decodeError returns [ErrTypeConversion] for Python-&gt;Go conversion.
+func (gate pyGate) decodeError(pyobj pyObject, to string) error <span class="cov8" title="1">{
+        return ErrTypeConversion{
+                from: gate.typename(pyobj),
+                to:   to,
+        }
+}</span>
+
+// decodeBigint decodes PyLong_Type object as *big.Int
+func (gate pyGate) decodeBigint(pyobj pyObject) (*big.Int, error) <span class="cov8" title="1">{
+        if !bool(C.py_obj_is_long(pyobj)) </span><span class="cov8" title="1">{
+                return nil, gate.decodeError(pyobj, "*big.Int,")
+        }</span>
+
+        <span class="cov8" title="1">s, err := gate.repr(pyobj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">v := big.NewInt(0)
+        _, ok := v.SetString(s, 10)
+        assert.Must(ok) // FIXME
+
+        return v, nil</span>
+}
+
+// decodeBytes decodes PyBytes_Type or PyByteArray_Type object as []byte slice.
+func (gate pyGate) decodeBytes(pyobj pyObject) ([]byte, error) <span class="cov8" title="1">{
+        if bool(C.py_obj_is_bytes(pyobj)) </span><span class="cov8" title="1">{
+                // PyBytes_Type are immutable, so we return a copy.
+                var data unsafe.Pointer
+                var size C.size_t
+
+                ok := bool(C.py_bytes_get(pyobj, &amp;data, &amp;size))
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, gate.lastError()
+                }</span>
+
+                <span class="cov8" title="1">bytes := make([]byte, size)
+                src := unsafe.Slice((*byte)(data), size)
+                copy(bytes, src)
+
+                return bytes, nil</span>
+        }
+
+        <span class="cov8" title="1">if bool(C.py_obj_is_byte_array(pyobj)) </span><span class="cov8" title="1">{
+                // Python byte array is mutable object, so we return a slice,
+                // backed by the Python memory.
+                var data unsafe.Pointer
+                var size C.size_t
+
+                ok := bool(C.py_bytearray_get(pyobj, &amp;data, &amp;size))
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, gate.lastError()
+                }</span>
+
+                <span class="cov8" title="1">bytes := unsafe.Slice((*byte)(data), size)
+                return bytes, nil</span>
+        }
+
+        <span class="cov8" title="1">return nil, gate.decodeError(pyobj, "[]byte")</span>
+}
+
+// decodeComplex decodes pyObject as complex128.
+// It handles conversion from the compatible types.
+func (gate pyGate) decodeComplex(pyobj pyObject) (complex128, error) <span class="cov8" title="1">{
+        if bool(C.py_obj_is_complex(pyobj)) </span><span class="cov8" title="1">{
+                return gate.decodeExactComplex(pyobj)
+        }</span>
+
+        <span class="cov8" title="1">v, err := gate.decodeFloat(pyobj)
+        if err == nil </span><span class="cov8" title="1">{
+                return complex(float64(v), 0), nil
+        }</span>
+
+        <span class="cov8" title="1">return 0, err</span>
+}
+
+// decodeFloat decodes pyObject as float64.
+// It handles conversion from the compatible types.
+func (gate pyGate) decodeFloat(pyobj pyObject) (float64, error) <span class="cov8" title="1">{
+        if bool(C.py_obj_is_float(pyobj)) </span><span class="cov8" title="1">{
+                return gate.decodeExactFloat(pyobj)
+        }</span>
+
+        <span class="cov8" title="1">i64, err := gate.decodeExactInt64(pyobj)
+        if err == nil </span><span class="cov8" title="1">{
+                return float64(i64), nil
+        }</span>
+
+        <span class="cov8" title="1">if _, ovf := err.(ErrOverflow); ovf </span><span class="cov8" title="1">{
+                u64, err2 := gate.decodeExactUint64(pyobj)
+                if err2 == nil </span><span class="cov8" title="1">{
+                        return float64(u64), nil
+                }</span>
+        }
+
+        <span class="cov8" title="1">return 0, err</span>
+}
+
+// decodeInt64 decodes pyObject as int64.
+// It handles conversion from the compatible types.
+func (gate pyGate) decodeInt64(pyobj pyObject) (int64, error) <span class="cov8" title="1">{
+        if bool(C.py_obj_is_float(pyobj)) </span><span class="cov8" title="1">{
+                f64, err := gate.decodeExactFloat(pyobj)
+                if err == nil </span><span class="cov8" title="1">{
+                        if minInt64Float &lt;= f64 &amp;&amp; f64 &lt;= maxInt64Float </span><span class="cov8" title="1">{
+                                return int64(f64), nil
+                        }</span>
+
+                        <span class="cov8" title="1">s, _ := gate.repr(pyobj)
+                        return 0, ErrOverflow{s}</span>
+                }
+        }
+
+        <span class="cov8" title="1">return gate.decodeExactInt64(pyobj)</span>
+}
+
+// decodeUint64 decodes pyObject as uint64.
+// It handles conversion from the compatible types.
+func (gate pyGate) decodeUint64(pyobj pyObject) (uint64, error) <span class="cov8" title="1">{
+        if bool(C.py_obj_is_float(pyobj)) </span><span class="cov8" title="1">{
+                f64, err := gate.decodeExactFloat(pyobj)
+                if err == nil </span><span class="cov8" title="1">{
+                        if 0 &lt;= f64 &amp;&amp; f64 &lt;= maxUint64Float </span><span class="cov8" title="1">{
+                                return uint64(f64), nil
+                        }</span>
+
+                        <span class="cov8" title="1">s, _ := gate.repr(pyobj)
+                        return 0, ErrOverflow{s}</span>
+                }
+        }
+
+        <span class="cov8" title="1">return gate.decodeExactUint64(pyobj)</span>
+}
+
+// decodeExactComplex decodes pyObject as complex128.
+// The object type must be PyComplex_Type.
+func (gate pyGate) decodeExactComplex(pyobj pyObject) (complex128, error) <span class="cov8" title="1">{
+        if !bool(C.py_obj_is_complex(pyobj)) </span><span class="cov0" title="0">{
+                return 0, gate.decodeError(pyobj, "complex128")
+        }</span>
+
+        <span class="cov8" title="1">var real, imag C.double
+
+        ok := bool(C.py_complex_get(pyobj, &amp;real, &amp;imag))
+        if !ok </span><span class="cov0" title="0">{
+                return 0, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return complex(float64(real), float64(imag)), nil</span>
+}
+
+// decodeExactFloat decodes pyObject as float64.
+// The object type must be PyFloat_Type.
+func (gate pyGate) decodeExactFloat(pyobj pyObject) (float64, error) <span class="cov8" title="1">{
+        if !bool(C.py_obj_is_float(pyobj)) </span><span class="cov0" title="0">{
+                return 0, gate.decodeError(pyobj, "float64")
+        }</span>
+
+        <span class="cov8" title="1">var val C.double
+
+        ok := bool(C.py_float_get(pyobj, &amp;val))
+        if !ok </span><span class="cov0" title="0">{
+                return 0, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return float64(val), nil</span>
+}
+
+// decodeExactInt64 decodes pyObject as int64.
+// The object type must be PyLong_Type.
+func (gate pyGate) decodeExactInt64(pyobj pyObject) (int64, error) <span class="cov8" title="1">{
+        if !bool(C.py_obj_is_long(pyobj)) </span><span class="cov8" title="1">{
+                return 0, gate.decodeError(pyobj, "int64")
+        }</span>
+
+        <span class="cov8" title="1">var val C.int64_t
+        var ovf C.bool
+
+        ok := bool(C.py_long_get_int64(pyobj, &amp;val, &amp;ovf))
+        switch </span>{
+        case !ok:<span class="cov0" title="0">
+                return 0, gate.lastError()</span>
+        case bool(ovf):<span class="cov8" title="1">
+                s, _ := gate.repr(pyobj)
+                return 0, ErrOverflow{s}</span>
+        }
+
+        <span class="cov8" title="1">return int64(val), nil</span>
+}
+
+// decodeExactUint64 decodes pyObject as uint64.
+// The object type must be PyLong_Type.
+func (gate pyGate) decodeExactUint64(pyobj pyObject) (uint64, error) <span class="cov8" title="1">{
+        if !bool(C.py_obj_is_long(pyobj)) </span><span class="cov8" title="1">{
+                return 0, gate.decodeError(pyobj, "uint64")
+        }</span>
+
+        <span class="cov8" title="1">var val C.uint64_t
+        var ovf C.bool
+
+        ok := bool(C.py_long_get_uint64(pyobj, &amp;val, &amp;ovf))
+        switch </span>{
+        case !ok:<span class="cov0" title="0">
+                return 0, gate.lastError()</span>
+        case bool(ovf):<span class="cov8" title="1">
+                s, _ := gate.repr(pyobj)
+                return 0, ErrOverflow{s}</span>
+        }
+
+        <span class="cov8" title="1">return uint64(val), nil</span>
+}
+
+// decodeUnicode decodes PyUnicode_Type object as a string.
+func (gate pyGate) decodeUnicode(pyobj pyObject) (string, error) <span class="cov8" title="1">{
+        if !bool(C.py_obj_is_unicode(pyobj)) </span><span class="cov8" title="1">{
+                return "", gate.decodeError(pyobj, "string")
+        }</span>
+
+        <span class="cov8" title="1">sz := C.py_str_len(pyobj)
+        assert.Must(sz &gt;= 0) // It only happens if PyObject not Unicode
+
+        s := ""
+        if sz &gt; 0 </span><span class="cov8" title="1">{
+                buf := make([]rune, sz)
+                p := (*C.Py_UCS4)(unsafe.Pointer(&amp;buf[0]))
+                C.py_str_get(pyobj, p, C.size_t(sz))
+                s = string(buf)
+        }</span>
+
+        <span class="cov8" title="1">return s, nil</span>
+}
+
+// makeBigint makes a new PyLong_type object from *big.Int.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeBigint(v *big.Int) (pyObject, error) <span class="cov8" title="1">{
+        cs := C.CString(v.String())
+        defer C.free(unsafe.Pointer(cs))
+
+        return gate.objOrLastError(C.py_long_from_string(cs))
+}</span>
+
+// makeBool makes a new PyBool_Type object.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeBool(v bool) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_bool_make(C.bool(v)))
+}</span>
+
+// makeBytes makes a new PyList_Bytes object.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeBytes(data []byte) (pyObject, error) <span class="cov8" title="1">{
+        var p unsafe.Pointer
+        if len(data) != 0 </span><span class="cov8" title="1">{
+                p = unsafe.Pointer(&amp;data[0])
+        }</span>
+
+        <span class="cov8" title="1">return gate.objOrLastError(C.py_bytes_make(p, C.size_t(len(data))))</span>
+}
+
+// makeComplex makes a new PyComlex_Type object.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeComplex(v complex128) (pyObject, error) <span class="cov8" title="1">{
+        pyobj := C.py_complex_make(C.double(real(v)), C.double(imag(v)))
+        return gate.objOrLastError(pyobj)
+}</span>
+
+// makeDict makes a new PyDict_Type object.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeDict() (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_dict_make())
+}</span>
+
+// makeFloat makes a new PyFloatType object.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeFloat(v float64) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_float_make(C.double(v)))
+}</span>
+
+// makeInt makes a new PyLong_type object from int64.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeInt(v int64) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_long_from_int64(C.int64_t(v)))
+}</span>
+
+// makeList makes a new PyList_Type object of the given size.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeList(sz int) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_list_make(C.size_t(sz)))
+}</span>
+
+// makeString makes a new PyUnicoder_type object from string.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeString(v string) (pyObject, error) <span class="cov8" title="1">{
+        cs := C.CString(v)
+        defer C.free(unsafe.Pointer(cs))
+        return gate.objOrLastError(C.py_str_make(cs, C.size_t(len(v))))
+}</span>
+
+// makeTuple makes a new PyTuple_Type object of the given size.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeTuple(sz int) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_tuple_make(C.size_t(sz)))
+}</span>
+
+// makeUint makes a new PyLong_type object from uint64.
+// It returns strong object reference on success, nil on an error.
+func (gate pyGate) makeUint(v uint64) (pyObject, error) <span class="cov8" title="1">{
+        return gate.objOrLastError(C.py_long_from_uint64(C.uint64_t(v)))
+}</span>
+
+// getListItem retrieves the item of the PyList_Type the specified position.
+func (gate pyGate) getListItem(list pyObject, idx int) (pyObject, error) <span class="cov0" title="0">{
+        item := C.py_list_get(list, C.int(idx))
+        return gate.objOrLastError(item)
+}</span>
+
+// setListItem sets the item of the PyList_Type the specified position.
+// Internally, it creates a new strong reference to the item object.
+func (gate pyGate) setListItem(list, item pyObject, idx int) error <span class="cov8" title="1">{
+        if !bool(C.py_list_set(list, C.int(idx), item)) </span><span class="cov0" title="0">{
+                return gate.lastError()
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// getSeqItem retrieves the item of the sequence the specified position.
+func (gate pyGate) getSeqItem(tuple pyObject, idx int) (pyObject, error) <span class="cov8" title="1">{
+        item := C.py_seq_get(tuple, C.int(idx))
+        return gate.objOrLastError(item)
+}</span>
+
+// getTupleItem retrieves the item of the PyTuple_Type the specified position.
+func (gate pyGate) getTupleItem(tuple pyObject, idx int) (pyObject, error) <span class="cov0" title="0">{
+        item := C.py_tuple_get(tuple, C.int(idx))
+        return gate.objOrLastError(item)
+}</span>
+
+// setTupleItem sets the item of the PyTuple_Type the specified position.
+// Internally, it creates a new strong reference to the item object.
+func (gate pyGate) setTupleItem(tuple, item pyObject, idx int) error <span class="cov8" title="1">{
+        if !bool(C.py_tuple_set(tuple, C.int(idx), item)) </span><span class="cov0" title="0">{
+                return gate.lastError()
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// eval evaluates string as a Python statement.
+//
+// The name parameter indicates the Python source file name and
+// used only for diagnostic messages.
+//
+// If expr is true, input interpreted as a Python expression and
+// on success, its result returned as a *Object. Otherwise, input
+// interpreted as a multi-line Python script, and returned *Object
+// will be nil.
+func (gate pyGate) eval(s, name string, expr bool) (pyObject, error) <span class="cov8" title="1">{
+        // Convert expression and filename to the C strings
+        cs := C.CString(s)
+        defer C.free(unsafe.Pointer(cs))
+
+        cname := C.CString(name)
+        defer C.free(unsafe.Pointer(cname))
+
+        // Execute the expression
+        var pyobj pyObject
+        var lineno C.long
+        ok := bool(C.py_interp_eval(cs, cname, C.bool(expr), &amp;pyobj, &amp;lineno))
+        if !ok </span><span class="cov8" title="1">{
+                return nil, gate.lastErrorAt(name, int(lineno))
+        }</span>
+
+        <span class="cov8" title="1">return pyobj, nil</span>
+}
+
+// load loads (imports) string as a Python module.
+//
+// Module name is specified by the 'name' parameter and
+// the 'file' parameter is used as a file name for the
+// diagnostics messages.
+func (gate pyGate) load(s, name, file string) (pyObject, error) <span class="cov8" title="1">{
+        // Convert strings to C
+        cs := C.CString(s)
+        defer C.free(unsafe.Pointer(cs))
+
+        cname := C.CString(name)
+        defer C.free(unsafe.Pointer(cname))
+
+        cfile := C.CString(file)
+        defer C.free(unsafe.Pointer(cfile))
+
+        // Import the module
+        var pyobj pyObject
+        ok := bool(C.py_interp_load(cs, cname, cfile, &amp;pyobj))
+        if !ok </span><span class="cov8" title="1">{
+                return nil, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return pyobj, nil</span>
+}
+
+// py_capsule_make makes a new PyCapsule_Type object.
+// This object encapsulates an opaque C pointer with optional destructor.
+func (gate pyGate) makeCapsule(p unsafe.Pointer, name *C.char,
+        destructor C.PyCapsule_Destructor) (pyObject, error) <span class="cov8" title="1">{
+
+        capsule := C.py_capsule_make(p, name, destructor)
+        if capsule == nil </span><span class="cov0" title="0">{
+                return nil, gate.lastError()
+        }</span>
+
+        <span class="cov8" title="1">return capsule, nil</span>
+}
+
+// makeCfunction makes a new PyCFunction_Type object.
+// This object represents a Python-&gt;C callback.
+func (gate pyGate) makeCfunction(def *C.PyMethodDef,
+        self pyObject) (pyObject, error) <span class="cov8" title="1">{
+
+        cfunction := C.py_cfunction_make(def, self)
+        if cfunction == nil </span><span class="cov0" title="0">{
+                err := gate.lastError()
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return cfunction, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Python objects
+
+package cpython
+
+import (
+        "errors"
+        "math/big"
+        "runtime"
+
+        "github.com/OpenPrinting/go-mfp/internal/assert"
+)
+
+// Object represents a Python value or Python error.
+//
+// All Python interpreter calls that return values encapsulate them
+// into an Object. If a Python call fails, the error is also returned
+// encapsulated into an Object (referred to as an "error Object").
+//
+// Any operation performed on an error Object will return the same error
+// as the error Object contains. If an operation involves multiple
+// Objects (e.g., [Object.Call]), the error is inherited from the first
+// Object used, starting with the receiver.
+//
+// This enables chaining operations with error propagation through the chain.
+//
+// The error contained in an error Object is finally exposed when attempting
+// to convert the Object into a Go value (using functions like [Object.Int])
+// or can be inspected directly via the [Object.Err] method.
+//
+// Normally, Object lifetime is managed by Go's garbage collector,
+// so explicit release is unnecessary. However, Python values may be
+// released early for optimization by calling [Object.Invalidate].
+type Object struct {
+        py  *Python // interpreter that owns this Object
+        err error   // error value for error Object
+        oid objid   // object ID of the underlying *C.PyObject
+}
+
+// newObjectFromPython constructs new Object, decoded from PyObject.
+func newObjectFromPython(py *Python, gate pyGate, pyobj pyObject) *Object <span class="cov8" title="1">{
+        assert.Must(pyobj != nil)
+        obj := &amp;Object{
+                py:  py,
+                oid: py.newObjID(gate, pyobj),
+        }
+
+        runtime.SetFinalizer(obj, func(obj *Object) </span><span class="cov8" title="1">{
+                obj.finalizer()
+        }</span>)
+
+        <span class="cov8" title="1">return obj</span>
+}
+
+// newErrorObject constructs new Object, that represents the error
+func newErrorObject(py *Python, err error) *Object <span class="cov8" title="1">{
+        return &amp;Object{
+                py:  py,
+                err: err,
+                oid: 0,
+        }
+}</span>
+
+// finalizer is called when Object is garbage-collected.
+// It released *C.PyObject, associated with the Object.
+func (obj *Object) finalizer() <span class="cov8" title="1">{
+        if !obj.py.closed() </span><span class="cov8" title="1">{
+                gate, err := obj.py.gate()
+                if err == nil </span><span class="cov8" title="1">{
+                        obj.py.delObjID(gate, obj.oid)
+                        gate.release()
+                }</span>
+
+        }
+}
+
+// begin starts operations with Object by obtaining the pyGate
+// and *C.PyObject reference to the Object's value at the
+// cpython side.
+func (obj *Object) begin() (pyGate, pyObject, error) <span class="cov8" title="1">{
+        if obj.err != nil </span><span class="cov8" title="1">{
+                return pyGate{}, nil, obj.err
+        }</span>
+
+        <span class="cov8" title="1">gate, err := obj.py.gate()
+
+        if err == nil </span><span class="cov8" title="1">{
+                var pyobj pyObject
+                pyobj, err = obj.py.lookupObjID(gate, obj.oid)
+                if pyobj != nil </span><span class="cov8" title="1">{
+                        return gate, pyobj, nil
+                }</span>
+
+                <span class="cov8" title="1">gate.release()</span>
+        }
+
+        <span class="cov8" title="1">return pyGate{}, nil, err</span>
+}
+
+// Invalidate marks Object as invalid and releases Python value
+// that it might have.
+//
+// This is optimization call. You actually don't have to manage
+// Object lifetime manually. Go GC does it automatically. However,
+// this call may be useful to release Python value early, especially
+// if the value is heavyweight at the Python side.
+func (obj *Object) Invalidate() <span class="cov8" title="1">{
+        gate, err := obj.py.gate()
+        if err != nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">obj.py.delObjID(gate, obj.oid)
+        gate.release()
+
+        runtime.SetFinalizer(obj, nil)</span> // Finalizer is not required anymore
+}
+
+// Py returns the [Python] interpreter Object belongs to.
+func (obj *Object) Py() *Python <span class="cov8" title="1">{
+        return obj.py
+}</span>
+
+// Err returns error for the error Object, or nil if there
+// is no error.
+func (obj *Object) Err() error <span class="cov8" title="1">{
+        return obj.err
+}</span>
+
+// NotFound returns true, if [Object] is the error object
+// and error type is [ErrNotFound].
+func (obj *Object) NotFound() bool <span class="cov8" title="1">{
+        return obj.err == ErrNotFound{}
+}</span>
+
+// Len returns Object length, in items. It works with container
+// objects (lists, tuples, dict, ...).
+//
+// In Python:
+//
+//        len(obj)
+func (obj *Object) Len() (int, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.length)
+}</span>
+
+// Save sets the global variable 'name' to the Object's value:
+//
+//        name = obj
+//
+// This is the same as obj.Py().Set(name, obj).
+// This method is useful for operations chaining with error propagation:
+//
+//        // x = (2 * 3 + 5) % 7
+//        err = py.NewObject(2).Mul(3).Add(5).Mod(7).Save("x")
+func (obj *Object) Save(name string) error <span class="cov8" title="1">{
+        return obj.py.Set(name, obj)
+}</span>
+
+// SaveTo saves the global variable 'name' to the dest Object's attribute:
+//
+//        dest.name = obj
+//
+// See also [Object.Save].
+func (obj *Object) SaveTo(dest *Object, name string) error <span class="cov8" title="1">{
+        return dest.Set(name, obj)
+}</span>
+
+// SaveItem saves the global variable 'name' to the dest's item with
+// the specified key.
+//
+//        dest[key] = obj
+//
+// See also [Object.Save].
+func (obj *Object) SaveItem(dest *Object, key any) error <span class="cov8" title="1">{
+        return dest.SetItem(key, obj)
+}</span>
+
+// String returns string representation of the Object, for debugging
+// purposes.
+//
+// It tries [Object.Str], with fallback to obj.Err().Error()
+func (obj *Object) String() string <span class="cov8" title="1">{
+        s, err := obj.Str()
+        if err != nil </span><span class="cov8" title="1">{
+                s = err.Error()
+        }</span>
+        <span class="cov8" title="1">return s</span>
+}
+
+// Del deletes Object item with the specified key:
+//
+// In Python:
+//
+//        del(obj, key)
+//
+// The Object must be container (array, dict, etc).
+// The key may be any value that [Python.NewObject] accepts.
+func (obj *Object) Del(key any) (bool, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain *C.PyObject reference for key
+        pykey, err := obj.py.newPyObject(gate, key)
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pykey)
+
+        // Check for item existence, then delete, if found.
+        found, err := gate.hasitem(pyobj, pykey)
+        if found </span><span class="cov8" title="1">{
+                err = gate.delitem(pyobj, pykey)
+        }</span>
+
+        <span class="cov8" title="1">return found, err</span>
+}
+
+// GetItem returns Object item with the specified key:
+//
+//        ret = obj[key]
+//
+// The Object must be container (array, dict, etc).
+// The key may be any value that [Python.NewObject] accepts.
+func (obj *Object) GetItem(key any) *Object <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain *C.PyObject references for key
+        pykey, err := obj.py.newPyObject(gate, key)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pykey)
+
+        // Check if item exists, then retrieve
+        found, err := gate.hasitem(pyobj, pykey)
+        var pyitem pyObject
+        if found </span><span class="cov8" title="1">{
+                pyitem, err = gate.getitem(pyobj, pykey)
+        }</span> else<span class="cov8" title="1"> if err == nil </span><span class="cov8" title="1">{
+                err = ErrNotFound{}
+        }</span>
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+
+        // Create the item object
+        <span class="cov8" title="1">return newObjectFromPython(obj.py, gate, pyitem)</span>
+}
+
+// ContainsItem reports if Object has the item with the specified key:
+//
+//        ret = key in obj
+//
+// The Object must be container (array, dict, etc).
+// The key may be any value that [Python.NewObject] accepts.
+func (obj *Object) ContainsItem(key any) (bool, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain *C.PyIbject references for key
+        pykey, err := obj.py.newPyObject(gate, key)
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pykey)
+
+        // Check for item existence
+        return gate.hasitem(pyobj, pykey)</span>
+}
+
+// SetItem sets Object item with the specified name:
+//
+//        obj[name] = val
+//
+// The Object must be container (array, dict, etc).
+// The key and val may be any value that [Python.NewObject] accepts.
+func (obj *Object) SetItem(key, val any) error <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain *C.PyObject references for key and val
+        pykey, err := obj.py.newPyObject(gate, key)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pykey)
+
+        pyval, err := obj.py.newPyObject(gate, val)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyval)
+
+        // Set the item
+        return gate.setitem(pyobj, pykey, pyval)</span>
+}
+
+// DelAttr deletes Object attribute with the specified name:
+//
+//        delattr(obj, name)
+//
+// It returns:
+//   - (true, nil) if attribute was found and deleted
+//   - (false, nil) if attribute was not found
+//   - (false, error) in a case of error
+func (obj *Object) DelAttr(name string) (bool, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Delete the attribute. If attribute didn't exist,
+        // don't threat it as an error.
+        err = gate.delattr(pyobj, name)
+        if errors.Is(err, AttributeError) </span><span class="cov8" title="1">{
+                return false, nil
+        }</span>
+
+        <span class="cov8" title="1">return err == nil, err</span>
+}
+
+// Get returns Object attribute with the specified name:
+//
+//        ret = obj.name
+func (obj *Object) Get(name string) *Object <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Fetch the attribute
+        pyattr, err := gate.getattr(pyobj, name)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, AttributeError) </span><span class="cov8" title="1">{
+                        err = ErrNotFound{}
+                }</span>
+
+                <span class="cov8" title="1">return newErrorObject(obj.py, err)</span>
+        }
+
+        // Create the attribute object
+        <span class="cov8" title="1">return newObjectFromPython(obj.py, gate, pyattr)</span>
+}
+
+// HasAttr reports if Object has the attribute with the specified name.
+//
+//        hasattr(obj, name)
+func (obj *Object) HasAttr(name string) (bool, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return gate.hasattr(pyobj, name)</span>
+}
+
+// Set sets Object attribute with the specified name:
+//
+//        obj.name = val
+//
+// The val may be any value that [Python.NewObject] accepts.
+func (obj *Object) Set(name string, val any) error <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain *C.PyIbject references val
+        pyval, err := obj.py.newPyObject(gate, val)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyval)
+
+        // Set the attribute
+        return gate.setattr(pyobj, name, pyval)</span>
+}
+
+// Call calls Object as function.
+//
+// Arguments are automatically converted from Go to Python.
+// See [Python.NewObject] for details.
+//
+// Use [Object.CallKW] for call with keyword arguments.
+func (obj *Object) Call(args ...any) *Object <span class="cov8" title="1">{
+        return obj.CallKW(nil, args...)
+}</span>
+
+// CallKW calls Object as function with keyword arguments defined
+// by the kw parameter and positional arguments defined by the
+// args parameter (variadic).
+//
+// Arguments are automatically converted from Go to Python.
+// See [Python.NewObject] for details.
+//
+// If keyword arguments are not used, kw may be nil.
+//
+// It returns the function's return value.
+func (obj *Object) CallKW(kw map[string]any, args ...any) *Object <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Convert positional arguments
+        pyargs, err := gate.makeTuple(len(args))
+        if err != nil </span><span class="cov0" title="0">{
+                return newErrorObject(obj.py, err)
+        }</span>
+
+        <span class="cov8" title="1">defer gate.unref(pyargs)
+
+        for i, arg := range args </span><span class="cov8" title="1">{
+                pyarg, err := obj.py.newPyObject(gate, arg)
+                if err != nil </span><span class="cov8" title="1">{
+                        return newErrorObject(obj.py, err)
+                }</span>
+
+                <span class="cov8" title="1">err = gate.setTupleItem(pyargs, pyarg, i)
+                if err != nil </span><span class="cov0" title="0">{
+                        gate.unref(pyarg)
+                        return newErrorObject(obj.py, err)
+                }</span>
+        }
+
+        // Convert keyword arguments
+        <span class="cov8" title="1">var pykwargs pyObject
+        if len(kw) &gt; 0 </span><span class="cov8" title="1">{
+                var err error
+                pykwargs, err = obj.py.newPyObject(gate, kw)
+                if err != nil </span><span class="cov8" title="1">{
+                        return newErrorObject(obj.py, err)
+                }</span>
+
+                <span class="cov8" title="1">defer gate.unref(pykwargs)</span>
+        }
+
+        // Perform a call
+        <span class="cov8" title="1">pyret, err := gate.call(pyobj, pyargs, pykwargs)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+
+        // Create response Object
+        <span class="cov8" title="1">return newObjectFromPython(obj.py, gate, pyret)</span>
+}
+
+// Str returns string representation of the Object.
+// This is the equivalent of the Python expression str(x).
+func (obj *Object) Str() (string, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.str)
+}</span>
+
+// Repr returns string representation of the Object.
+// This is the equivalent of the Python expression repr(x).
+func (obj *Object) Repr() (string, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.repr)
+}</span>
+
+// Bigint returns Object value as *[big.Int] or an error.
+func (obj *Object) Bigint() (*big.Int, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeBigint)
+}</span>
+
+// Bool returns Object value as bool or an error.
+func (obj *Object) Bool() (bool, error) <span class="cov8" title="1">{
+        // Try the fast conversion
+        val, err := obj.fastBool()
+        if err == nil </span><span class="cov8" title="1">{
+                return val, nil
+        }</span>
+
+        // Try to call the __bool__ method
+        <span class="cov8" title="1">toBool := obj.Get("__bool__")
+        if toBool.Err() == nil </span><span class="cov8" title="1">{
+                val, err2 := toBool.Call().fastBool()
+                if err2 == nil </span><span class="cov8" title="1">{
+                        return val, nil
+                }</span>
+        }
+
+        <span class="cov8" title="1">return false, err</span>
+}
+
+// fastBool returns Object value as bool or an error.
+// This is the fast path for Obkect.Bool.
+func (obj *Object) fastBool() (bool, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return false, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        switch pyobj </span>{
+        case obj.py.pyTrue:<span class="cov8" title="1">
+                return true, nil</span>
+        case obj.py.pyFalse:<span class="cov8" title="1">
+                return false, nil</span>
+        }
+
+        <span class="cov8" title="1">return false, gate.decodeError(pyobj, "bool")</span>
+}
+
+// Bytes returns Object value as []byte slice or an error.
+func (obj *Object) Bytes() ([]byte, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeBytes)
+}</span>
+
+// Complex returns Object value as complex128 number or an error.
+func (obj *Object) Complex() (complex128, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeComplex)
+}</span>
+
+// Float returns Object value as float64 number or an error.
+func (obj *Object) Float() (float64, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeFloat)
+}</span>
+
+// Int returns Object value as int64 number or an error.
+func (obj *Object) Int() (int64, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeInt64)
+}</span>
+
+// Keys returns Object mapping keys as the []*Object slice.
+// The Object must support mapping.
+func (obj *Object) Keys() ([]*Object, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain keys as list (or tuple)
+        pykeys, err := gate.keys(pyobj)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">defer gate.unref(pykeys)
+
+        // Convert into []*Object slice
+        return objSlice(obj.py, gate, pykeys)</span>
+}
+
+// Slice returns Object value as []*Object slice or an error.
+// It works with sequence objects (lists, tuples, ...).
+func (obj *Object) Slice() ([]*Object, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return objSlice(obj.py, gate, pyobj)</span>
+}
+
+// Uint returns Object value as uint64 number or an error.
+func (obj *Object) Uint() (uint64, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeUint64)
+}</span>
+
+// Unicode returns Object value as UNICODE string or an error.
+func (obj *Object) Unicode() (string, error) <span class="cov8" title="1">{
+        return objDo(obj, pyGate.decodeUnicode)
+}</span>
+
+// TypeName returns name of the Object's Python type
+func (obj *Object) TypeName() string <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return gate.typename(pyobj)</span>
+}
+
+// TypeModuleName returns name of the module where Object's Python type
+// is defined.
+func (obj *Object) TypeModuleName() string <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return gate.typemodulename(pyobj)</span>
+}
+
+// IsCallable reports if Object is callable.
+func (obj *Object) IsCallable() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.callable)
+}</span>
+
+// IsBool reports if Object is boolean.
+func (obj *Object) IsBool() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isBool)
+}</span>
+
+// IsByteArray reports if Object is bytearray.
+// Python bytearray objects are writable sequences of bytes.
+// See also [Object.IsBytes].
+func (obj *Object) IsByteArray() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isByteArray)
+}</span>
+
+// IsBytes reports if Object is bytearray.
+// Python bytearray objects are immutable sequences of bytes.
+// See also [Object.IsByteArray].
+func (obj *Object) IsBytes() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isBytes)
+}</span>
+
+// IsComplex reports if Object is the complex number.
+func (obj *Object) IsComplex() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isComplex)
+}</span>
+
+// IsFloat reports if Object is the floating point number.
+func (obj *Object) IsFloat() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isFloat)
+}</span>
+
+// IsDict reports if Object is dict or similar.
+func (obj *Object) IsDict() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isDict)
+}</span>
+
+// IsLong reports if Object is the integer number.
+func (obj *Object) IsLong() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isLong)
+}</span>
+
+// IsNone reports if Object is Python None.
+func (obj *Object) IsNone() bool <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return pyobj == obj.py.pyNone</span>
+}
+
+// IsSeq reports if Object is sequence (i.e., list, tuple, ...).
+func (obj *Object) IsSeq() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isSeq)
+}</span>
+
+// IsUnicode reports if Object is the Unicode string
+func (obj *Object) IsUnicode() bool <span class="cov8" title="1">{
+        return objDoNoError(obj, pyGate.isUnicode)
+}</span>
+
+// objDo is the convenience wrapper for the pyGate methods
+// with the following signature:
+//
+//        pyGate.method(pyObject) (T, error)
+//
+// It acquires the pyGate for the Python interpreter that owns
+// the Object, calls the method, releases the gate and return
+// result.
+func objDo[T any](obj *Object, f func(pyGate, pyObject) (T, error)) (T, error) <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                var t T
+                return t, err
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return f(gate, pyobj)</span>
+}
+
+// objDoNoError is the convenience wrapper for the pyGate methods
+// with the following signature:
+//
+//        pyGate.method(pyObject) T
+//
+// It acquires the pyGate for the Python interpreter that owns
+// the Object, calls the method, releases the gate and return
+// result.
+func objDoNoError[T any](obj *Object, f func(pyGate, pyObject) T) T <span class="cov8" title="1">{
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                var t T
+                return t
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        return f(gate, pyobj)</span>
+}
+
+// objSlice is the helper function that extracts contained objects from the
+// sequence object and converts extracted objects into the []*Object slice.
+func objSlice(py *Python, gate pyGate, pyobj pyObject) ([]*Object, error) <span class="cov8" title="1">{
+        // Check that object is sequence
+        if !gate.isSeq(pyobj) </span><span class="cov8" title="1">{
+                return nil, gate.decodeError(pyobj, "[]*Object")
+        }</span>
+
+        // Obtain length
+        <span class="cov8" title="1">length, err := gate.length(pyobj)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        // Obtain items
+        <span class="cov8" title="1">pyobjects := make([]pyObject, length)
+        for i := range pyobjects </span><span class="cov8" title="1">{
+                pyobjects[i], err = gate.getSeqItem(pyobj, i)
+                if err != nil </span><span class="cov8" title="1">{
+                        for j := 0; j &lt; i; j++ </span><span class="cov8" title="1">{
+                                gate.unref(pyobjects[j])
+                        }</span>
+                        <span class="cov8" title="1">return nil, err</span>
+                }
+        }
+
+        // Convert into []*Object
+        <span class="cov8" title="1">objects := make([]*Object, length)
+        for i := range pyobjects </span><span class="cov8" title="1">{
+                objects[i] = newObjectFromPython(py, gate, pyobjects[i])
+        }</span>
+
+        <span class="cov8" title="1">return objects, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Object identifiers
+
+package cpython
+
+import (
+        "sync/atomic"
+
+        "github.com/OpenPrinting/go-mfp/internal/assert"
+)
+
+// objid uniquely identified each *C.PyObject owned by *C.PyInterpreterState
+type objid uint64
+
+// inc atomically increments the objid and returns the new value.
+func (oid *objid) inc() objid <span class="cov8" title="1">{
+        return objid(atomic.AddUint64((*uint64)(oid), 1))
+}</span>
+
+// objmap maintains the mapping between *C.PyObject-s and assigned objid-s.
+type objmap struct {
+        next   objid
+        mapped map[objid]pyObject
+        maplen atomic.Int32
+}
+
+// newObjmap creates a new objmap
+func newObjmap() *objmap <span class="cov8" title="1">{
+        return &amp;objmap{
+                mapped: make(map[objid]pyObject, 512),
+        }
+}</span>
+
+// put adds *C.PyObject to the map and returns assigned objid.
+func (omap *objmap) put(gate pyGate, obj pyObject) objid <span class="cov8" title="1">{
+        oid := omap.next.inc()
+        assert.Must(omap.mapped[oid] == nil)
+        omap.mapped[oid] = obj
+        omap.maplen.Store(int32(len(omap.mapped)))
+        return oid
+}</span>
+
+// get returns *C.PyObject by objid.
+func (omap *objmap) get(gate pyGate, oid objid) pyObject <span class="cov8" title="1">{
+        return omap.mapped[oid]
+}</span>
+
+// del removes the *C.PyObject from the map and deletes its strong reference.
+func (omap *objmap) del(gate pyGate, oid objid) <span class="cov8" title="1">{
+        obj := omap.mapped[oid]
+        delete(omap.mapped, oid)
+        omap.maplen.Store(int32(len(omap.mapped)))
+        gate.unref(obj)
+}</span>
+
+// purge removes all objects from the map.
+func (omap *objmap) purge(gate pyGate) <span class="cov8" title="1">{
+        objects := make([]pyObject, 0, len(omap.mapped))
+
+        for oid, obj := range omap.mapped </span><span class="cov8" title="1">{
+                objects = append(objects, obj)
+                delete(omap.mapped, oid)
+        }</span>
+
+        <span class="cov8" title="1">omap.maplen.Store(int32(len(omap.mapped)))
+
+        for _, obj := range objects </span><span class="cov8" title="1">{
+                gate.unref(obj)
+        }</span>
+}
+
+// count returns count of currently mapped objid-s
+// This is the testing interface.
+func (omap *objmap) count() int <span class="cov8" title="1">{
+        return int(omap.maplen.Load())
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Python interpreter.
+
+package cpython
+
+import (
+        "fmt"
+        "math/big"
+        "reflect"
+        "runtime"
+        "strings"
+
+        "github.com/OpenPrinting/go-mfp/internal/assert"
+)
+
+// Python represents a Python interpreter.
+// There are may be many interpreters within a single process.
+// Each has its own namespace and isolated from others.
+type Python struct {
+        interp   pyThreadState // Python sub-interpreter (its main thread state)
+        objects  *objmap       // Objects owned by the interpreter
+        pyNone   pyObject      // Cached None pyObject
+        pyTrue   pyObject      // Cached True pyObject
+        pyFalse  pyObject      // Cached False pyObject
+        objNone  *Object       // Cached None Object
+        objTrue  *Object       // Cached True Object
+        objFalse *Object       // Cached False Object
+        globals  *Object       // Global dictionary
+        builtins *Object       // __builtins__ dictionary
+}
+
+// NewPython creates a new Python interpreter.
+func NewPython() (py *Python, err error) <span class="cov8" title="1">{
+        interp, err := pyNewInterp()
+        if err == nil </span><span class="cov8" title="1">{
+                py = &amp;Python{
+                        interp:  interp,
+                        objects: newObjmap(),
+                }
+
+                // Load None, True and False singletons
+                gate, err := py.gate()
+                assert.NoError(err)
+
+                py.pyNone, err = gate.eval("None", "", true)
+                assert.NoError(err)
+
+                py.pyTrue, err = gate.eval("True", "", true)
+                assert.NoError(err)
+
+                py.pyFalse, err = gate.eval("False", "", true)
+                assert.NoError(err)
+
+                py.objNone = newObjectFromPython(py, gate, py.pyNone)
+                py.objTrue = newObjectFromPython(py, gate, py.pyTrue)
+                py.objFalse = newObjectFromPython(py, gate, py.pyFalse)
+
+                gate.release()
+
+                // Load global dictionary and __builtins__
+                py.globals = py.Eval("globals()")
+                assert.NoError(py.globals.Err())
+
+                py.builtins = py.Eval("__builtins__")
+                assert.NoError(py.globals.Err())
+        }</span>
+
+        <span class="cov8" title="1">return</span>
+}
+
+// Close closes the [Python] interpreter and releases all
+// resources it holds.
+func (py *Python) Close() <span class="cov8" title="1">{
+        gate, err := py.gate()
+        if err != nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+
+        // On ARM64, Py_EndInterpreter hangs in wait_for_thread_shutdown()
+        // because threading._shutdown() blocks on a semaphore that is never
+        // signalled in a subinterpreter context (CPython issues #122517, #87135).
+        //
+        // As a workaround, we call threading._shutdown() explicitly first
+        // (to process any atexit hooks), then replace it with a no-op so
+        // Py_EndInterpreter's internal call becomes harmless.
+        //
+        // See: https://github.com/OpenPrinting/go-mfp/issues/20
+        <span class="cov8" title="1">gate.eval(
+                "import threading\n"+
+                        "threading._shutdown = lambda: None\n",
+                "Python.Close",
+                false,
+        )
+
+        py.objects.purge(gate)
+
+        interp := py.interp
+        py.interp = nil
+
+        gate.release()
+
+        pyInterpDelete(interp)</span>
+}
+
+// closed reports if interpreter is closed.
+func (py *Python) closed() bool <span class="cov8" title="1">{
+        return py.interp == nil
+}</span>
+
+// Get returns item from the Python global scope:
+//
+//        ret = name
+//
+// It searches globals dictionary, then __builtins__
+func (py *Python) Get(name string) *Object <span class="cov8" title="1">{
+        obj := py.globals.GetItem(name)
+        if obj.NotFound() </span><span class="cov8" title="1">{
+                obj = py.builtins.Get(name)
+        }</span>
+
+        <span class="cov8" title="1">return obj</span>
+}
+
+// GetGlobal returns item from the interpreter's global dictionary:
+//
+//        ret = globals()[name]
+//
+// Unlike [Python.Get] it doesn't search __builtins__.
+func (py *Python) GetGlobal(name string) *Object <span class="cov8" title="1">{
+        return py.globals.GetItem(name)
+}</span>
+
+// Set sets item in the Python global scope:
+//
+//        name = val
+//
+// The val may be any value that [Python.NewObject] accepts.
+func (py *Python) Set(name string, val any) error <span class="cov8" title="1">{
+        return py.globals.SetItem(name, val)
+}</span>
+
+// Del deletes item from the Python global scope:
+//
+//        del(globals(), name)
+//
+// It returns:
+//   - (true, nil) if item was found and deleted
+//   - (false, nil) if item was not found
+//   - (false, error) in a case of error
+func (py *Python) Del(name string) (bool, error) <span class="cov8" title="1">{
+        return py.globals.Del(name)
+}</span>
+
+// Contains reports if the item is defined in the Python global
+// scope, either in globals or in __builtins__
+func (py *Python) Contains(name string) (bool, error) <span class="cov8" title="1">{
+        found, err := py.globals.ContainsItem(name)
+        if !found &amp;&amp; err == nil </span><span class="cov8" title="1">{
+                found, err = py.builtins.ContainsItem(name)
+        }</span>
+
+        <span class="cov8" title="1">return found, err</span>
+}
+
+// ContainsGlobal reports if the interpreter's global dictionary
+// contains the named item:
+//
+//        name in globals()
+func (py *Python) ContainsGlobal(name string) (bool, error) <span class="cov8" title="1">{
+        return py.globals.ContainsItem(name)
+}</span>
+
+// None returns the None Object
+func (py *Python) None() *Object <span class="cov8" title="1">{
+        return py.objNone
+}</span>
+
+// Bool returns the boolean Object
+func (py *Python) Bool(v bool) *Object <span class="cov8" title="1">{
+        if v </span><span class="cov8" title="1">{
+                return py.objTrue
+        }</span>
+
+        <span class="cov8" title="1">return py.objFalse</span>
+}
+
+// NewObject creates a new Python Object for the Go value.
+//
+// The following Go types are supported:
+//
+//        Go                              Python
+//        ==                              ======
+//
+//        nil                             None
+//
+//        bool and derivatives            PyBool_Type
+//
+//        int, int8, int16, int32,        PyLong_Type
+//        int64, uint, uint8, uint16,
+//        uint32, uint64 and derivatives
+//
+//        string and derivatives          PyUnicode_Type
+//
+//        [*big.Int]                      PyLong_Type
+//
+//        *Object                         new reference to the same PyObject
+//
+//        []byte, [...]byte               PyBytes_Type
+//
+//        []any, [...]any                 PyList_Type
+//
+//        [any]any                        PyDict_Type; key must be cmp.Ordered
+//                                        or bool
+func (py *Python) NewObject(val any) *Object <span class="cov8" title="1">{
+        gate, err := py.gate()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        pyobj, err := py.newPyObject(gate, val)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(py, err)
+        }</span>
+
+        <span class="cov8" title="1">return newObjectFromPython(py, gate, pyobj)</span>
+}
+
+// NewError creates a new Error object
+func (py *Python) NewError(err error) *Object <span class="cov8" title="1">{
+        return newErrorObject(py, err)
+}</span>
+
+// newPyObject is the internal function behind the [Python.NewObject]
+// which does all the dirty work of conversion value into the
+// Python Object.
+func (py *Python) newPyObject(gate pyGate, val any) (pyObject, error) <span class="cov8" title="1">{
+        // Handle special cases
+        if val == nil </span><span class="cov8" title="1">{
+                return py.pyNone, nil
+        }</span>
+
+        <span class="cov8" title="1">switch v := val.(type) </span>{
+        case *big.Int:<span class="cov8" title="1">
+                return gate.makeBigint(v)</span>
+        case *Object:<span class="cov8" title="1">
+                if v.err != nil </span><span class="cov8" title="1">{
+                        return nil, v.err
+                }</span>
+
+                <span class="cov8" title="1">pyobj, err := py.lookupObjID(gate, v.oid)
+                gate.ref(pyobj)
+                return pyobj, err</span>
+        case error:<span class="cov8" title="1">
+                return nil, v</span>
+        }
+
+        // Generic conversions
+        <span class="cov8" title="1">rv := reflect.ValueOf(val)
+        rt := rv.Type()
+
+        switch rt.Kind() </span>{
+        case reflect.Bool:<span class="cov8" title="1">
+                return gate.makeBool(rv.Bool())</span>
+
+        case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
+                reflect.Int64:<span class="cov8" title="1">
+                return gate.makeInt(rv.Int())</span>
+
+        case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32,
+                reflect.Uint64:<span class="cov8" title="1">
+                return gate.makeUint(rv.Uint())</span>
+
+        case reflect.Float32, reflect.Float64:<span class="cov8" title="1">
+                return gate.makeFloat(rv.Float())</span>
+
+        case reflect.Complex64, reflect.Complex128:<span class="cov8" title="1">
+                return gate.makeComplex(rv.Complex())</span>
+
+        case reflect.String:<span class="cov8" title="1">
+                return gate.makeString(rv.String())</span>
+
+        case reflect.Array, reflect.Slice:<span class="cov8" title="1">
+                if rt.Elem().Kind() == reflect.Uint8 </span><span class="cov8" title="1">{
+                        if rt.Kind() == reflect.Array &amp;&amp; !rv.CanAddr() </span><span class="cov8" title="1">{
+                                tmp := reflect.New(rt).Elem()
+                                reflect.Copy(tmp, rv)
+                                rv = tmp
+                        }</span>
+
+                        <span class="cov8" title="1">data := rv.Bytes()
+                        return gate.makeBytes(data)</span>
+                }
+                <span class="cov8" title="1">return py.newPyList(gate, val)</span>
+
+        case reflect.Map:<span class="cov8" title="1">
+                return py.newPyDict(gate, val)</span>
+
+        case reflect.Func:<span class="cov8" title="1">
+                return py.newPyFunction(gate, val)</span>
+
+        case reflect.Chan:<span class="cov8" title="1"></span>
+        case reflect.Interface:<span class="cov0" title="0"></span>
+        case reflect.Pointer:<span class="cov0" title="0"></span>
+        case reflect.Struct:<span class="cov8" title="1"></span>
+        case reflect.Uintptr:<span class="cov0" title="0"></span>
+        case reflect.UnsafePointer:<span class="cov0" title="0"></span>
+        }
+
+        <span class="cov8" title="1">err := ErrTypeConversion{
+                from: rt.String(),
+                to:   "Python object",
+        }
+
+        return nil, err</span>
+}
+
+// newPyList creates PyObject from array of slice of values.
+func (py *Python) newPyList(gate pyGate, val any) (pyObject, error) <span class="cov8" title="1">{
+        rv := reflect.ValueOf(val)
+        sz := rv.Len()
+
+        list, err := gate.makeList(sz)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">defer gate.unref(list)
+
+        for i := 0; i &lt; sz; i++ </span><span class="cov8" title="1">{
+                item := rv.Index(i).Interface()
+                pyobj, err := py.newPyObject(gate, item)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">err = gate.setListItem(list, pyobj, i)
+                gate.unref(pyobj) // Now owned by the list
+
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">gate.ref(list)
+        return list, nil</span>
+}
+
+// newPyList creates PyObject from the go map.
+func (py *Python) newPyDict(gate pyGate, val any) (pyObject, error) <span class="cov8" title="1">{
+        rv := reflect.ValueOf(val)
+
+        // Go maps are not ordered, while Python dictionaries
+        // are ordered. So sort the map keys, to have reproducible
+        // results.
+        //
+        // If keys cannot be sorted due to their type, map cannot
+        // be converted.
+        keys := rv.MapKeys()
+        ok := reflectSort(keys)
+        if !ok </span><span class="cov8" title="1">{
+                err := ErrTypeConversion{
+                        from: reflect.TypeOf(val).String(),
+                        to:   "Python dict",
+                }
+                return nil, err
+        }</span>
+
+        // Create a PyDict_Type object
+        <span class="cov8" title="1">pydict, err := gate.makeDict()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Populate the dictionary
+        <span class="cov8" title="1">for _, key := range keys </span><span class="cov8" title="1">{
+                pykey, err := py.newPyObject(gate, key.Interface())
+                if err != nil </span><span class="cov0" title="0">{
+                        gate.unref(pydict)
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">item := rv.MapIndex(key)
+                pyitem, err := py.newPyObject(gate, item.Interface())
+                if err != nil </span><span class="cov8" title="1">{
+                        gate.unref(pydict)
+                        gate.unref(pykey)
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">err = gate.setitem(pydict, pykey, pyitem)
+                gate.unref(pykey)
+                gate.unref(pyitem)
+
+                if err != nil </span><span class="cov0" title="0">{
+                        gate.unref(pydict)
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">return pydict, nil</span>
+}
+
+// newPyFunction creates a new callable object for Python-&gt;Go calls.
+func (py *Python) newPyFunction(gate pyGate, call any) (pyObject, error) <span class="cov8" title="1">{
+        // Obtain function name
+        name := "unknown"
+        if ff := runtime.FuncForPC(reflect.ValueOf(call).Pointer()); ff != nil </span><span class="cov8" title="1">{
+                name = ff.Name()
+                if i := strings.LastIndexByte(name, '/'); i &gt;= 0 </span><span class="cov8" title="1">{
+                        name = name[i+1:]
+                }</span>
+        }
+
+        // Create callback
+        <span class="cov8" title="1">cb := newCallback(py, name, call)
+        if cb == nil </span><span class="cov8" title="1">{
+                err := ErrTypeConversion{
+                        from: reflect.ValueOf(call).Type().String(),
+                        to:   "Python object",
+                }
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">pyobj, err := cb.object(gate)
+        if err != nil </span><span class="cov0" title="0">{
+                cb.Delete()
+        }</span>
+
+        <span class="cov8" title="1">return pyobj, err</span>
+}
+
+// Eval evaluates string as a Python expression and returns its value.
+func (py *Python) Eval(s string) *Object <span class="cov8" title="1">{
+        return py.eval(s, "", true)
+}</span>
+
+// Exec evaluates string as a Python script.
+//
+// The filename parameter specifies the Python source file name
+// and used only for diagnostic. If set to the empty string (""),
+// the reasonable default is provided.
+func (py *Python) Exec(s, filename string) error <span class="cov8" title="1">{
+        obj := py.eval(s, filename, false)
+        return obj.Err()
+}</span>
+
+// Load loads (imports) string as a Python module with name 'name' as if
+// it was loaded from the file 'file'.
+//
+// It returns the module [Object] or error Object on failure.
+func (py *Python) Load(s, name, file string) *Object <span class="cov8" title="1">{
+        gate, err := py.gate()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        pyobj, err := gate.load(s, name, file)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(py, err)
+        }</span>
+
+        <span class="cov8" title="1">return newObjectFromPython(py, gate, pyobj)</span>
+}
+
+// eval is the common body for Python.Eval and Python.Exec
+func (py *Python) eval(s, filename string, expr bool) *Object <span class="cov8" title="1">{
+        // Adjust filename to point to the Go file:line position
+        // of the called, if filename is not specified
+        if filename == "" </span><span class="cov8" title="1">{
+                pc := make([]uintptr, 1)
+                if n := runtime.Callers(3, pc); n &gt; 0 </span><span class="cov8" title="1">{
+                        frames := runtime.CallersFrames(pc)
+                        frame, _ := frames.Next()
+                        filename = fmt.Sprintf("%s:%d", frame.File, frame.Line)
+                }</span>
+        }
+
+        // Obtain pyGate
+        <span class="cov8" title="1">gate, err := py.gate()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Call interpreter
+        pyobj, err := gate.eval(s, filename, expr)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(py, err)
+        }</span>
+
+        <span class="cov8" title="1">if pyobj == nil </span><span class="cov8" title="1">{
+                return py.objNone
+        }</span>
+
+        <span class="cov8" title="1">return newObjectFromPython(py, gate, pyobj)</span>
+}
+
+// gate is the convenience wrapper for pyGateAcquire(py.interp)
+func (py *Python) gate() (pyGate, error) <span class="cov8" title="1">{
+        if py.interp == nil </span><span class="cov8" title="1">{
+                return pyGate{}, ErrClosed{}
+        }</span>
+
+        <span class="cov8" title="1">return pyGateAcquire(py.interp), nil</span>
+}
+
+// newObjID allocates new objiD for the *C.PyObject.
+func (py *Python) newObjID(gate pyGate, obj pyObject) objid <span class="cov8" title="1">{
+        return py.objects.put(gate, obj)
+}</span>
+
+// delObjID deletes *C.PyObject by objid.
+func (py *Python) delObjID(gate pyGate, oid objid) <span class="cov8" title="1">{
+        py.objects.del(gate, oid)
+}</span>
+
+// lookupObjID return *C.PyObject by objid.
+func (py *Python) lookupObjID(gate pyGate, oid objid) (pyObject, error) <span class="cov8" title="1">{
+        pyobj := py.objects.get(gate, oid)
+        if pyobj != nil </span><span class="cov8" title="1">{
+                return pyobj, nil
+        }</span>
+        <span class="cov8" title="1">return nil, ErrInvalidObject{}</span>
+}
+
+// countObjID returns count of active objid mappings.
+// This is the testing interface
+func (py *Python) countObjID() int <span class="cov8" title="1">{
+        return py.objects.count()
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Helper functions for reflect.Value
+
+package cpython
+
+import (
+        "reflect"
+        "sort"
+)
+
+// reflectErrorType is the reflect.Type of error
+var reflectErrorType = reflect.TypeOf(new(error)).Elem()
+
+// reflectSort sorts slice of reflect.Value in acceding order.
+//
+// Slice elements must be [cmp.Ordered] or bool.
+// All elements of the slice must be of the same type;
+//
+// It returns true if slice was sorted, false otherwise.
+func reflectSort(slice []reflect.Value) bool <span class="cov8" title="1">{
+        // If slice is empty, we have nothing to do
+        if len(slice) == 0 </span><span class="cov8" title="1">{
+                return true
+        }</span>
+
+        // Make sure all elements have the same type
+        <span class="cov8" title="1">typ := slice[0].Type()
+        for i := 1; i &lt; len(slice); i++ </span><span class="cov8" title="1">{
+                if slice[i].Type() != typ </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+
+        // Choose the proper less function
+        <span class="cov8" title="1">var less func(i, j int) bool
+
+        switch typ.Kind() </span>{
+        case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
+                reflect.Int64:<span class="cov8" title="1">
+
+                less = func(i, j int) bool </span><span class="cov8" title="1">{
+                        return slice[i].Int() &lt; slice[j].Int()
+                }</span>
+
+        case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32,
+                reflect.Uint64:<span class="cov8" title="1">
+
+                less = func(i, j int) bool </span><span class="cov8" title="1">{
+                        return slice[i].Uint() &lt; slice[j].Uint()
+                }</span>
+
+        case reflect.Float32, reflect.Float64:<span class="cov8" title="1">
+                less = func(i, j int) bool </span><span class="cov8" title="1">{
+                        return slice[i].Float() &lt; slice[j].Float()
+                }</span>
+
+        case reflect.String:<span class="cov8" title="1">
+                less = func(i, j int) bool </span><span class="cov8" title="1">{
+                        return slice[i].String() &lt; slice[j].String()
+                }</span>
+
+        case reflect.Bool:<span class="cov8" title="1">
+                less = func(i, j int) bool </span><span class="cov8" title="1">{
+                        return !slice[i].Bool() &amp;&amp; slice[j].Bool()
+                }</span>
+
+        default:<span class="cov8" title="1">
+                return false</span>
+        }
+
+        // And now sort the slice
+        <span class="cov8" title="1">sort.Slice(slice, less)
+
+        return true</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">// MFP - Miulti-Function Printers and scanners toolkit
+// CPython binding.
+//
+// Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
+// See LICENSE for license terms and conditions
+//
+// Unary operations on objects
+
+package cpython
+
+// Neg negates the Object:
+//
+//        ret = -obj
+func (obj *Object) Neg() *Object <span class="cov8" title="1">{
+        return obj.unop("__neg__")
+}</span>
+
+// Pos applies the unary '+' operation to the Object:
+//
+//        ret = +obj
+func (obj *Object) Pos() *Object <span class="cov8" title="1">{
+        return obj.unop("__pos__")
+}</span>
+
+// Invert inverts the Object:
+//
+//        ret = ~obj
+func (obj *Object) Invert() *Object <span class="cov8" title="1">{
+        return obj.unop("__invert__")
+}</span>
+
+// binop performs the named unary operation on the object.
+func (obj *Object) unop(name string) *Object <span class="cov8" title="1">{
+        // Acquire the gate and obtain the first object's *C.PyObject
+        gate, pyobj, err := obj.begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.release()
+
+        // Obtain callable *C.PyObject for the operation
+        pyop, err := gate.getattr(pyobj, name)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyop)
+
+        // Construct arguments
+        pyargs, err := gate.makeTuple(0)
+        if err != nil </span><span class="cov0" title="0">{
+                return newErrorObject(obj.py, err)
+        }</span>
+        <span class="cov8" title="1">defer gate.unref(pyargs)
+
+        // Call the operation
+        pyres, err := gate.call(pyop, pyargs, nil)
+        if err != nil </span><span class="cov8" title="1">{
+                return newErrorObject(obj.py, err)
+        }</span>
+
+        // Create the result object
+        <span class="cov8" title="1">return newObjectFromPython(obj.py, gate, pyres)</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
