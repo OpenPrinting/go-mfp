@@ -205,9 +205,6 @@ func (s *Server) httpError(query *transport.ServerQuery, err error) {
 		// Create the IPP response
 		rsp := err.Encode()
 
-		// Notify tracer if present
-		trace.OnResponse(query, goippResponse{rsp}, nil)
-
 		// Call OnIPPResponse hook
 		if s.options.Hooks.OnIPPResponse != nil {
 			rsp2 := s.options.Hooks.OnIPPResponse(query, rsp)
@@ -232,6 +229,10 @@ func (s *Server) httpError(query *transport.ServerQuery, err error) {
 		query.WriteHeader(http.StatusOK) // At HTTP level everything OK.
 
 		rsp.Encode(query)
+
+		// Notify tracer, if present (must be after WriteHeader so
+		// DumpResponse can read the correct response status).
+		trace.OnResponse(query, goippResponse{rsp}, nil)
 
 	default:
 		query.Reject(http.StatusInternalServerError, err)
