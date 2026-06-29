@@ -19,7 +19,7 @@ import (
 
 // ippExport converts the [ipp.Object] into the [cpython.Object].
 func ippExport(py *cpython.Python, s ipp.Object) *cpython.Object {
-	if legacy := py.Get("__use_legacy_format"); legacy.Err() == nil {
+	if legacyMode(py) {
 		return legacyIPPExport(py, s)
 	}
 

@@ -625,3 +625,12 @@ func legacyIPPImportValue(obj *cpython.Object) (
 	err = fmt.Errorf("%s cannot be converted to IPP value", obj.TypeName())
 	return
 }
+
+// legacyMode returns true of model generation works in legacy mode.
+//
+// This is temporary function that will be removed after completion
+// of the legacy->new format transition.
+func legacyMode(py *cpython.Python) bool {
+	legacy := py.Get("__use_legacy_format")
+	return legacy.Err() == nil
+}
