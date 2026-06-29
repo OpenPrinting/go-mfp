@@ -31,7 +31,7 @@ import (
 func structExport(py *cpython.Python,
 	kwmap map[string]string, s any) *cpython.Object {
 
-	if legacy := py.Get("__use_legacy_format"); legacy.Err() == nil {
+	if legacyMode(py) {
 		return legacyStructExport(py, kwmap, s)
 	}
 
