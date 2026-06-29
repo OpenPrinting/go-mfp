@@ -25,7 +25,7 @@ import (
 	"github.com/OpenPrinting/goipp"
 )
 
-func test_ScannerCapabilities() *abstract.ScannerCapabilities {
+func testScannerCapabilities() *abstract.ScannerCapabilities {
 	profiles := []abstract.SettingsProfile{
 		{
 			ColorModes: generic.MakeBitset(abstract.ColorModeColor),
@@ -55,18 +55,18 @@ func test_ScannerCapabilities() *abstract.ScannerCapabilities {
 	}
 }
 
-func test_NewScanner(t *testing.T, backend abstract.Scanner) *Scanner {
+func testNewScanner(t *testing.T, backend abstract.Scanner) *Scanner {
 	t.Helper()
 	return NewScanner(&PrinterAttributes{}, ScannerOptions{Scanner: backend})
 }
 
-func test_ScannerURL(srv *httptest.Server) (*url.URL, string) {
+func testScannerURL(srv *httptest.Server) (*url.URL, string) {
 	httpURL, _ := url.Parse(srv.URL + "/ipp/scan")
 	ippURI := fmt.Sprintf("ipp://%s/ipp/scan", srv.Listener.Addr())
 	return httpURL, ippURI
 }
 
-func test_GetNextDocumentData(
+func testGetNextDocumentData(
 	ctx context.Context,
 	client *Client,
 	ippURI string,
@@ -98,7 +98,7 @@ func test_GetNextDocumentData(
 	return nil, fmt.Errorf("timed out waiting for document data")
 }
 
-func test_ScanJobCreateOperation(ippURI string) JobCreateOperation {
+func testScanJobCreateOperation(ippURI string) JobCreateOperation {
 	return JobCreateOperation{
 		PrinterURI:             ippURI,
 		RequestingUserName:     optional.New("alice"),
@@ -146,7 +146,7 @@ func test_ScanJobCreateOperation(ippURI string) JobCreateOperation {
 // Get-Printer-Attributes → Create-Job → Get-Next-Document-Data.
 func Test_Scanner_HappyPath(t *testing.T) {
 	vscan := &abstract.VirtualScanner{
-		ScanCaps: test_ScannerCapabilities(),
+		ScanCaps: testScannerCapabilities(),
 		Resolution: abstract.Resolution{
 			XResolution: 300,
 			YResolution: 300,
@@ -154,11 +154,11 @@ func Test_Scanner_HappyPath(t *testing.T) {
 		PlatenImage: testutils.Images.JPEG100x75rgb8,
 	}
 
-	scanner := test_NewScanner(t, vscan)
+	scanner := testNewScanner(t, vscan)
 	srv := httptest.NewServer(scanner)
 	defer srv.Close()
 
-	httpURL, ippURI := test_ScannerURL(srv)
+	httpURL, ippURI := testScannerURL(srv)
 	client := NewClient(httpURL, nil)
 	ctx := context.Background()
 
@@ -198,7 +198,7 @@ func Test_Scanner_HappyPath(t *testing.T) {
 	// Step 2: Create-Job
 	createRq := &CreateJobRequest{
 		RequestHeader:      DefaultRequestHeader,
-		JobCreateOperation: test_ScanJobCreateOperation(ippURI),
+		JobCreateOperation: testScanJobCreateOperation(ippURI),
 		Job:                &JobAttributes{},
 	}
 	createRsp := &CreateJobResponse{}
@@ -221,7 +221,7 @@ func Test_Scanner_HappyPath(t *testing.T) {
 	jobID := createRsp.Job.JobID
 
 	// Step 3: Get-Next-Document-Data (first page)
-	docRsp, err := test_GetNextDocumentData(ctx, client, ippURI, jobID)
+	docRsp, err := testGetNextDocumentData(ctx, client, ippURI, jobID)
 	if err != nil {
 		t.Fatalf("Get-Next-Document-Data: %v", err)
 	}
@@ -251,7 +251,7 @@ func Test_Scanner_HappyPath(t *testing.T) {
 	}
 
 	// Step 4: Get-Next-Document-Data (end of scan)
-	endRsp, err := test_GetNextDocumentData(ctx, client, ippURI, jobID)
+	endRsp, err := testGetNextDocumentData(ctx, client, ippURI, jobID)
 	if err != nil {
 		t.Fatalf("Get-Next-Document-Data (end): %v", err)
 	}

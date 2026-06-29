@@ -47,6 +47,7 @@ type GetNextDocumentDataResponse struct {
 	Document *DocumentStatus
 }
 
+// DocumentStatus contains document status attributes.
 type DocumentStatus struct {
 	ObjectRawAttrs
 	DocumentStatusGroup
