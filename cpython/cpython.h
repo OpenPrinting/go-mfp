@@ -181,16 +181,20 @@ bool py_obj_getitem(PyObject *x, PyObject *key, PyObject **answer);
 // It returns true on success, false on error.
 bool py_obj_setitem(PyObject *x, PyObject *key, PyObject *value);
 
-// py_obj_call calls callable object (i.e., function, method, ...)
-// with the specified arguments.
+// py_obj_call calls a Python callable object (function, method, class, etc.)
+// with the specified positional and keyword arguments.
 //
-// The args parameter must be of PyTuple_Type object and it specified
-// the function parameters. It must not be NULL.
+// Parameters:
+//   x      - The callable Python object to invoke. Must not be NULL.
+//   args   - A tuple containing the positional arguments for the call.
+//            Must be a PyTuple_Type object and must not be NULL.
+//   kwargs - A dictionary containing the keyword arguments for the call.
+//            Must be a PyDict_Type object if provided. May be NULL
+//            to indicate no keyword arguments.
 //
-// The kwargs must be PyDict_Type and it specifies keyword arguments.
-// It can be NULL, if keyword arguments are not used.
-//
-// It returns strong object reference on success, NULL on an error.
+// Returns:
+//   A new strong reference to the result object on success, or NULL
+//   if an error occurs (a Python exception will be set).
 PyObject *py_obj_call(PyObject *x, PyObject *args, PyObject *kwargs);
 
 // py_obj_callable reports if object is callable.
