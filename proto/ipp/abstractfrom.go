@@ -73,10 +73,28 @@ func abstractInputColorModes(
 				add(KwInputColorModeBiLevel)
 			}
 			if prof.ColorModes.Contains(abstract.ColorModeMono) {
-				add(KwInputColorModeMonochrome)
+				if prof.Depths.IsEmpty() {
+					add(KwInputColorModeMonochrome)
+				} else {
+					if prof.Depths.Contains(abstract.ColorDepth8) {
+						add(KwInputColorModeMonochrome8)
+					}
+					if prof.Depths.Contains(abstract.ColorDepth16) {
+						add(KwInputColorModeMonochrome16)
+					}
+				}
 			}
 			if prof.ColorModes.Contains(abstract.ColorModeColor) {
-				add(KwInputColorModeColor)
+				if prof.Depths.IsEmpty() {
+					add(KwInputColorModeColor)
+				} else {
+					if prof.Depths.Contains(abstract.ColorDepth8) {
+						add(KwInputColorModeColor8)
+					}
+					if prof.Depths.Contains(abstract.ColorDepth16) {
+						add(KwInputColorModeRGB16)
+					}
+				}
 			}
 		}
 	}
@@ -181,9 +199,23 @@ func fromAbstractInputAttributes(req *abstract.ScannerRequest) InputAttributes {
 	case abstract.ColorModeBinary:
 		attrs.InputColorMode = optional.New(KwInputColorModeBiLevel)
 	case abstract.ColorModeMono:
-		attrs.InputColorMode = optional.New(KwInputColorModeMonochrome)
+		switch req.ColorDepth {
+		case abstract.ColorDepth8:
+			attrs.InputColorMode = optional.New(KwInputColorModeMonochrome8)
+		case abstract.ColorDepth16:
+			attrs.InputColorMode = optional.New(KwInputColorModeMonochrome16)
+		default:
+			attrs.InputColorMode = optional.New(KwInputColorModeMonochrome)
+		}
 	case abstract.ColorModeColor:
-		attrs.InputColorMode = optional.New(KwInputColorModeColor)
+		switch req.ColorDepth {
+		case abstract.ColorDepth8:
+			attrs.InputColorMode = optional.New(KwInputColorModeColor8)
+		case abstract.ColorDepth16:
+			attrs.InputColorMode = optional.New(KwInputColorModeRGB16)
+		default:
+			attrs.InputColorMode = optional.New(KwInputColorModeColor)
+		}
 	}
 
 	// Resolution

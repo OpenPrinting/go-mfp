@@ -30,16 +30,6 @@ type Server struct {
 // ServerOptions allows to specify options that can modify
 // the [Server] behavior.
 type ServerOptions struct {
-	// UseRawPrinterAttributes, if set, instruct [Printer]
-	// to return attributes, based on PrinterAttributes.RawAttrs
-	// instead of the the PrinterAttributes.Encode.
-	//
-	// It can be useful when the exact content and ordering of
-	// printer attributes needs to be specified, because conversion
-	// from the IPP attributes to and from the Go structure
-	// is not lossless.
-	UseRawPrinterAttributes bool
-
 	// Hooks defines IPP server hooks. See [ServerHooks]
 	// for details.
 	Hooks ServerHooks
@@ -178,9 +168,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		}
 	}
 
-	// Notify tracer, if present
-	trace.OnResponse(query, goippResponse{rsp}, nil)
-
 	// Log the response
 	buf.Reset()
 	rsp.Print(&buf, false)
@@ -190,6 +177,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	// Send response
 	query.ResponseHeader().Set("Content-Type", "application/ipp")
 	query.WriteHeader(http.StatusOK) // At HTTP level everything OK.
+
+	// Notify tracer, if present (must be after WriteHeader so
+	// DumpResponse can read the correct response status).
+	trace.OnResponse(query, goippResponse{rsp}, nil)
 
 	err = rsp.Encode(query)
 	if err != nil {

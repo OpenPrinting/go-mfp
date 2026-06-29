@@ -9,6 +9,7 @@
 package cpython
 
 import (
+	"errors"
 	"math/big"
 	"runtime"
 
@@ -68,13 +69,10 @@ func newErrorObject(py *Python, err error) *Object {
 // finalizer is called when Object is garbage-collected.
 // It released *C.PyObject, associated with the Object.
 func (obj *Object) finalizer() {
-	if !obj.py.closed() {
-		gate, err := obj.py.gate()
-		if err == nil {
-			obj.py.delObjID(gate, obj.oid)
-			gate.release()
-		}
-
+	gate, err := obj.py.gate()
+	if err == nil {
+		obj.py.delObjID(gate, obj.oid)
+		gate.release()
 	}
 }
 
@@ -134,7 +132,7 @@ func (obj *Object) Err() error {
 // NotFound returns true, if [Object] is the error object
 // and error type is [ErrNotFound].
 func (obj *Object) NotFound() bool {
-	return obj.err == ErrNotFound{}
+	return errors.Is(obj.err, ErrNotFound{})
 }
 
 // Len returns Object length, in items. It works with container
@@ -248,7 +246,8 @@ func (obj *Object) GetItem(key any) *Object {
 	if found {
 		pyitem, err = gate.getitem(pyobj, pykey)
 	} else if err == nil {
-		err = ErrNotFound{}
+		name, _ := gate.str(pykey)
+		err = ErrNotFound{name}
 	}
 
 	if err != nil {
@@ -328,13 +327,14 @@ func (obj *Object) DelAttr(name string) (bool, error) {
 	}
 	defer gate.release()
 
-	// Check for attribute existence, then delete
-	found, err := gate.hasattr(pyobj, name)
-	if found {
-		err = gate.delattr(pyobj, name)
+	// Delete the attribute. If attribute didn't exist,
+	// don't threat it as an error.
+	err = gate.delattr(pyobj, name)
+	if errors.Is(err, AttributeError) {
+		return false, nil
 	}
 
-	return found, err
+	return err == nil, err
 }
 
 // Get returns Object attribute with the specified name:
@@ -347,16 +347,13 @@ func (obj *Object) Get(name string) *Object {
 	}
 	defer gate.release()
 
-	// Check if attribute exists, then retrieve
-	found, err := gate.hasattr(pyobj, name)
-	var pyattr pyObject
-	if found {
-		pyattr, err = gate.getattr(pyobj, name)
-	} else if err == nil {
-		err = ErrNotFound{}
-	}
-
+	// Fetch the attribute
+	pyattr, err := gate.getattr(pyobj, name)
 	if err != nil {
+		if errors.Is(err, AttributeError) {
+			err = ErrNotFound{name}
+		}
+
 		return newErrorObject(obj.py, err)
 	}
 

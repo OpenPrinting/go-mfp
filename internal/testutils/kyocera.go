@@ -28,6 +28,10 @@ var Kyocera struct {
 				ScannerCapabilities []byte
 				ScannerStatus       []byte
 			}
+			// WS-Scan protocol samples
+			WSD struct {
+				GetScannerElementsResponse []byte
+			}
 		}
 	}
 }
@@ -39,6 +43,9 @@ func init() {
 		kyoceraECOSYSM2040dnScannerCapabilities
 	Kyocera.ECOSYS.M2040dn.ESCL.ScannerStatus =
 		kyoceraECOSYSM2040dnScannerStatus
+	Kyocera.ECOSYS.M2040dn.WSD.GetScannerElementsResponse =
+		kyoceraECOSYSM2040dnWSDGetScannerElementsResponse
+
 }
 
 //go:embed "data/Kyocera-ECOSYS-M2040dn-Printer-Attributes.ipp"
@@ -49,3 +56,6 @@ var kyoceraECOSYSM2040dnScannerCapabilities []byte
 
 //go:embed "data/Kyocera-ECOSYS-M2040dn-ScannerStatus.xml"
 var kyoceraECOSYSM2040dnScannerStatus []byte
+
+//go:embed "data/Kyocera-ECOSYS-M2040dn-WSD-GetScannerElementsResponse.xml"
+var kyoceraECOSYSM2040dnWSDGetScannerElementsResponse []byte

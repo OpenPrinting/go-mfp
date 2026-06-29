@@ -23,6 +23,22 @@ func (e ErrPython) Error() string {
 	return string(e.except) + ": " + e.msg
 }
 
+// Is reports if ErrPython matches the target error.
+//
+// ErrPython matches on the following cases:
+//   - target is ErrPython with the same exception type and message
+//   - target is [Except] and exception type is the same
+func (e ErrPython) Is(target error) bool {
+	switch target := target.(type) {
+	case Except:
+		return e.except == target
+	case ErrPython:
+		return e == target
+	}
+
+	return false
+}
+
 // ErrTypeConversion represents Go<->Python type conversion error.
 type ErrTypeConversion struct {
 	from, to string // from/to types that can't be converted
@@ -65,9 +81,27 @@ func (e ErrInvalidObject) Error() string {
 // ErrNotFound represents the error that occurs when retrieving
 // value from container (dict, array, ...) fails because key was
 // not found in the container
-type ErrNotFound struct{}
+type ErrNotFound struct{ name string }
 
 // Error returns error message. It implements the [error] interface.
 func (e ErrNotFound) Error() string {
-	return "item not found"
+	const s = "item not found"
+	if e.name == "" {
+		return s
+	}
+	return fmt.Sprintf("%s: %s", e.name, s)
+}
+
+// Is reports if ErrNotFound matches the target error.
+//
+// ErrNotFound matches on the following cases:
+//   - target is ErrNotFound with the same item name
+//   - target is ErrNotFound with the empty item name
+func (e ErrNotFound) Is(target error) bool {
+	switch target := target.(type) {
+	case ErrNotFound:
+		return e.name == target.name || target.name == ""
+	}
+
+	return false
 }

@@ -5,10 +5,10 @@
 // See LICENSE for license terms and conditions
 //
 // Tests for error types
-
 package cpython
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -29,6 +29,38 @@ func TestErrPython(t *testing.T) {
 	got := e.Error()
 	if !strings.Contains(got, "RuntimeError") || !strings.Contains(got, "something went wrong") {
 		t.Fatalf("ErrPython.Error() = %q, want it to contain exception and message", got)
+	}
+}
+
+// TestErrPythonIs verifies all branches of ErrPython.Is directly.
+func TestErrPythonIs(t *testing.T) {
+	e := ErrPython{except: "RuntimeError", msg: "something went wrong"}
+
+	// case Except: → true  (hit via errors.Is which calls e.Is with Except as error)
+	if !errors.Is(e, Except("RuntimeError")) {
+		t.Error("expected ErrPython to match Except with same type")
+	}
+
+	// case Except: → false
+	if errors.Is(e, Except("ValueError")) {
+		t.Error("expected ErrPython not to match Except with different type")
+	}
+
+	// case ErrPython: → true  (call Is directly so type switch sees ErrPython, not error)
+	same := ErrPython{except: "RuntimeError", msg: "something went wrong"}
+	if !e.Is(same) {
+		t.Error("expected ErrPython.Is to return true for identical ErrPython")
+	}
+
+	// case ErrPython: → false
+	diff := ErrPython{except: "RuntimeError", msg: "different message"}
+	if e.Is(diff) {
+		t.Error("expected ErrPython.Is to return false for different ErrPython")
+	}
+
+	// default return false — unrelated type
+	if e.Is(ErrClosed{}) {
+		t.Error("expected ErrPython.Is to return false for unrelated error type")
 	}
 }
 

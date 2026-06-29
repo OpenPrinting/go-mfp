@@ -34,16 +34,15 @@ type Model struct {
 	wsdScanCaps     *wsscan.GetScannerElementsResponse
 
 	// Modules
-	modQuery  *cpython.Object // query.py
-	modIPP    *cpython.Object // ipp.py
-	modEscl   *cpython.Object // escl.py
-	modWSScan *cpython.Object // wsd.py
+	modHelpers *cpython.Object // helpers.py
+	modQuery   *cpython.Object // query.py
+	modIPP     *cpython.Object // ipp.py
+	modEscl    *cpython.Object // escl.py
+	modWSScan  *cpython.Object // wsd.py
 
 	// Important Python class constructors
-	clsDict            *cpython.Object // dict
 	clsHTTPMessage     *cpython.Object // query.HTTPMessage
 	clsQuery           *cpython.Object // query.Query constructor
-	clsUUID            *cpython.Object // uuid.UUID
 	clsDateTimeFromISO *cpython.Object // datetime.datetime.fromisoformat
 
 	// Python hooks for eSCL
@@ -79,6 +78,11 @@ func NewModel() (*Model, error) {
 	}
 
 	// Load modules
+	model.modHelpers = py.Load(embedPyHelpers, "helpers", "helpers.py")
+	if err := model.modHelpers.Err(); err != nil {
+		return nil, err
+	}
+
 	model.modQuery = py.Load(embedPyQuery, "query", "query.py")
 	if err := model.modQuery.Err(); err != nil {
 		return nil, err
@@ -100,11 +104,6 @@ func NewModel() (*Model, error) {
 	}
 
 	// Load commonly used class constructors
-	model.clsDict = py.Eval("dict")
-	if err != nil {
-		return nil, err
-	}
-
 	model.clsQuery = py.Eval("query.Query")
 	if err := model.clsQuery.Err(); err != nil {
 		return nil, err
@@ -115,21 +114,14 @@ func NewModel() (*Model, error) {
 		return nil, err
 	}
 
-	model.clsUUID = py.Eval("UUID")
-	if err := model.clsUUID.Err(); err != nil {
-		return nil, err
-	}
-
 	model.clsDateTimeFromISO = py.Eval("datetime.fromisoformat")
 	if err := model.clsDateTimeFromISO.Err(); err != nil {
 		return nil, err
 	}
 
 	// Verify things
-	assert.Must(model.clsDict.IsCallable())
 	assert.Must(model.clsHTTPMessage.IsCallable())
 	assert.Must(model.clsQuery.IsCallable())
-	assert.Must(model.clsUUID.IsCallable())
 	assert.Must(model.clsDateTimeFromISO.IsCallable())
 
 	return model, nil
@@ -160,7 +152,7 @@ func (model *Model) Write(w io.Writer) (err error) {
 
 	// Format parts
 	if model.ippPrinterAttrs != nil {
-		obj := model.pyExportIPP(model.ippPrinterAttrs)
+		obj := ippExport(model.py, model.ippPrinterAttrs)
 		ipp, err = formatPython(obj)
 		if err != nil {
 			return
@@ -168,7 +160,7 @@ func (model *Model) Write(w io.Writer) (err error) {
 	}
 
 	if model.esclScanCaps != nil {
-		obj := model.pyExportStruct(keywordMapESCL, model.esclScanCaps)
+		obj := structExport(model.py, keywordMapESCL, model.esclScanCaps)
 		escl, err = formatPython(obj)
 		if err != nil {
 			return
@@ -176,7 +168,7 @@ func (model *Model) Write(w io.Writer) (err error) {
 	}
 
 	if model.wsdScanCaps != nil {
-		obj := model.pyExportStruct(keywordMapWSD, model.wsdScanCaps)
+		obj := structExport(model.py, keywordMapWSD, model.wsdScanCaps)
 		wsd, err = formatPython(obj)
 		if err != nil {
 			return

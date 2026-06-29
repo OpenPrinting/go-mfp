@@ -11,6 +11,9 @@ package ieee1284
 import (
 	"bytes"
 	"strings"
+
+	"github.com/OpenPrinting/go-mfp/abstract"
+	"github.com/OpenPrinting/go-mfp/log"
 )
 
 // UEL is the Universal Exit Language escape sequence.
@@ -32,9 +35,6 @@ type JobParams struct {
 	Variables map[string]string
 }
 
-// DocumentHandler is called when a complete document is extracted
-// from the print stream.
-type DocumentHandler func(format DocFormat, params JobParams, data []byte)
 
 // parserState represents the current state of the stream parser.
 type parserState int
@@ -231,10 +231,37 @@ func (p *Printer) feedDocument() bool {
 	return false
 }
 
-// emitDocument calls the handler with the completed document.
+// emitDocument calls the backend with the completed document.
 func (p *Printer) emitDocument() {
-	if p.handler != nil && len(p.docBuf) > 0 {
-		p.handler(p.format, p.params, p.docBuf)
+	if p.backend != nil && len(p.docBuf) > 0 {
+		params := abstract.PrinterRequest{
+			Format:  p.format.MIME(),
+			JobName: p.params.JobName,
+		}
+
+		// Map PJL SET variables to typed PrinterRequest fields.
+		// Keys are stored uppercase by the PJL parser.
+		if v, ok := p.params.Variables["DUPLEX"]; ok {
+			switch strings.ToUpper(v) {
+			case "ON":
+				params.Sides = abstract.SidesTwoSidedLongEdge
+			case "OFF":
+				params.Sides = abstract.SidesOneSided
+			}
+		}
+		if v, ok := p.params.Variables["COLORMODE"]; ok {
+			switch strings.ToUpper(v) {
+			case "COLOR":
+				params.ColorMode = abstract.ColorModeColor
+			case "MONO", "MONOCHROME", "GRAYSCALE":
+				params.ColorMode = abstract.ColorModeMono
+			}
+		}
+
+		body := bytes.NewReader(p.docBuf)
+		if err := p.backend.PrintDocument(params, body); err != nil {
+			log.Error(p.ctx, "ieee1284: PrintDocument: %s", err)
+		}
 	}
 	p.docBuf = nil
 	p.format = DocFormatUnknown

@@ -13,9 +13,13 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/textproto"
 
+	"github.com/OpenPrinting/go-mfp/log/trace"
+	"github.com/OpenPrinting/go-mfp/transport"
 	"github.com/OpenPrinting/go-mfp/util/generic"
+	"github.com/OpenPrinting/go-mfp/util/uuid"
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
 )
 
@@ -169,20 +173,23 @@ func mtomContentType(boundary, envelopeCID string) string {
 // with the SOAP envelope as the first part and the binary
 // attachment from [RetrieveImageResponse] as the second part.
 //
-// The caller must set HTTP headers (using [mtomContentType]) and
-// call WriteHeader before invoking writeMTOM, because writeMTOM
-// writes directly to w.
-//
-// The boundary and envelopeCID must match the values used in the
-// Content-Type header.
-func (msg Message) writeMTOM(w io.Writer, boundary, envelopeCID string) error {
+// Message.Body type must be *RetrieveImageResponse
+func (msg Message) writeMTOM(query *transport.ServerQuery) error {
 	body := msg.Body.(*RetrieveImageResponse)
+
+	// Write HTTP header
+	boundary := uuid.Random().String()
+	envelopeCID := uuid.Random().String()
+
+	query.ResponseHeader().Set("Content-Type",
+		mtomContentType(boundary, envelopeCID))
+	query.WriteHeader(http.StatusOK)
 
 	// Encode the SOAP envelope
 	soapData := msg.Encode()
 
 	// Create multipart writer with the pre-determined boundary
-	mw := multipart.NewWriter(w)
+	mw := multipart.NewWriter(query)
 	if err := mw.SetBoundary(boundary); err != nil {
 		return err
 	}
@@ -203,6 +210,11 @@ func (msg Message) writeMTOM(w io.Writer, boundary, envelopeCID string) error {
 		return err
 	}
 
+	// Notify tracer. We do it now, so only the attached
+	// image will be captured by tracer as data attachment.
+	image := trace.OnResponse(query, traceMessage{msg}, body.Image)
+	defer image.Close()
+
 	// Part 2: Image data (streamed)
 	imagePart, err := mw.CreatePart(textproto.MIMEHeader{
 		"Content-Type":              {body.ContentType},
@@ -212,7 +224,7 @@ func (msg Message) writeMTOM(w io.Writer, boundary, envelopeCID string) error {
 	if err != nil {
 		return err
 	}
-	if _, err = io.Copy(imagePart, body.Image); err != nil {
+	if _, err = io.Copy(imagePart, image); err != nil {
 		return err
 	}
 

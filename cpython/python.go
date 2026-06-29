@@ -14,6 +14,8 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 )
@@ -22,24 +24,27 @@ import (
 // There are may be many interpreters within a single process.
 // Each has its own namespace and isolated from others.
 type Python struct {
-	interp   pyThreadState // Python sub-interpreter (its main thread state)
-	objects  *objmap       // Objects owned by the interpreter
-	pyNone   pyObject      // Cached None pyObject
-	pyTrue   pyObject      // Cached True pyObject
-	pyFalse  pyObject      // Cached False pyObject
-	objNone  *Object       // Cached None Object
-	objTrue  *Object       // Cached True Object
-	objFalse *Object       // Cached False Object
-	globals  *Object       // Global dictionary
-	builtins *Object       // __builtins__ dictionary
+	closelock sync.RWMutex  // Sync between Python.gate() and Python.Close()
+	interp    pyInterpState // Python sub-interpreter
+	tstate    pyThreadState // its main thread state
+	objects   *objmap       // Objects owned by the interpreter
+	pyNone    pyObject      // Cached None pyObject
+	pyTrue    pyObject      // Cached True pyObject
+	pyFalse   pyObject      // Cached False pyObject
+	objNone   *Object       // Cached None Object
+	objTrue   *Object       // Cached True Object
+	objFalse  *Object       // Cached False Object
+	globals   *Object       // Global dictionary
+	builtins  *Object       // __builtins__ dictionary
 }
 
 // NewPython creates a new Python interpreter.
 func NewPython() (py *Python, err error) {
-	interp, err := pyNewInterp()
+	tstate, interp, err := pyNewInterp()
 	if err == nil {
 		py = &Python{
 			interp:  interp,
+			tstate:  tstate,
 			objects: newObjmap(),
 		}
 
@@ -70,16 +75,31 @@ func NewPython() (py *Python, err error) {
 		assert.NoError(py.globals.Err())
 	}
 
+	pythonInstancesCount.Add(1)
+
 	return
 }
 
 // Close closes the [Python] interpreter and releases all
 // resources it holds.
 func (py *Python) Close() {
-	gate, err := py.gate()
-	if err != nil {
+	// Synchronization between py.Close() and py.gate() is subtle.
+	//
+	// py.gate() cannot be used here because it would race with the
+	// check for py.interp == nil inside py.gate(). Instead, we
+	// atomically mark Python as closed (py.interp = nil) and
+	// acquire pyGate via pyGateAcquire(), partially duplicating
+	// py.gate() logic for this specific case.
+	py.closelock.Lock()
+	tstate, interp := py.tstate, py.interp
+	py.tstate, py.interp = nil, nil
+	py.closelock.Unlock()
+
+	if interp == nil {
 		return
 	}
+
+	gate := pyGateAcquire(interp)
 
 	// On ARM64, Py_EndInterpreter hangs in wait_for_thread_shutdown()
 	// because threading._shutdown() blocks on a semaphore that is never
@@ -97,19 +117,17 @@ func (py *Python) Close() {
 		false,
 	)
 
+	// Destroy all objects
 	py.objects.purge(gate)
 
-	interp := py.interp
-	py.interp = nil
-
+	// Now safe to release the gate
 	gate.release()
 
-	pyInterpDelete(interp)
-}
+	// And finally delete the interpreter
+	pyInterpDelete(tstate, interp)
 
-// closed reports if interpreter is closed.
-func (py *Python) closed() bool {
-	return py.interp == nil
+	// Update statistics counter
+	pythonInstancesCount.Add(-1)
 }
 
 // Get returns item from the Python global scope:
@@ -504,6 +522,10 @@ func (py *Python) eval(s, filename string, expr bool) *Object {
 
 // gate is the convenience wrapper for pyGateAcquire(py.interp)
 func (py *Python) gate() (pyGate, error) {
+	// Synchronize with py.Close()
+	py.closelock.RLock()
+	defer py.closelock.RUnlock()
+
 	if py.interp == nil {
 		return pyGate{}, ErrClosed{}
 	}
@@ -534,4 +556,15 @@ func (py *Python) lookupObjID(gate pyGate, oid objid) (pyObject, error) {
 // This is the testing interface
 func (py *Python) countObjID() int {
 	return py.objects.count()
+}
+
+// pythonInstancesCount contains count of active Python instances.
+var pythonInstancesCount atomic.Int32
+
+// PythonInstancesCount returns count of active [Python] instances.
+// [NewPython] increments this counter and [Python.Close] decrements it.
+//
+// This is the testing interface.
+func PythonInstancesCount() int {
+	return int(pythonInstancesCount.Load())
 }

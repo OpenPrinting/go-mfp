@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"runtime"
+	"strings"
 	"unsafe"
 
 	"github.com/OpenPrinting/go-mfp/internal/assert"
@@ -35,7 +36,7 @@ type pyGate struct{}
 //
 // It returns the pyGate object, that must be released after
 // use with the [pyGate.release] call.
-func pyGateAcquire(interp pyThreadState) pyGate {
+func pyGateAcquire(interp pyInterpState) pyGate {
 	runtime.LockOSThread()
 	C.py_enter(interp)
 	return pyGate{}
@@ -210,6 +211,7 @@ func (gate pyGate) str(pyobj pyObject) (s string, err error) {
 		s, err = gate.decodeUnicode(str)
 	}
 
+	err = gate.lastError()
 	return
 }
 
@@ -221,14 +223,26 @@ func (gate pyGate) repr(pyobj pyObject) (s string, err error) {
 		s, err = gate.decodeUnicode(repr)
 	}
 
+	err = gate.lastError()
 	return
 }
 
 // typename returns name of the PyObject's type
 func (gate pyGate) typename(pyobj pyObject) string {
+	module := "unknown"
 	name := "unknown"
 
 	t := pyObject(unsafe.Pointer(C.py_obj_type(pyobj)))
+
+	if tmp, err := gate.getattr(t, "__module__"); err == nil {
+		s, err := gate.str(tmp)
+		C.py_obj_unref(tmp)
+
+		if err == nil {
+			module = s
+		}
+	}
+
 	if tmp, err := gate.getattr(t, "__name__"); err == nil {
 		s, err := gate.str(tmp)
 		C.py_obj_unref(tmp)
@@ -238,6 +252,7 @@ func (gate pyGate) typename(pyobj pyObject) string {
 		}
 	}
 
+	name, _ = strings.CutPrefix(module+"."+name, "builtins.")
 	return name
 }
 

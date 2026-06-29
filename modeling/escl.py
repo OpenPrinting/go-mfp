@@ -8,97 +8,26 @@
 
 from uuid import UUID
 from typing import TypedDict
+from helpers import collection
 
-# Range represents range of integers
-class Range (TypedDict):
-    Min: int
-    Max: int
-    Normal: int
-    Step: int
-
-# Region represents scanning region
-class Region (TypedDict):
-    Width: int
-    Height: int
-    XOffset: int
-    YOffset: int
-
-# Intent keywords:
-Document = 'Document'
-TextAndGraphic = 'TextAndGraphic'
-Photo = 'Photo'
-Preview = 'Preview'
-Object = 'Object'
-BusinessCard = 'BusinessCard'
-
-# ContentType keywords:
-Photo = 'Photo'
-Text = 'Text'
-TextAndPhoto = 'TextAndPhoto'
-LineArt = 'LineArt'
-Magazine = 'Magazine'
-Halftone = 'Halftone'
-Auto = 'Auto'
-
-# InputSource keywords:
-Platen = 'Platen'
-Feeder = 'Feeder'
-Camera = 'Camera'
-
-# ColorMode keywords:
-BlackAndWhite1 = 'BlackAndWhite1'
-Grayscale8 = 'Grayscale8'
-Grayscale16 = 'Grayscale16'
-RGB24 = 'RGB24'
-RGB48 = 'RGB48'
-
-# CcdChannel keywords:
-Red = 'Red'
-Green = 'Green'
-Blue = 'Blue'
-NTSC = 'NTSC'
-GrayCcd = 'GrayCcd'
-GrayCcdEmulated = 'GrayCcdEmulated'
-
-# BinaryRendering keywords:
-Halftone = 'Halftone'
-Threshold = 'Threshold'
-
-# FeedDirection keywords:
-LongEdgeFeed = 'LongEdgeFeed'
-ShortEdgeFeed = 'ShortEdgeFeed'
-
-# ScanSettings is the eSCL scan request:
-#
-# POST /{root}/ScanJobs       - to start scanning
-# PUT  /{root}/ScanBufferInfo - to estimate actual scanning parameters
-class ScanSettings(TypedDict):
-    Version: str
-    Intent: str
-    ScanRegions: list
-    DocumentFormat: str
-    DocumentFormatExt: str
-    ContentType: str
-    InputSource: str
-    XResolution: int
-    YResolution: int
-    ColorMode: str
-    ColorSpace: str
-    CcdChannel: str
-    BinaryRendering: str
-    Duplex: str
-    FeedDirection: str
-    Brightness: int
-    CompressionFactor: int
-    Contrast: int
-    Gamma: int
-    Highlight: int
-    NoiseRemoval: int
-    Shadow: int
-    Sharpen: int
-    Threshold: int
-    BlankPageDetection: bool
-    BlankPageDetectionAndRemoval: bool
+# eSCL types
+class Adf(collection): pass
+class Camera(collection): pass
+class DiscreteResolution(collection): pass
+class InputSourceCaps(collection): pass
+class JobInfo(collection): pass
+class Platen(collection): pass
+class Range(collection): pass
+class Region(collection): pass
+class ResolutionRange(collection): pass
+class ScanBufferInfo(collection): pass
+class ScanImageInfo(collection): pass
+class ScannerCapabilities(collection): pass
+class ScannerStatus(collection): pass
+class ScanRegion(collection): pass
+class ScanSettings(collection): pass
+class SettingProfile(collection): pass
+class SupportedResolutions(collection): pass
 
 class ImageFilter(TypedDict):
     OutputFormat: str
@@ -108,5 +37,5 @@ class ImageFilter(TypedDict):
 
 # caps is the model-settable variable that defines the
 # eSCL scanner capabilities
-caps: dict = None
+caps = None
 

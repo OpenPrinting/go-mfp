@@ -9,6 +9,7 @@
 package ipp
 
 import (
+	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/goipp"
 )
 
@@ -32,6 +33,9 @@ type CreateJobResponse struct {
 	ObjectRawAttrs
 	ResponseHeader
 	OperationGroup
+
+	// PWG5100.17, 7.1.2: compression of the delivered document data.
+	Compression optional.Val[KwCompression] `ipp:"compression"`
 
 	// Unsupported attributes, if any
 	UnsupportedAttributes goipp.Attributes
@@ -82,7 +86,7 @@ func (rq *CreateJobRequest) Decode(
 		return err
 	}
 
-	rq.Job, err = DecodeJobAttributes(msg.Printer, opt)
+	rq.Job, err = DecodeJobAttributes(msg.Job, opt)
 	if err != nil {
 		return err
 	}
@@ -124,7 +128,7 @@ func (rsp *CreateJobResponse) Decode(
 	rsp.UnsupportedAttributes = msg.Unsupported
 
 	var err error
-	rsp.Job, err = DecodeJobStatusAttributes(msg.Printer, opt)
+	rsp.Job, err = DecodeJobStatusAttributes(msg.Job, opt)
 	if err != nil {
 		return err
 	}

@@ -32,6 +32,89 @@ type ValWithOptions[T any] struct {
 	UsedDefault optional.Val[BooleanElement]
 }
 
+// WithOptions is a combination of [WithOptionsGetter]
+// and [WithOptionsSetter] interfaces.
+type WithOptions interface {
+	WithOptionsGetter
+	WithOptionsSetter
+}
+
+// WithOptionsGetter is the common interface, implemented by
+// all variants of ValWithOptions[T], regardless of T.
+//
+// It provides an uniform get access to the underlying value
+// and options.
+type WithOptionsGetter interface {
+	GetValue() any
+	GetMustHonor() optional.Val[BooleanElement]
+	GetOverride() optional.Val[BooleanElement]
+	GetUsedDefault() optional.Val[BooleanElement]
+}
+
+// WithOptionsSetter is the common interface, implemented by
+// all variants of ValWithOptions[T], regardless of T.
+//
+// It provides an uniform set access to the underlying value
+// and options.
+//
+// It requires pointer receiver.
+type WithOptionsSetter interface {
+	SetValue(any) bool
+	SetMustHonor(optional.Val[BooleanElement])
+	SetOverride(optional.Val[BooleanElement])
+	SetUsedDefault(optional.Val[BooleanElement])
+}
+
+// GetValue implements [WithOptions] interface for getting the
+// underlying value without options.
+func (t ValWithOptions[T]) GetValue() any {
+	return t.Val
+}
+
+// SetValue implements [WithOptions] interface for setting the
+// underlying value.
+func (t *ValWithOptions[T]) SetValue(v any) bool {
+	var ok bool
+	t.Val, ok = v.(T)
+	return ok
+}
+
+// GetMustHonor implements [WithOptions] interface for getting the
+// MustHonor option.
+func (t ValWithOptions[T]) GetMustHonor() optional.Val[BooleanElement] {
+	return t.MustHonor
+}
+
+// SetMustHonor implements [WithOptions] interface for setting the
+// MustHonor option.
+func (t *ValWithOptions[T]) SetMustHonor(opt optional.Val[BooleanElement]) {
+	t.MustHonor = opt
+}
+
+// GetOverride implements [WithOptions] interface for getting the
+// Override option.
+func (t ValWithOptions[T]) GetOverride() optional.Val[BooleanElement] {
+	return t.Override
+}
+
+// SetOverride implements [WithOptions] interface for setting the
+// Override option.
+func (t *ValWithOptions[T]) SetOverride(opt optional.Val[BooleanElement]) {
+	t.Override = opt
+}
+
+// GetUsedDefault implements [WithOptions] interface for getting the
+// UsedDefault option.
+func (t ValWithOptions[T]) GetUsedDefault() optional.Val[BooleanElement] {
+	return t.UsedDefault
+}
+
+// SetUsedDefault implements [WithOptions] interface for setting the
+// UsedDefault option.
+func (t *ValWithOptions[T]) SetUsedDefault(opt optional.Val[BooleanElement]) {
+	t.UsedDefault = opt
+}
+
 // HasOptions reports if value really has any options set.
 // It implements the [Wrapper] interface.
 func (t ValWithOptions[T]) HasOptions() bool {

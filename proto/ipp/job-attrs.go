@@ -11,6 +11,7 @@ package ipp
 import (
 	"time"
 
+	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/goipp"
 )
@@ -31,6 +32,90 @@ type JobCreateOperation struct {
 	JobKOctets              optional.Val[int]    `ipp:"job-k-octets"`
 	JobMediaSheets          optional.Val[int]    `ipp:"job-media-sheets"`
 	JobName                 optional.Val[string] `ipp:"job-name"`
+	RequestingUserURI       optional.Val[string] `ipp:"requesting-user-uri"`
+
+	// PWG5100.17, 7.1.1: scan-job operation attributes.
+	CompressionAccepted    []KwCompression                `ipp:"compression-accepted"`
+	DocumentFormatAccepted []string                       `ipp:"document-format-accepted"`
+	InputAttributes        optional.Val[InputAttributes]  `ipp:"input-attributes"`
+	OutputAttributes       optional.Val[OutputAttributes] `ipp:"output-attributes"`
+}
+
+// ToAbstract converts [JobCreateOperation] scan parameters into an
+// [abstract.ScannerRequest].
+//
+// The returned request is partially populated — only fields that have
+// an IPP representation are set. Callers should pass the result through
+// [abstract.ScannerCapabilities.FillRequest] to validate and fill in
+// any remaining defaults.
+func (op *JobCreateOperation) ToAbstract() abstract.ScannerRequest {
+	req := abstract.ScannerRequest{}
+
+	if op.DocumentFormat != nil {
+		req.DocumentFormat = optional.Get(op.DocumentFormat)
+	} else if len(op.DocumentFormatAccepted) > 0 {
+		req.DocumentFormat = op.DocumentFormatAccepted[0]
+	}
+
+	if op.InputAttributes == nil {
+		return req
+	}
+	inp := *op.InputAttributes
+
+	if inp.InputSource != nil {
+		switch optional.Get(inp.InputSource) {
+		case KwInputSourcePlaten:
+			req.Input = abstract.InputPlaten
+		case KwInputSourceADF:
+			req.Input = abstract.InputADF
+			req.ADFMode = abstract.ADFModeSimplex
+			if inp.InputSides != nil &&
+				optional.Get(inp.InputSides) == KwSidesTwoSidedLongEdge {
+				req.ADFMode = abstract.ADFModeDuplex
+			}
+		}
+	}
+
+	if inp.InputColorMode != nil {
+		req.ColorMode, req.ColorDepth = inputColorModeToAbstract(
+			optional.Get(inp.InputColorMode))
+	}
+
+	if inp.InputResolution != nil {
+		r := optional.Get(inp.InputResolution)
+		req.Resolution = abstract.Resolution{
+			XResolution: r.Xres,
+			YResolution: r.Yres,
+		}
+	}
+
+	if len(inp.InputScanRegions) > 0 {
+		reg := inp.InputScanRegions[0]
+		if reg.XOrigin != nil {
+			req.Region.XOffset = abstract.Dimension(optional.Get(reg.XOrigin))
+		}
+		if reg.YOrigin != nil {
+			req.Region.YOffset = abstract.Dimension(optional.Get(reg.YOrigin))
+		}
+		if reg.XDimension != nil {
+			req.Region.Width = abstract.Dimension(optional.Get(reg.XDimension))
+		}
+		if reg.YDimension != nil {
+			req.Region.Height = abstract.Dimension(optional.Get(reg.YDimension))
+		}
+	}
+
+	// Brightness, Contrast, Sharpness
+	req.Brightness = inp.InputBrightness
+	req.Contrast = inp.InputContrast
+	req.Sharpen = inp.InputSharpness
+
+	// OutputAttributes → NoiseRemoval
+	if op.OutputAttributes != nil {
+		req.NoiseRemoval = optional.Get(op.OutputAttributes).NoiseRemoval
+	}
+
+	return req
 }
 
 // JobStatus contains Job status attributes

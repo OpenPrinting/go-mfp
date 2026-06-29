@@ -496,17 +496,11 @@ func (srv *AbstractServer) sendSOAPResponse(
 
 	// RetrieveImageResponse requires MTOM/XOP multipart encoding
 	if _, ok := body.(*RetrieveImageResponse); ok {
-		boundary := uuid.Random().String()
-		envelopeCID := uuid.Random().String()
-
-		query.ResponseHeader().Set("Content-Type",
-			mtomContentType(boundary, envelopeCID))
-		query.WriteHeader(http.StatusOK)
-
-		rsp.writeMTOM(query, boundary, envelopeCID)
+		rsp.writeMTOM(query)
 		return
 	}
 
+	query.ResponseHeader().Set("Content-Type", "application/soap+xml")
 	query.SendXML(http.StatusOK, NsMap, rsp.toXML())
 
 	// Notify tracer

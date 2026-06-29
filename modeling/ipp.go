@@ -34,7 +34,7 @@ func (model *Model) NewIPPServer() *ipp.Printer {
 	}
 
 	// Create the IPP print server
-	options := ipp.ServerOptions{
+	options := ipp.PrinterOptions{
 		UseRawPrinterAttributes: true,
 	}
 	return ipp.NewPrinter(attrs, options)
@@ -51,7 +51,7 @@ func (model *Model) ippLoad() error {
 	}
 
 	if !obj.IsNone() {
-		pa, err := model.pyImportPrinterAppributes(obj)
+		pa, err := ippImportPrinterAppributes(obj)
 		if err != nil {
 			err = fmt.Errorf("ipp.attrs: %s", err)
 			return err

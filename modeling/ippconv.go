@@ -17,33 +17,41 @@ import (
 	"github.com/OpenPrinting/goipp"
 )
 
-// pyExportIPP converts the [ipp.Object] into the [cpython.Object].
-func (model *Model) pyExportIPP(s ipp.Object) *cpython.Object {
-	return model.pyExportIPPAttrs(s.RawAttrs().All())
+// ippExport converts the [ipp.Object] into the [cpython.Object].
+func ippExport(py *cpython.Python, s ipp.Object) *cpython.Object {
+	if legacyMode(py) {
+		return legacyIPPExport(py, s)
+	}
+
+	return ippExportAttrs(py, s.RawAttrs().All())
 }
 
-// pyExportIPPAttrs exports IPP attributes into the [cpython.Object].
-func (model *Model) pyExportIPPAttrs(attrs goipp.Attributes) *cpython.Object {
+// ippExportAttrs exports IPP attributes into the [cpython.Object].
+func ippExportAttrs(py *cpython.Python,
+	attrs goipp.Attributes) *cpython.Object {
+
 	// Create output cpython.Object (the empty dict).
-	dict := model.py.NewObject(map[any]any(nil))
+	dict := py.NewObject(map[any]any(nil))
 
 	// Roll over all IPP attributes
 	for _, attr := range attrs {
-		vals := model.pyExportIPPValues(attr)
+		vals := ippExportValues(py, attr)
 		err := dict.SetItem(attr.Name, vals)
 		if err != nil {
-			return model.py.NewError(err)
+			return py.NewError(err)
 		}
 	}
 
 	return dict
 }
 
-// pyExportIPPValues exports IPP attribute values into the [cpython.Object].
-func (model *Model) pyExportIPPValues(attr goipp.Attribute) *cpython.Object {
+// ippExportValues exports IPP attribute values into the [cpython.Object].
+func ippExportValues(py *cpython.Python,
+	attr goipp.Attribute) *cpython.Object {
+
 	objs := make([]*cpython.Object, 0, len(attr.Values))
 	for _, v := range attr.Values {
-		obj := model.pyExportIPPValue(attr.Name, v.T, v.V)
+		obj := ippExportValue(py, attr.Name, v.T, v.V)
 		objs = append(objs, obj)
 	}
 
@@ -51,16 +59,16 @@ func (model *Model) pyExportIPPValues(attr goipp.Attribute) *cpython.Object {
 		return objs[0]
 	}
 
-	return model.py.NewObject(objs)
+	return py.NewObject(objs)
 }
 
-// pyExportIPPValue exports IPP value as [cpython.Object].
-func (model *Model) pyExportIPPValue(attrname string,
-	tag goipp.Tag, val goipp.Value) *cpython.Object {
+// ippExportValue exports IPP value as [cpython.Object].
+func ippExportValue(py *cpython.Python,
+	attrname string, tag goipp.Tag, val goipp.Value) *cpython.Object {
 
 	// Collections handled the special way
 	if v, ok := val.(goipp.Collection); ok {
-		return model.pyExportIPPAttrs(goipp.Attributes(v))
+		return ippExportAttrs(py, goipp.Attributes(v))
 	}
 
 	// Some Enums are handled the special way
@@ -68,7 +76,7 @@ func (model *Model) pyExportIPPValue(attrname string,
 		switch attrname {
 		case "operations-supported":
 			op := goipp.Op(val.(goipp.Integer))
-			obj := model.py.Eval(fmt.Sprintf("ipp.OP(0x%.2x)", int(op)))
+			obj := py.Eval(fmt.Sprintf("ipp.OP(0x%.2x)", int(op)))
 			if obj.Err() == nil {
 				return obj
 			}
@@ -84,16 +92,16 @@ func (model *Model) pyExportIPPValue(attrname string,
 	//   ipp.KEYWORD('auto')
 	//
 	// Here we obtain Python type name for the IPP tag
-	pytypename := pyIPPTagName[tag]
+	pytypename := ippTagName[tag]
 	if pytypename == "" {
 		err := fmt.Errorf("invalid IPP tag %d", int(tag))
-		return model.py.NewError(err)
+		return py.NewError(err)
 	}
 
 	pytypename = "ipp." + pytypename
 
 	// Obtain constructor
-	pytype := model.py.Eval(pytypename)
+	pytype := py.Eval(pytypename)
 
 	// Encode the value
 	switch v := val.(type) {
@@ -117,14 +125,15 @@ func (model *Model) pyExportIPPValue(attrname string,
 		return pytype.Call(string(v))
 	}
 
-	return model.py.None()
+	return py.None()
 }
 
-// pyImportPrinterAppributes imports IPP printer attributes from the
+// ippImportPrinterAppributes imports IPP printer attributes from the
 // Python representation
-func (model *Model) pyImportPrinterAppributes(obj *cpython.Object) (
+func ippImportPrinterAppributes(obj *cpython.Object) (
 	*ipp.PrinterAttributes, error) {
-	attrs, err := model.pyImportIPPAttrs(obj)
+
+	attrs, err := ippImportIPPAttrs(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +145,19 @@ func (model *Model) pyImportPrinterAppributes(obj *cpython.Object) (
 	return ipp.DecodePrinterAttributes(attrs, opt)
 }
 
-// pyImportIPPAttrs imports IPP attributes from the [cpython.Object].
-func (model *Model) pyImportIPPAttrs(obj *cpython.Object) (
+// ippImportIPPAttrs imports IPP attributes from the [cpython.Object].
+func ippImportIPPAttrs(obj *cpython.Object) (
+	attrs goipp.Attributes, err error) {
+
+	if obj.IsDict() {
+		return legacyIPPImportAttrs(obj)
+	}
+
+	return ippImportIPPAttrsInt(obj)
+}
+
+// ippImportIPPAttrsInt is the internal function behind ippImportIPPAttrs.
+func ippImportIPPAttrsInt(obj *cpython.Object) (
 	attrs goipp.Attributes, err error) {
 
 	// Retrieve dictionary keys
@@ -164,9 +184,9 @@ func (model *Model) pyImportIPPAttrs(obj *cpython.Object) (
 
 		// Decode the value
 		var vals goipp.Values
-		vals, err = model.pyImportIPPValues(valobj)
+		vals, err = ippImportIPPValues(valobj)
 		if err != nil {
-			return nil, pyImportErrorWrap(key, err)
+			return nil, errImportWrap(key, err)
 		}
 
 		// Append the attribute
@@ -176,8 +196,8 @@ func (model *Model) pyImportIPPAttrs(obj *cpython.Object) (
 	return
 }
 
-// pyImportIPPAttrs imports IPP values from the [cpython.Object].
-func (model *Model) pyImportIPPValues(obj *cpython.Object) (
+// ippImportIPPValues imports IPP values from the [cpython.Object].
+func ippImportIPPValues(obj *cpython.Object) (
 	goipp.Values, error) {
 
 	// If obj is the list object, expand it
@@ -200,7 +220,7 @@ func (model *Model) pyImportIPPValues(obj *cpython.Object) (
 	// Now decode each value
 	vals := make(goipp.Values, len(objs))
 	for i := 0; i < len(objs); i++ {
-		tag, val, err := model.pyImportIPPValue(objs[i])
+		tag, val, err := ippImportIPPValue(objs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -212,8 +232,8 @@ func (model *Model) pyImportIPPValues(obj *cpython.Object) (
 	return vals, nil
 }
 
-// pyImportIPPValue imports IPP value from the Python object
-func (model *Model) pyImportIPPValue(obj *cpython.Object) (
+// ippImportIPPValue imports IPP value from the Python object
+func ippImportIPPValue(obj *cpython.Object) (
 	tag goipp.Tag, val goipp.Value, err error) {
 
 	if obj.TypeModuleName() == "ipp" {
@@ -222,7 +242,7 @@ func (model *Model) pyImportIPPValue(obj *cpython.Object) (
 		tag = pyIPPTagByName[typename]
 		if tag == goipp.TagZero {
 			switch typename {
-			case "OP":
+			case "ipp.OP":
 				tag = goipp.TagEnum
 			}
 		}
@@ -257,13 +277,13 @@ func (model *Model) pyImportIPPValue(obj *cpython.Object) (
 
 			val = goipp.Time{Time: t}
 		case goipp.TypeResolution:
-			val, err = model.pyImportIPPResolution(obj)
+			val, err = ippImportIPPResolution(obj)
 		case goipp.TypeRange:
-			val, err = model.pyImportIPPRange(obj)
+			val, err = ippImportIPPRange(obj)
 		case goipp.TypeTextWithLang:
-			val, err = model.pyImportIPPTextWithLang(obj, tag)
+			val, err = ippImportIPPTextWithLang(obj, tag)
 		default:
-			err = fmt.Errorf("ipp.%s: unknown type", typename)
+			err = fmt.Errorf("ipp.%s: unknown tag type", tag)
 		}
 
 		return
@@ -271,7 +291,7 @@ func (model *Model) pyImportIPPValue(obj *cpython.Object) (
 
 	if obj.IsDict() {
 		var attrs goipp.Attributes
-		attrs, err = model.pyImportIPPAttrs(obj)
+		attrs, err = ippImportIPPAttrsInt(obj)
 		val = goipp.Collection(attrs)
 		tag = goipp.TagBeginCollection
 		return
@@ -281,8 +301,8 @@ func (model *Model) pyImportIPPValue(obj *cpython.Object) (
 	return
 }
 
-// pyImportIPPResolution imports IPP resolution from the Python object
-func (model *Model) pyImportIPPResolution(obj *cpython.Object) (
+// ippImportIPPResolution imports IPP resolution from the Python object
+func ippImportIPPResolution(obj *cpython.Object) (
 	res goipp.Resolution, err error) {
 
 	var x, y int64
@@ -291,14 +311,14 @@ func (model *Model) pyImportIPPResolution(obj *cpython.Object) (
 	// Load Xres
 	x, err = obj.Get("X").Int()
 	if err != nil {
-		err = pyImportErrorWrap("X", err)
+		err = errImportWrap("X", err)
 		return
 	}
 
 	// Load Yres
 	y, err = obj.Get("Y").Int()
 	if err != nil {
-		err = pyImportErrorWrap("Y", err)
+		err = errImportWrap("Y", err)
 		return
 	}
 
@@ -328,8 +348,8 @@ func (model *Model) pyImportIPPResolution(obj *cpython.Object) (
 	return
 }
 
-// pyImportIPPRange imports IPP range from the Python object
-func (model *Model) pyImportIPPRange(obj *cpython.Object) (
+// ippImportIPPRange imports IPP range from the Python object
+func ippImportIPPRange(obj *cpython.Object) (
 	rng goipp.Range, err error) {
 
 	var lower, upper int64
@@ -337,14 +357,14 @@ func (model *Model) pyImportIPPRange(obj *cpython.Object) (
 	// Load Lower
 	lower, err = obj.Get("Lower").Int()
 	if err != nil {
-		err = pyImportErrorWrap("Lower", err)
+		err = errImportWrap("Lower", err)
 		return
 	}
 
 	// Load Upper
 	upper, err = obj.Get("Upper").Int()
 	if err != nil {
-		err = pyImportErrorWrap("Upper", err)
+		err = errImportWrap("Upper", err)
 		return
 	}
 
@@ -356,8 +376,8 @@ func (model *Model) pyImportIPPRange(obj *cpython.Object) (
 	return
 }
 
-// pyImportIPPTextWithLang imports IPP text with language from the Python object
-func (model *Model) pyImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) (
+// ippImportIPPTextWithLang imports IPP text with language from the Python object
+func ippImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) (
 	txt goipp.TextWithLang, err error) {
 
 	var lang, text string
@@ -365,7 +385,7 @@ func (model *Model) pyImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) 
 	// Load lang
 	lang, err = obj.Get("Lang").Str()
 	if err != nil {
-		err = pyImportErrorWrap("Lang", err)
+		err = errImportWrap("Lang", err)
 		return
 	}
 
@@ -377,7 +397,7 @@ func (model *Model) pyImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) 
 
 	text, err = obj.Get(nm).Str()
 	if err != nil {
-		err = pyImportErrorWrap(nm, err)
+		err = errImportWrap(nm, err)
 		return
 	}
 
@@ -389,56 +409,56 @@ func (model *Model) pyImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) 
 	return
 }
 
-// pyIPPTagName maps goipp.Tag to its Python name
-var pyIPPTagName = map[goipp.Tag]string{
+// ippTagName maps goipp.Tag to its Python name
+var ippTagName = map[goipp.Tag]string{
 	// Delimiters
-	goipp.TagZero: "ZERO",
-	goipp.TagEnd:  "END",
+	goipp.TagZero: "ipp.ZERO",
+	goipp.TagEnd:  "ipp.END",
 
 	// Groups of attributes
-	goipp.TagOperationGroup:         "OPERATION",
-	goipp.TagJobGroup:               "JOB",
-	goipp.TagPrinterGroup:           "PRINTER",
-	goipp.TagUnsupportedGroup:       "UNSUPPORTED_GROUP",
-	goipp.TagSubscriptionGroup:      "SUBSCRIPTION",
-	goipp.TagEventNotificationGroup: "EVENT_NOTIFICATION",
-	goipp.TagResourceGroup:          "RESOURCE",
-	goipp.TagDocumentGroup:          "DOCUMENT",
-	goipp.TagSystemGroup:            "SYSTEM",
+	goipp.TagOperationGroup:         "ipp.OPERATION",
+	goipp.TagJobGroup:               "ipp.JOB",
+	goipp.TagPrinterGroup:           "ipp.PRINTER",
+	goipp.TagUnsupportedGroup:       "ipp.UNSUPPORTED_GROUP",
+	goipp.TagSubscriptionGroup:      "ipp.SUBSCRIPTION",
+	goipp.TagEventNotificationGroup: "ipp.EVENT_NOTIFICATION",
+	goipp.TagResourceGroup:          "ipp.RESOURCE",
+	goipp.TagDocumentGroup:          "ipp.DOCUMENT",
+	goipp.TagSystemGroup:            "ipp.SYSTEM",
 
 	// Special values
-	goipp.TagUnsupportedValue: "UNSUPPORTED_VALUE",
-	goipp.TagDefault:          "DEFAULT",
-	goipp.TagUnknown:          "UNKNOWN",
-	goipp.TagNoValue:          "NOVALUE",
-	goipp.TagNotSettable:      "NOTSETTABLE",
-	goipp.TagDeleteAttr:       "DELETEATTR",
-	goipp.TagAdminDefine:      "ADMINDEFINE",
+	goipp.TagUnsupportedValue: "ipp.UNSUPPORTED_VALUE",
+	goipp.TagDefault:          "ipp.DEFAULT",
+	goipp.TagUnknown:          "ipp.UNKNOWN",
+	goipp.TagNoValue:          "ipp.NOVALUE",
+	goipp.TagNotSettable:      "ipp.NOTSETTABLE",
+	goipp.TagDeleteAttr:       "ipp.DELETEATTR",
+	goipp.TagAdminDefine:      "ipp.ADMINDEFINE",
 
 	// Values
-	goipp.TagInteger:    "INTEGER",
-	goipp.TagBoolean:    "BOOLEAN",
-	goipp.TagEnum:       "ENUM",
-	goipp.TagString:     "STRING",
-	goipp.TagDateTime:   "DATE",
-	goipp.TagResolution: "RESOLUTION",
-	goipp.TagRange:      "RANGE",
-	goipp.TagTextLang:   "TEXTLANG",
-	goipp.TagNameLang:   "NAMELANG",
-	goipp.TagText:       "TEXT",
-	goipp.TagName:       "NAME",
-	goipp.TagKeyword:    "KEYWORD",
-	goipp.TagURI:        "URI",
-	goipp.TagURIScheme:  "URISCHEME",
-	goipp.TagCharset:    "CHARSET",
-	goipp.TagLanguage:   "LANGUAGE",
-	goipp.TagMimeType:   "MIMETYPE",
-	goipp.TagExtension:  "EXTENSION",
+	goipp.TagInteger:    "ipp.INTEGER",
+	goipp.TagBoolean:    "ipp.BOOLEAN",
+	goipp.TagEnum:       "ipp.ENUM",
+	goipp.TagString:     "ipp.STRING",
+	goipp.TagDateTime:   "ipp.DATE",
+	goipp.TagResolution: "ipp.RESOLUTION",
+	goipp.TagRange:      "ipp.RANGE",
+	goipp.TagTextLang:   "ipp.TEXTLANG",
+	goipp.TagNameLang:   "ipp.NAMELANG",
+	goipp.TagText:       "ipp.TEXT",
+	goipp.TagName:       "ipp.NAME",
+	goipp.TagKeyword:    "ipp.KEYWORD",
+	goipp.TagURI:        "ipp.URI",
+	goipp.TagURIScheme:  "ipp.URISCHEME",
+	goipp.TagCharset:    "ipp.CHARSET",
+	goipp.TagLanguage:   "ipp.LANGUAGE",
+	goipp.TagMimeType:   "ipp.MIMETYPE",
+	goipp.TagExtension:  "ipp.EXTENSION",
 
 	// Collections
-	goipp.TagBeginCollection: "BEGIN_COLLECTION",
-	goipp.TagEndCollection:   "END_COLLECTION",
-	goipp.TagMemberName:      "MEMBERNAME",
+	goipp.TagBeginCollection: "ipp.BEGIN_COLLECTION",
+	goipp.TagEndCollection:   "ipp.END_COLLECTION",
+	goipp.TagMemberName:      "ipp.MEMBERNAME",
 }
 
 // pyIPPTagByName maps goipp.Tag's Python name to its value
@@ -446,7 +466,7 @@ var pyIPPTagByName = map[string]goipp.Tag{}
 
 // init populates the pyIPPTagByName name
 func init() {
-	for tag, name := range pyIPPTagName {
+	for tag, name := range ippTagName {
 		pyIPPTagByName[name] = tag
 	}
 }

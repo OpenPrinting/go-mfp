@@ -74,7 +74,7 @@ func (model *Model) wsdLoad() error {
 
 	// Decode wsscan.GetScannerElementsResponse
 	var caps *wsscan.GetScannerElementsResponse
-	err := model.pyImportStruct(keywordMapWSD, &caps, obj)
+	err := structImport(obj, keywordMapWSD, &caps)
 	if err != nil {
 		err = fmt.Errorf("wsd.caps: %w", err)
 		return err

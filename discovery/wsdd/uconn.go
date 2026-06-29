@@ -41,14 +41,6 @@ func newUconn(local netstate.Addr, port uint16) (*uconn, error) {
 	}
 
 	// Open UDP connection.
-	//
-	// Note, with the multicast address being given,
-	// net.ListenUDP creates UDP socket bound to the
-	// 0.0.0.0:port (or [::0]:port) address with
-	// SO_REUSEADDR option being set.
-	//
-	// This socket can be joined multiple multicast
-	// groups and suitable for the multicast reception.
 	network := "udp4"
 	if local.Addr().Is6() {
 		network = "udp6"

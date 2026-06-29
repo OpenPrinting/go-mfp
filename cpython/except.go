@@ -89,6 +89,11 @@ const (
 	Warning                   Except = "Warning"
 )
 
+// Error implements error interface for the exception.
+func (ex Except) Error() string {
+	return string(ex)
+}
+
 // object returns Python object for the exception.
 func (ex Except) object() pyObject {
 	pyobj := exceptTable[ex]

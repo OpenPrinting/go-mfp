@@ -29,17 +29,19 @@ const char *py_init (const char *libpython3);
 // py_new_interp returns a new Python interpreter.
 //
 // This function MUST be called by the main Python thread only.
-PyThreadState *py_new_interp (void);
+void py_new_interp (PyThreadState **tstate_p, PyInterpreterState **interp_p);
 
 // py_interp_close closes the Python interpreter.
-void py_interp_close (PyThreadState *interp);
+//
+// This function MUST be called by the main Python thread only.
+void py_interp_close (PyThreadState *tstate, PyInterpreterState *interp);
 
 // py_enter temporary attaches the calling thread to the
 // Python interpreter.
 //
 // It must be called before any operations with the interpreter
 // are performed and must be paired with the py_leave.
-void py_enter (PyThreadState *interp);
+void py_enter (PyInterpreterState *interp);
 
 // py_leave detaches the calling thread from the Python interpreter.
 void py_leave (void);

@@ -88,4 +88,33 @@ const (
 
 	// KwInputColorModeMonochrome means grayscale scanning.
 	KwInputColorModeMonochrome KwInputColorMode = "monochrome"
+
+	// PWG5100.17, 9.1: precise bit-depth variants.
+
+	// KwInputColorModeMonochrome4 is 4-bit grayscale (4 bits/pixel).
+	KwInputColorModeMonochrome4 KwInputColorMode = "monochrome_4"
+
+	// KwInputColorModeMonochrome8 is 8-bit grayscale (8 bits/pixel).
+	KwInputColorModeMonochrome8 KwInputColorMode = "monochrome_8"
+
+	// KwInputColorModeMonochrome16 is 16-bit grayscale (16 bits/pixel).
+	KwInputColorModeMonochrome16 KwInputColorMode = "monochrome_16"
+
+	// KwInputColorModeColor8 is 24-bit RGB (8 bits/channel).
+	KwInputColorModeColor8 KwInputColorMode = "color_8"
+
+	// KwInputColorModeRGBA8 is 32-bit RGBA (8 bits/channel).
+	KwInputColorModeRGBA8 KwInputColorMode = "rgba_8"
+
+	// KwInputColorModeRGB16 is 48-bit RGB (16 bits/channel).
+	KwInputColorModeRGB16 KwInputColorMode = "rgb_16"
+
+	// KwInputColorModeRGBA16 is 64-bit RGBA (16 bits/channel).
+	KwInputColorModeRGBA16 KwInputColorMode = "rgba_16"
+
+	// KwInputColorModeCMYK8 is 32-bit CMYK (8 bits/channel).
+	KwInputColorModeCMYK8 KwInputColorMode = "cmyk_8"
+
+	// KwInputColorModeCMYK16 is 64-bit CMYK (16 bits/channel).
+	KwInputColorModeCMYK16 KwInputColorMode = "cmyk_16"
 )

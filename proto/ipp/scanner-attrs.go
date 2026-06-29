@@ -25,6 +25,16 @@ type InputScanRegion struct {
 	YOrigin    optional.Val[int] `ipp:"y-origin"`
 }
 
+// OutputAttributes represents the "output-attributes" collection.
+//
+// It is used in scan job operation requests to specify per-job
+// image-processing settings for the output document(s), and as the value
+// type of "output-attributes-default" in printer description attributes.
+type OutputAttributes struct {
+	NoiseRemoval                   optional.Val[int] `ipp:"noise-removal"`
+	OutputCompressionQualityFactor optional.Val[int] `ipp:"output-compression-quality-factor"`
+}
+
 // InputAttributes represents the "input-attributes" collection.
 //
 // It is used in scan job operation requests to specify per-job scanning
@@ -89,4 +99,13 @@ type ScannerDescription struct {
 
 	// PWG5100.15: input source
 	InputSourceSupported []KwInputSource `ipp:"input-source-supported"`
+
+	// PWG5100.17: spooling behavior for scan job document data.
+	JobDestinationSpoolingSupported optional.Val[KwJobSpooling] `ipp:"job-destination-spooling-supported"`
+
+	// PWG5100.17: default values for output-attributes members.
+	OutputAttributesDefault optional.Val[OutputAttributes] `ipp:"output-attributes-default"`
+
+	// PWG5100.17: which output-attributes member attributes are supported.
+	OutputAttributesSupported []string `ipp:"output-attributes-supported"`
 }

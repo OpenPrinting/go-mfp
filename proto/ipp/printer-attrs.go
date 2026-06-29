@@ -141,6 +141,7 @@ type PrinterDescription struct {
 	DocumentPasswordSupported         optional.Val[int]         `ipp:"document-password-supported"`
 	IdentifyActionsDefault            []string                  `ipp:"identify-actions-default"`
 	IdentifyActionsSupported          []string                  `ipp:"identify-actions-supported"`
+	// Scan Services MUST include "scan" in this list (PWG5100.17, 9.2).
 	IppFeaturesSupported              []string                  `ipp:"ipp-features-supported"`
 	JobPresetsSupported               []JobPresets              `ipp:"job-presets-supported"`
 	JpegFeaturesSupported             []string                  `ipp:"jpeg-features-supported"`

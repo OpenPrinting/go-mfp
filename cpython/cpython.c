@@ -8,6 +8,7 @@
 
 #include "cpython.h"
 
+#include <assert.h>
 #include <dlfcn.h>
 #include <stdarg.h>
 #include <stdatomic.h>
@@ -29,7 +30,8 @@ static PyThreadState                            *py_main_thread;
 
 // py_enter_level counts py_enter nesting level when called
 // from the same thread;
-static __thread volatile int                     py_enter_level;
+static __thread int                             py_enter_level;
+static __thread PyThreadState                   *py_thread_current;
 
 // The table of the libpython3 symbols.
 //
@@ -74,7 +76,9 @@ static __typeof__(PyErr_NormalizeException)     *PyErr_NormalizeException_p;
 static __typeof__(PyErr_Occurred)               *PyErr_Occurred_p;
 static __typeof__(PyErr_Restore)                *PyErr_Restore_p;
 static __typeof__(PyErr_SetString)              *PyErr_SetString_p;
+static __typeof__(PyEval_AcquireThread)         *PyEval_AcquireThread_p;
 static __typeof__(PyEval_EvalCode)              *PyEval_EvalCode_p;
+static __typeof__(PyEval_ReleaseThread)         *PyEval_ReleaseThread_p;
 static __typeof__(PyEval_RestoreThread)         *PyEval_RestoreThread_p;
 static __typeof__(PyEval_SaveThread)            *PyEval_SaveThread_p;
 static __typeof__(PyFloat_AsDouble)             *PyFloat_AsDouble_p;
@@ -99,7 +103,6 @@ static __typeof__(PyObject_Call)                *PyObject_Call_p;
 static __typeof__(PyObject_DelItem)             *PyObject_DelItem_p;
 static __typeof__(PyObject_GetAttrString)       *PyObject_GetAttrString_p;
 static __typeof__(PyObject_GetItem)             *PyObject_GetItem_p;
-static __typeof__(PyObject_HasAttrString)       *PyObject_HasAttrString_p;
 static __typeof__(*PyObject_Length)             *PyObject_Length_p;
 static __typeof__(PyObject_Repr)                *PyObject_Repr_p;
 static __typeof__(PyObject_SetAttrString)       *PyObject_SetAttrString_p;
@@ -109,6 +112,8 @@ static __typeof__(PyObject_Type)                *PyObject_Type_p;
 static __typeof__(PySequence_Check)             *PySequence_Check_p;
 static __typeof__(PySequence_GetItem)           *PySequence_GetItem_p;
 static __typeof__(PyThreadState_Clear)          *PyThreadState_Clear_p;
+static __typeof__(PyThreadState_Delete)         *PyThreadState_Delete_p;
+static __typeof__(PyThreadState_New)            *PyThreadState_New_p;
 static __typeof__(PyThreadState_Swap)           *PyThreadState_Swap_p;
 static __typeof__(PyTuple_GetItem)              *PyTuple_GetItem_p;
 static __typeof__(PyTuple_New)                  *PyTuple_New_p;
@@ -117,6 +122,10 @@ static __typeof__(*PyType_GetFlags)             *PyType_GetFlags_p;
 static __typeof__(PyType_IsSubtype)             *PyType_IsSubtype_p;
 static __typeof__(PyUnicode_AsUCS4)             *PyUnicode_AsUCS4_p;
 static __typeof__(PyUnicode_FromStringAndSize)  *PyUnicode_FromStringAndSize_p;
+
+// PyInterpreterState_Get is not officially exposed on Python 3.8,
+// so it needs the special care.
+static PyInterpreterState *(*PyInterpreterState_Get_p)(void);
 
 // Directly exposed functions
 __typeof__(PyUnicode_GetLength)                  *PyUnicode_GetLength_p;
@@ -238,6 +247,25 @@ static void *py_load (const char *name) {
     return p;
 }
 
+// py_load2 loads Python symbol by name, trying two variants
+// of the name
+static void *py_load2 (const char *name1, const char *name2) {
+    void *p = NULL;
+
+    if (py_error == NULL) {
+        p = dlsym(RTLD_DEFAULT, name1);
+        if (p == NULL) {
+            p = dlsym(RTLD_DEFAULT, name2);
+        }
+
+        if (p == NULL) {
+            py_set_error("%s", dlerror());
+        }
+    }
+
+    return p;
+}
+
 // py_load loads and dereferences pointer from the libpython3.so.
 static void *py_load_ptr (const char *name) {
     void **pp = py_load(name);
@@ -269,10 +297,10 @@ static void py_load_all (const char *libpython3) {
     PyBytes_AsStringAndSize_p = py_load("PyBytes_AsStringAndSize");
     PyBytes_FromStringAndSize_p = py_load("PyBytes_FromStringAndSize");
     PyCallable_Check_p = py_load("PyCallable_Check");
-    Py_CompileString_p = py_load("Py_CompileString");
     PyCapsule_GetPointer_p = py_load("PyCapsule_GetPointer");
     PyCapsule_New_p = py_load("PyCapsule_New");
     PyCFunction_NewEx_p = py_load("PyCFunction_NewEx");
+    Py_CompileString_p = py_load("Py_CompileString");
     PyComplex_FromDoubles_p = py_load("PyComplex_FromDoubles");
     PyComplex_ImagAsDouble_p = py_load("PyComplex_ImagAsDouble");
     PyComplex_RealAsDouble_p = py_load("PyComplex_RealAsDouble");
@@ -282,11 +310,13 @@ static void py_load_all (const char *libpython3) {
     Py_EndInterpreter_p = py_load("Py_EndInterpreter");
     PyErr_Clear_p = py_load("PyErr_Clear");
     PyErr_Fetch_p = py_load("PyErr_Fetch");
-    PyErr_Restore_p = py_load("PyErr_Restore");
-    PyErr_SetString_p = py_load("PyErr_SetString");
     PyErr_NormalizeException_p = py_load("PyErr_NormalizeException");
     PyErr_Occurred_p = py_load("PyErr_Occurred");
+    PyErr_Restore_p = py_load("PyErr_Restore");
+    PyErr_SetString_p = py_load("PyErr_SetString");
+    PyEval_AcquireThread_p = py_load("PyEval_AcquireThread");
     PyEval_EvalCode_p = py_load("PyEval_EvalCode");
+    PyEval_ReleaseThread_p = py_load("PyEval_ReleaseThread");
     PyEval_RestoreThread_p = py_load("PyEval_RestoreThread");
     PyEval_SaveThread_p = py_load("PyEval_SaveThread");
     PyFloat_AsDouble_p = py_load("PyFloat_AsDouble");
@@ -311,7 +341,6 @@ static void py_load_all (const char *libpython3) {
     PyObject_DelItem_p = py_load("PyObject_DelItem");
     PyObject_GetAttrString_p = py_load("PyObject_GetAttrString");
     PyObject_GetItem_p = py_load("PyObject_GetItem");
-    PyObject_HasAttrString_p = py_load("PyObject_HasAttrString");
     PyObject_Length_p = py_load("PyObject_Length");
     PyObject_Repr_p = py_load("PyObject_Repr");
     PyObject_SetAttrString_p = py_load("PyObject_SetAttrString");
@@ -321,6 +350,8 @@ static void py_load_all (const char *libpython3) {
     PySequence_Check_p = py_load("PySequence_Check");
     PySequence_GetItem_p = py_load("PySequence_GetItem");
     PyThreadState_Clear_p = py_load("PyThreadState_Clear");
+    PyThreadState_Delete_p = py_load("PyThreadState_Delete");
+    PyThreadState_New_p = py_load("PyThreadState_New");
     PyThreadState_Swap_p = py_load("PyThreadState_Swap");
     PyTuple_GetItem_p = py_load("PyTuple_GetItem");
     PyTuple_New_p = py_load("PyTuple_New");
@@ -329,6 +360,16 @@ static void py_load_all (const char *libpython3) {
     PyType_IsSubtype_p = py_load("PyType_IsSubtype");
     PyUnicode_AsUCS4_p = py_load("PyUnicode_AsUCS4");
     PyUnicode_FromStringAndSize_p = py_load("PyUnicode_FromStringAndSize");
+
+    // Python 3.8 "unoficcially" exposes this symbol as
+    // _PyInterpreterState_Get.
+    //
+    // Python 3.9 and up exposes it as PyInterpreterState_Get, and
+    // now it's a part of the stable API.
+    //
+    // So this trickery is safe.
+    PyInterpreterState_Get_p = py_load2(
+        "_PyInterpreterState_Get", "PyInterpreterState_Get");
 
     PyUnicode_GetLength_p = py_load("PyUnicode_GetLength");
 
@@ -441,9 +482,7 @@ const char *py_init (const char *libpython3) {
 // py_new_interp returns a new Python interpreter.
 //
 // This function MUST be called by the main Python thread only.
-PyThreadState *py_new_interp (void) {
-    PyThreadState      *tstate;
-
+void py_new_interp (PyThreadState **tstate_p, PyInterpreterState **interp_p) {
     // This attaches the current OS thread to py_main_thread and
     // locks the GIL
     PyEval_RestoreThread_p(py_main_thread);
@@ -451,7 +490,8 @@ PyThreadState *py_new_interp (void) {
     // This creates an interpreter and the new thread state for it
     // and switches the current OS thread to the newly created
     // thread state
-    tstate = Py_NewInterpreter_p();
+    PyThreadState *tstate = Py_NewInterpreter_p();
+    PyInterpreterState *interp = PyInterpreterState_Get_p();
 
     // Here we switch back to the py_main_thread, which detaches
     // the newly created thread state from the OS thread
@@ -460,14 +500,28 @@ PyThreadState *py_new_interp (void) {
     // And now we finally release the GIL
     PyEval_SaveThread_p();
 
-    return tstate;
+    *tstate_p = tstate;
+    *interp_p = interp;
 }
 
 // py_interp_close closes the Python interpreter.
-void py_interp_close (PyThreadState *tstate) {
-    PyThreadState *prev = PyThreadState_Swap_p(tstate);
+//
+// This function MUST be called by the main Python thread only.
+void py_interp_close (PyThreadState *tstate, PyInterpreterState *interp) {
+    // This attaches the current OS thread to py_main_thread and
+    // locks the GIL
+    PyEval_RestoreThread_p(py_main_thread);
+
+    // Now switch to the thread state of the interpreter being closed
+    // and call Py_EndInterpreter to close it
+    PyThreadState_Swap_p(tstate);
     Py_EndInterpreter_p(tstate);
-    PyThreadState_Swap_p(prev);
+
+    // Switch back to py_main_thread
+    PyThreadState_Swap_p(py_main_thread);
+
+    // And now we finally release the GIL
+    PyEval_SaveThread_p();
 }
 
 // py_enter temporary attaches the calling thread to the
@@ -475,17 +529,31 @@ void py_interp_close (PyThreadState *tstate) {
 //
 // It must be called before any operations with the interpreter
 // are performed and must be paired with the py_leave.
-void py_enter (PyThreadState *tstate) {
-    if (atomic_fetch_add(&py_enter_level,1) == 0) {
-        PyEval_RestoreThread_p(tstate);
+void py_enter(PyInterpreterState *interp) {
+    py_enter_level ++;
+    if (py_enter_level == 1) {
+        PyThreadState *tstate = PyThreadState_New_p(interp);
+
+        assert(py_thread_current == NULL);
+        py_thread_current = tstate;
+
+        PyEval_AcquireThread_p(tstate);
     }
 }
 
 // py_leave detaches the calling thread from the Python interpreter.
 void py_leave (void) {
-    if (atomic_fetch_sub(&py_enter_level,1) == 1) {
-        PyEval_SaveThread_p();
+    assert(py_thread_current != NULL);
+
+    if (py_enter_level == 1) {
+        PyThreadState *tstate = py_thread_current;
+        py_thread_current = NULL;
+
+        PyThreadState_Clear_p(tstate);
+        PyEval_ReleaseThread_p(tstate);
+        PyThreadState_Delete_p(tstate);
     }
+    py_enter_level --;
 }
 
 // py_interp_eval evaluates string as a Python statement or expression.
@@ -741,8 +809,26 @@ PyObject *py_obj_keys (PyObject *x) {
 // It returns true on success, false on error and puts answer into
 // its third parameter.
 bool py_obj_hasattr(PyObject *x, const char *name, bool *answer) {
-    *answer = PyObject_HasAttrString_p(x, name) != 0;
-    return true;
+    PyObject *attr = NULL;
+
+    // Try to retrieve an attribute
+    if (py_obj_getattr(x, name, &attr)) {
+        *answer = true;
+        Py_DecRef_p(attr);
+        return true;
+    }
+
+    // Don't treat PyExc_AttributeError as an error.
+    // Just indicate that attribute didn't exist
+    if (PyErr_Occurred_p() == PyExc_AttributeError_p) {
+        *answer = false;
+        PyErr_Clear_p();
+        return true;
+    }
+
+    // Otherwise, propagate the error
+    *answer = false;
+    return false;
 }
 
 // py_obj_delattr deletes the attribute with the specified name.
@@ -764,7 +850,7 @@ bool py_obj_getattr(PyObject *x, const char *name, PyObject **answer) {
 // internal use.
 //
 // It has the following differences from the normal py_obj_getattr:
-//   - the returned reference is borrowed, not string
+//   - the returned reference is borrowed, not strong
 //   - input object may be NULL
 //   - error is cleared if any occurs
 static PyObject *py_obj_getattr_int(PyObject *x, const char *name) {

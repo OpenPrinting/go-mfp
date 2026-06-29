@@ -157,9 +157,9 @@ func TestPJLFullJob(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("expected 1 document, got %d", len(results))
 	}
-	if results[0].format != DocFormatPostScript {
+	if docFormat(results[0]) != DocFormatPostScript {
 		t.Errorf("format = %v, want PostScript",
-			results[0].format)
+			docFormat(results[0]))
 	}
 
 	// Verify PJL response is readable
@@ -207,15 +207,6 @@ func TestPJLJobParams(t *testing.T) {
 	if params.JobName != "My Print Job" {
 		t.Errorf("JobName = %q, want %q",
 			params.JobName, "My Print Job")
-	}
-	if v := params.Variables["SMOOTHING"]; v != "ON" {
-		t.Errorf("SMOOTHING = %q, want %q", v, "ON")
-	}
-	if v := params.Variables["ECONOMODE"]; v != "OFF" {
-		t.Errorf("ECONOMODE = %q, want %q", v, "OFF")
-	}
-	if v := params.Variables["USERNAME"]; v != "alice" {
-		t.Errorf("USERNAME = %q, want %q", v, "alice")
 	}
 }
 

@@ -315,10 +315,19 @@ func (query *ServerQuery) Created(location string) {
 }
 
 // SendXML sends the XML response and completes the request.
+//
+// If Content-Type header is not set by the caller, this
+// function automatically sets it to "text/xml"
 func (query *ServerQuery) SendXML(
 	status int, ns xmldoc.Namespace, xml xmldoc.Element) {
 
-	query.ResponseHeader().Set("Content-Type", "text/xml")
+	const ContentType = "Content-Type"
+
+	hdr := query.ResponseHeader()
+	if hasContentType := hdr.Values(ContentType); hasContentType == nil {
+		hdr.Set("Content-Type", "text/xml")
+	}
+
 	query.WriteHeader(status)
 	xml.EncodeIndent(query, ns, "  ")
 

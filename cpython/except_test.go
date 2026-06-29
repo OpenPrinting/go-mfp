@@ -5,7 +5,6 @@
 // See LICENSE for license terms and conditions
 //
 // Tests for Python exceptions
-
 package cpython
 
 import "testing"
@@ -47,7 +46,6 @@ func TestExceptConstants(t *testing.T) {
 		{UserWarning, "UserWarning"},
 		{Warning, "Warning"},
 	}
-
 	for _, tt := range tests {
 		if string(tt.except) != tt.want {
 			t.Fatalf("Except %q = %q, want %q",
@@ -70,7 +68,6 @@ func TestExceptObjectKnown(t *testing.T) {
 		ZeroDivisionError, DeprecationWarning,
 		RuntimeWarning, UserWarning, Warning,
 	}
-
 	for _, ex := range known {
 		if ex.object() == nil {
 			t.Fatalf("Except(%q).object() returned nil", ex)
@@ -85,5 +82,35 @@ func TestExceptObjectUnknown(t *testing.T) {
 	obj := unknown.object()
 	if obj == nil {
 		t.Fatalf("Except(%q).object() returned nil, want SystemError fallback", unknown)
+	}
+}
+
+// TestExceptError verifies that the Error() method returns the exception
+// name as a string, satisfying the error interface.
+func TestExceptError(t *testing.T) {
+	tests := []struct {
+		except Except
+		want   string
+	}{
+		{ArithmeticError, "ArithmeticError"},
+		{ValueError, "ValueError"},
+		{Warning, "Warning"},
+		{Except("CustomError"), "CustomError"},
+	}
+
+	for _, tt := range tests {
+		got := tt.except.Error()
+		if got != tt.want {
+			t.Fatalf("Except(%q).Error() = %q, want %q", tt.except, got, tt.want)
+		}
+	}
+}
+
+// TestExceptImplementsError verifies Except satisfies the error interface
+// at compile time and that the method is callable via the interface.
+func TestExceptImplementsError(t *testing.T) {
+	var err error = ValueError
+	if err.Error() != "ValueError" {
+		t.Fatalf("error.Error() = %q, want %q", err.Error(), "ValueError")
 	}
 }
