@@ -567,7 +567,7 @@ func legacyIPPImportValue(obj *cpython.Object) (
 		tag = pyIPPTagByName[typename]
 		if tag == goipp.TagZero {
 			switch typename {
-			case "OP":
+			case "ipp.OP":
 				tag = goipp.TagEnum
 			}
 		}
@@ -608,7 +608,7 @@ func legacyIPPImportValue(obj *cpython.Object) (
 		case goipp.TypeTextWithLang:
 			val, err = ippImportIPPTextWithLang(obj, tag)
 		default:
-			err = fmt.Errorf("ipp.%s: unknown type", typename)
+			err = fmt.Errorf("ipp.%s: unknown tag type", tag)
 		}
 
 		return

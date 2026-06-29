@@ -242,7 +242,7 @@ func ippImportIPPValue(obj *cpython.Object) (
 		tag = pyIPPTagByName[typename]
 		if tag == goipp.TagZero {
 			switch typename {
-			case "OP":
+			case "ipp.OP":
 				tag = goipp.TagEnum
 			}
 		}
@@ -283,7 +283,7 @@ func ippImportIPPValue(obj *cpython.Object) (
 		case goipp.TypeTextWithLang:
 			val, err = ippImportIPPTextWithLang(obj, tag)
 		default:
-			err = fmt.Errorf("ipp.%s: unknown type", typename)
+			err = fmt.Errorf("ipp.%s: unknown tag type", tag)
 		}
 
 		return
@@ -412,53 +412,53 @@ func ippImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) (
 // ippTagName maps goipp.Tag to its Python name
 var ippTagName = map[goipp.Tag]string{
 	// Delimiters
-	goipp.TagZero: "ZERO",
-	goipp.TagEnd:  "END",
+	goipp.TagZero: "ipp.ZERO",
+	goipp.TagEnd:  "ipp.END",
 
 	// Groups of attributes
-	goipp.TagOperationGroup:         "OPERATION",
-	goipp.TagJobGroup:               "JOB",
-	goipp.TagPrinterGroup:           "PRINTER",
-	goipp.TagUnsupportedGroup:       "UNSUPPORTED_GROUP",
-	goipp.TagSubscriptionGroup:      "SUBSCRIPTION",
-	goipp.TagEventNotificationGroup: "EVENT_NOTIFICATION",
-	goipp.TagResourceGroup:          "RESOURCE",
-	goipp.TagDocumentGroup:          "DOCUMENT",
-	goipp.TagSystemGroup:            "SYSTEM",
+	goipp.TagOperationGroup:         "ipp.OPERATION",
+	goipp.TagJobGroup:               "ipp.JOB",
+	goipp.TagPrinterGroup:           "ipp.PRINTER",
+	goipp.TagUnsupportedGroup:       "ipp.UNSUPPORTED_GROUP",
+	goipp.TagSubscriptionGroup:      "ipp.SUBSCRIPTION",
+	goipp.TagEventNotificationGroup: "ipp.EVENT_NOTIFICATION",
+	goipp.TagResourceGroup:          "ipp.RESOURCE",
+	goipp.TagDocumentGroup:          "ipp.DOCUMENT",
+	goipp.TagSystemGroup:            "ipp.SYSTEM",
 
 	// Special values
-	goipp.TagUnsupportedValue: "UNSUPPORTED_VALUE",
-	goipp.TagDefault:          "DEFAULT",
-	goipp.TagUnknown:          "UNKNOWN",
-	goipp.TagNoValue:          "NOVALUE",
-	goipp.TagNotSettable:      "NOTSETTABLE",
-	goipp.TagDeleteAttr:       "DELETEATTR",
-	goipp.TagAdminDefine:      "ADMINDEFINE",
+	goipp.TagUnsupportedValue: "ipp.UNSUPPORTED_VALUE",
+	goipp.TagDefault:          "ipp.DEFAULT",
+	goipp.TagUnknown:          "ipp.UNKNOWN",
+	goipp.TagNoValue:          "ipp.NOVALUE",
+	goipp.TagNotSettable:      "ipp.NOTSETTABLE",
+	goipp.TagDeleteAttr:       "ipp.DELETEATTR",
+	goipp.TagAdminDefine:      "ipp.ADMINDEFINE",
 
 	// Values
-	goipp.TagInteger:    "INTEGER",
-	goipp.TagBoolean:    "BOOLEAN",
-	goipp.TagEnum:       "ENUM",
-	goipp.TagString:     "STRING",
-	goipp.TagDateTime:   "DATE",
-	goipp.TagResolution: "RESOLUTION",
-	goipp.TagRange:      "RANGE",
-	goipp.TagTextLang:   "TEXTLANG",
-	goipp.TagNameLang:   "NAMELANG",
-	goipp.TagText:       "TEXT",
-	goipp.TagName:       "NAME",
-	goipp.TagKeyword:    "KEYWORD",
-	goipp.TagURI:        "URI",
-	goipp.TagURIScheme:  "URISCHEME",
-	goipp.TagCharset:    "CHARSET",
-	goipp.TagLanguage:   "LANGUAGE",
-	goipp.TagMimeType:   "MIMETYPE",
-	goipp.TagExtension:  "EXTENSION",
+	goipp.TagInteger:    "ipp.INTEGER",
+	goipp.TagBoolean:    "ipp.BOOLEAN",
+	goipp.TagEnum:       "ipp.ENUM",
+	goipp.TagString:     "ipp.STRING",
+	goipp.TagDateTime:   "ipp.DATE",
+	goipp.TagResolution: "ipp.RESOLUTION",
+	goipp.TagRange:      "ipp.RANGE",
+	goipp.TagTextLang:   "ipp.TEXTLANG",
+	goipp.TagNameLang:   "ipp.NAMELANG",
+	goipp.TagText:       "ipp.TEXT",
+	goipp.TagName:       "ipp.NAME",
+	goipp.TagKeyword:    "ipp.KEYWORD",
+	goipp.TagURI:        "ipp.URI",
+	goipp.TagURIScheme:  "ipp.URISCHEME",
+	goipp.TagCharset:    "ipp.CHARSET",
+	goipp.TagLanguage:   "ipp.LANGUAGE",
+	goipp.TagMimeType:   "ipp.MIMETYPE",
+	goipp.TagExtension:  "ipp.EXTENSION",
 
 	// Collections
-	goipp.TagBeginCollection: "BEGIN_COLLECTION",
-	goipp.TagEndCollection:   "END_COLLECTION",
-	goipp.TagMemberName:      "MEMBERNAME",
+	goipp.TagBeginCollection: "ipp.BEGIN_COLLECTION",
+	goipp.TagEndCollection:   "ipp.END_COLLECTION",
+	goipp.TagMemberName:      "ipp.MEMBERNAME",
 }
 
 // pyIPPTagByName maps goipp.Tag's Python name to its value
