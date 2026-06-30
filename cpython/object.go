@@ -10,10 +10,14 @@ package cpython
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"runtime"
+	"slices"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/internal/assert"
+	"github.com/OpenPrinting/go-mfp/util/generic"
 )
 
 // Object represents a Python value or Python error.
@@ -402,9 +406,10 @@ func (obj *Object) Set(name string, val any) error {
 // Arguments are automatically converted from Go to Python.
 // See [Python.NewObject] for details.
 //
-// Use [Object.CallKW] for call with keyword arguments.
+// Use [Object.CallKW] or [Object.CallKWArgs] for call with
+// keyword arguments.
 func (obj *Object) Call(args ...any) *Object {
-	return obj.CallKW(nil, args...)
+	return obj.CallKWArgs(nil, args...)
 }
 
 // CallKW calls Object as function with keyword arguments defined
@@ -418,18 +423,48 @@ func (obj *Object) Call(args ...any) *Object {
 //
 // It returns the function's return value.
 func (obj *Object) CallKW(kw map[string]any, args ...any) *Object {
+	// Convert arguments from kw map to the slice.
+	kwargs := make([]KWArg, 0, len(kw))
+	for name, value := range kw {
+		kwargs = append(kwargs, KWArg{name, value})
+	}
+
+	// Go maps are not ordered, while Python dictionaries
+	// are ordered. So sort the map by argument name,
+	// to have reproducible results.
+	slices.SortFunc(kwargs, func(a, b KWArg) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	return obj.CallKWArgs(kwargs, args...)
+}
+
+// CallKWArgs is like [Object.CallKW], but preserves order
+// of the keyword arguments.
+func (obj *Object) CallKWArgs(kwargs []KWArg, args ...any) *Object {
 	gate, pyobj, err := obj.begin()
 	if err != nil {
 		return newErrorObject(obj.py, err)
 	}
 	defer gate.release()
 
-	// Convert positional arguments
+	// Check for repeated keyword arguments
+	seen := generic.NewSet[string]()
+	for _, kwarg := range kwargs {
+		if !seen.TestAndAdd(kwarg.Name) {
+			msg := fmt.Sprintf("keyword argument repeated: %s",
+				kwarg.Name)
+
+			err = ErrPython{except: SyntaxError, msg: msg}
+			return newErrorObject(obj.py, err)
+		}
+	}
+
+	// Convert positional arguments into Python tuple
 	pyargs, err := gate.makeTuple(len(args))
 	if err != nil {
 		return newErrorObject(obj.py, err)
 	}
-
 	defer gate.unref(pyargs)
 
 	for i, arg := range args {
@@ -445,16 +480,34 @@ func (obj *Object) CallKW(kw map[string]any, args ...any) *Object {
 		}
 	}
 
-	// Convert keyword arguments
+	// Now convert kwargs into the Python dictionary
 	var pykwargs pyObject
-	if len(kw) > 0 {
-		var err error
-		pykwargs, err = obj.py.newPyObject(gate, kw)
+	if len(kwargs) > 0 {
+		pykwargs, err = gate.makeDict()
 		if err != nil {
 			return newErrorObject(obj.py, err)
 		}
 
 		defer gate.unref(pykwargs)
+
+		for _, kwarg := range kwargs {
+			pyname, err := obj.py.newPyObject(gate, kwarg.Name)
+			if err != nil {
+				return newErrorObject(obj.py, err)
+			}
+			defer gate.unref(pyname)
+
+			pyvalue, err := obj.py.newPyObject(gate, kwarg.Value)
+			if err != nil {
+				return newErrorObject(obj.py, err)
+			}
+			defer gate.unref(pyvalue)
+
+			err = gate.setitem(pykwargs, pyname, pyvalue)
+			if err != nil {
+				return newErrorObject(obj.py, err)
+			}
+		}
 	}
 
 	// Perform a call
