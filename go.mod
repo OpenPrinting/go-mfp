@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/OpenPrinting/go-avahi v0.0.0-20250813163007-dd9db1c4a6e9
-	github.com/OpenPrinting/goipp v1.2.1-0.20260323160019-a44f0d83b874
+	github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf
 	github.com/google/go-cmp v0.6.0
 	github.com/kr/pretty v0.3.1
 	golang.org/x/image v0.24.0

@@ -1,7 +1,7 @@
 github.com/OpenPrinting/go-avahi v0.0.0-20250813163007-dd9db1c4a6e9 h1:sYwgzNSkvqBnhfhS5THhHdSYt+8aleQBGMLObOOg5vM=
 github.com/OpenPrinting/go-avahi v0.0.0-20250813163007-dd9db1c4a6e9/go.mod h1:1vYkalHi1N1ZQ+Wt7KX7WK8fTS09iwrZnuQjwpsUMCU=
-github.com/OpenPrinting/goipp v1.2.1-0.20260323160019-a44f0d83b874 h1:LJiCs8UvTXsuGAd5wiJ8IxYwKhN6fNo/LUi8ZgP6N14=
-github.com/OpenPrinting/goipp v1.2.1-0.20260323160019-a44f0d83b874/go.mod h1:ot2iw+QF7fVLaX+55JUNlF5YSDNiXVo2LRAv21iGcQI=
+github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf h1:ZP5tvUK5YTp/KxNSA2+IjP47R6aFFu7Tl7BE1hm273M=
+github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf/go.mod h1:ot2iw+QF7fVLaX+55JUNlF5YSDNiXVo2LRAv21iGcQI=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
