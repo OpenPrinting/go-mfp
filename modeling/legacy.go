@@ -451,8 +451,6 @@ func legacyIPPExportValue(py *cpython.Python,
 		return py.NewError(err)
 	}
 
-	pytypename = pytypename
-
 	// Obtain constructor
 	pytype := py.Eval(pytypename)
 
