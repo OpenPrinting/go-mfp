@@ -42,9 +42,6 @@ func structExport(py *cpython.Python,
 func structExportInt(py *cpython.Python,
 	kwmap map[string]string, s any) *cpython.Object {
 
-	// kw maintains arguments for the output object constructor
-	kw := make(map[string]any)
-
 	// Normalize input parameter and obtain the reflect.Value for it.
 	v := reflect.ValueOf(s)
 	if v.Kind() == reflect.Pointer && v.Elem().Kind() == reflect.Struct {
@@ -53,8 +50,9 @@ func structExportInt(py *cpython.Python,
 	assert.Must((v.Kind() == reflect.Struct))
 
 	// Roll over all struct fields
-	flgs := reflect.VisibleFields(v.Type())
-	for _, fld := range flgs {
+	flds := reflect.VisibleFields(v.Type())
+	kwargs := make([]cpython.KWArg, 0, len(flds))
+	for _, fld := range flds {
 		// Skip non-exposed fields
 		if !fld.IsExported() {
 			continue
@@ -78,7 +76,8 @@ func structExportInt(py *cpython.Python,
 
 		// Convert into the Python Object and add to the kw map
 		item := structExportValue(py, kwmap, f)
-		kw[keywordNormalize(kwmap, fld.Name)] = item
+		name := keywordNormalize(kwmap, fld.Name)
+		kwargs = append(kwargs, cpython.KWArg{Name: name, Value: item})
 	}
 
 	// Compute Python-side type name
@@ -94,7 +93,7 @@ func structExportInt(py *cpython.Python,
 		name = keywordNormalize(kwmap, name)
 	}
 
-	return py.Eval(name).CallKW(kw)
+	return py.Eval(name).CallKWArgs(kwargs)
 }
 
 // structExportSlice exports slice of values as the Python object.
@@ -133,28 +132,31 @@ func structExportValue(py *cpython.Python,
 			return py.NewObject(v.Text)
 		}
 
-		kw := map[string]any{"lang": *v.Lang}
-		return py.Eval("wsd.WithLang").CallKW(kw, v.Text)
+		kwargs := []cpython.KWArg{{Name: "lang", Value: *v.Lang}}
+		return py.Eval("wsd.WithLang").CallKWArgs(kwargs, v.Text)
 
 	case wsscan.WithOptionsGetter:
-		kw := map[string]any{}
+		kwargs := []cpython.KWArg{}
 		if opt := v.GetMustHonor(); opt != nil {
-			kw["MustHonor"] = *opt
+			arg := cpython.KWArg{Name: "MustHonor", Value: *opt}
+			kwargs = append(kwargs, arg)
 		}
 		if opt := v.GetOverride(); opt != nil {
-			kw["Override"] = *opt
+			arg := cpython.KWArg{Name: "Override", Value: *opt}
+			kwargs = append(kwargs, arg)
 		}
 		if opt := v.GetUsedDefault(); opt != nil {
-			kw["UsedDefault"] = *opt
+			arg := cpython.KWArg{Name: "UsedDefault", Value: *opt}
+			kwargs = append(kwargs, arg)
 		}
 
 		obj := structExportValue(py, kwmap,
 			reflect.ValueOf(v.GetValue()))
-		if len(kw) == 0 {
+		if len(kwargs) == 0 {
 			return obj
 		}
 
-		return py.Eval("wsd.WithOptions").CallKW(kw, obj)
+		return py.Eval("wsd.WithOptions").CallKWArgs(kwargs, obj)
 
 	// fmt.Stringer becomes Python string
 	case fmt.Stringer:
