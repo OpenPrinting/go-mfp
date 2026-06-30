@@ -8,7 +8,9 @@
 
 package testutils
 
-import "github.com/OpenPrinting/goipp"
+import (
+	"github.com/OpenPrinting/goipp"
+)
 
 // IPPParse parses IPP binary data into the [goipp.Message].
 func IPPParse(blob []byte) (*goipp.Message, error) {
@@ -33,4 +35,20 @@ func IPPMustParse(blob []byte) *goipp.Message {
 	}
 
 	return msg
+}
+
+// IPPDiffAttributes returns line diff between two sequences of IPP attributes
+func IPPDiffAttributes(oldName string, old goipp.Attributes,
+	newName string, new goipp.Attributes) string {
+	f := goipp.NewFormatter()
+	f.SetIndent(4)
+	f.FmtAttributes(old)
+	s1 := f.String()
+	f.Reset()
+
+	f.SetIndent(4)
+	f.FmtAttributes(new)
+	s2 := f.String()
+
+	return DiffLines(oldName, s1, newName, s2)
 }
