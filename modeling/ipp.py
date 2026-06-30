@@ -8,6 +8,7 @@
 
 from dataclasses import dataclass
 from enum import Enum, IntEnum
+from helpers import collection
 
 # IPP operation codes
 class OP(IntEnum):
@@ -327,6 +328,9 @@ class LANGUAGE(str):
 class MIMETYPE(str):
     def __repr__ (self):
         return 'ipp.MIMETYPE(' + repr(str(self)) + ')'
+
+# IPP_TAG_BEGIN_COLLECTION/IPP_TAG_END_COLLECTION
+class COLLECTION(collection): pass
 
 # attrs is the model-settable variable that defines the
 # IPP printer attributes
