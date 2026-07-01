@@ -172,6 +172,7 @@ func TestObjectIsMapSeq(t *testing.T) {
 		isnone      bool
 		isseq       bool
 		isunicode   bool
+		istype      bool
 	}
 
 	tests := []testData{
@@ -188,6 +189,8 @@ func TestObjectIsMapSeq(t *testing.T) {
 		{expr: `[]`, isseq: true},
 		{expr: `()`, isseq: true},
 		{expr: `"hello"`, isunicode: true},
+		{expr: `int`, iscallable: true, istype: true},
+		{expr: `str`, iscallable: true, istype: true},
 	}
 
 	py, err := NewPython()
@@ -241,6 +244,10 @@ func TestObjectIsMapSeq(t *testing.T) {
 		if v := obj.IsUnicode(); v != test.isunicode {
 			t.Errorf("%#v: Object.IsUnicode: expected %v, present %v",
 				test.expr, test.isunicode, v)
+		}
+		if v := obj.IsType(); v != test.istype {
+			t.Errorf("%#v: Object.IsType: expected %v, present %v",
+				test.expr, test.istype, v)
 		}
 	}
 }

@@ -100,6 +100,9 @@ bool py_obj_is_seq (PyObject *x);
 // py_obj_is_unicode reports if PyObject is PyUnicode_Type or its subclass.
 bool py_obj_is_unicode (PyObject *x);
 
+// py_obj_is_type reports if PyObject is type object.
+bool py_obj_is_type (PyObject *x);
+
 // py_obj_ref increments the PyObject's reference count.
 void py_obj_ref (PyObject *x);
 

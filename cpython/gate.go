@@ -447,6 +447,11 @@ func (gate pyGate) isUnicode(pyobj pyObject) bool {
 	return bool(C.py_obj_is_unicode(pyobj))
 }
 
+// isUnicode reports if PyObject is type object.
+func (gate pyGate) isType(pyobj pyObject) bool {
+	return bool(C.py_obj_is_type(pyobj))
+}
+
 // decodeError returns [ErrTypeConversion] for Python->Go conversion.
 func (gate pyGate) decodeError(pyobj pyObject, to string) error {
 	return ErrTypeConversion{

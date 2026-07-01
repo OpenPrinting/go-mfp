@@ -727,6 +727,11 @@ func (obj *Object) IsUnicode() bool {
 	return objDoNoError(obj, pyGate.isUnicode)
 }
 
+// IsType reports if Object is the type object (i.e., class).
+func (obj *Object) IsType() bool {
+	return objDoNoError(obj, pyGate.isType)
+}
+
 // objDo is the convenience wrapper for the pyGate methods
 // with the following signature:
 //

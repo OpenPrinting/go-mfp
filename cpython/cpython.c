@@ -743,6 +743,12 @@ bool py_obj_is_unicode (PyObject *x) {
     return (flags & Py_TPFLAGS_UNICODE_SUBCLASS) != 0;
 }
 
+// py_obj_is_type reports if PyObject is type object.
+bool py_obj_is_type (PyObject *x) {
+    unsigned long flags = PyType_GetFlags_p(Py_TYPE(x));
+    return (flags & Py_TPFLAGS_TYPE_SUBCLASS) != 0;
+}
+
 // py_obj_ref increments the PyObject's reference count.
 void py_obj_ref (PyObject *x) {
         Py_IncRef_p(x);
