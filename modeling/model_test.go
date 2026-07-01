@@ -604,7 +604,7 @@ func TestWSDValWithOptions(t *testing.T) {
 						map[string]any{
 							"MustHonor": "True",
 						},
-						"Text",
+						py.Eval("wsd.Text"),
 					),
 				},
 			),

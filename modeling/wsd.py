@@ -135,8 +135,12 @@ class Boolean(str):
 # class with additional Boolean options: MustHonor, Override
 # and UsedDefault
 def WithOptions(value, *, MustHonor: Boolean = None, Override: Boolean = None, UsedDefault: Boolean = None):
-    # FIXME, WithOptions is currently broken for keyword values.
-    # This is the temporary solution.
+    # Save value's representation
+    base_repr = repr(value)
+
+    # WithOptions doesn't work well with wrapping classes,
+    # and keywords are classes. So for keyword, replace
+    # value with its string representation.
     if iskeyword(value):
         value = str(value)
 
@@ -161,7 +165,7 @@ def WithOptions(value, *, MustHonor: Boolean = None, Override: Boolean = None, U
             active_options = {k: v for k, v in options.items() if v is not None}
 
             # Format base value
-            base_repr = super().__repr__()
+            #base_repr = super().__repr__()
 
             if not active_options:
                 return base_repr
