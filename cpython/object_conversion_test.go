@@ -173,24 +173,28 @@ func TestObjectIsMapSeq(t *testing.T) {
 		isseq       bool
 		isunicode   bool
 		istype      bool
+		istrue      bool
+		isfalse     bool
+		iserror     bool
 	}
 
 	tests := []testData{
-		{expr: "True", isbool: true},
-		{expr: "False", isbool: true},
+		{expr: "True", isbool: true, istrue: true},
+		{expr: "False", isbool: true, isfalse: true},
 		{expr: `bytearray(b'\x01\x02\x03')`, isbytearray: true},
 		{expr: `bytes(b'\x01\x02\x03')`, isbytes: true},
 		{expr: `min`, iscallable: true},
-		{expr: `0.5 + 0.25j`, iscomplex: true},
+		{expr: `0.5 + 0.25j`, iscomplex: true, istrue: true},
 		{expr: `{}`, isdict: true},
-		{expr: `0.5`, isfloat: true},
-		{expr: `5`, islong: true},
-		{expr: `None`, isnone: true},
+		{expr: `0.5`, isfloat: true, istrue: true},
+		{expr: `5`, islong: true, istrue: true},
+		{expr: `None`, isnone: true, isfalse: true},
 		{expr: `[]`, isseq: true},
 		{expr: `()`, isseq: true},
 		{expr: `"hello"`, isunicode: true},
 		{expr: `int`, iscallable: true, istype: true},
 		{expr: `str`, iscallable: true, istype: true},
+		{expr: `undefined`, iserror: true}, // Force an error
 	}
 
 	py, err := NewPython()
@@ -199,7 +203,6 @@ func TestObjectIsMapSeq(t *testing.T) {
 
 	for _, test := range tests {
 		obj := py.Eval(test.expr)
-		assert.NoError(obj.Err())
 
 		if v := obj.IsBool(); v != test.isbool {
 			t.Errorf("%#v: Object.IsBool: expected %v, present %v",
@@ -248,6 +251,18 @@ func TestObjectIsMapSeq(t *testing.T) {
 		if v := obj.IsType(); v != test.istype {
 			t.Errorf("%#v: Object.IsType: expected %v, present %v",
 				test.expr, test.istype, v)
+		}
+		if v := obj.IsTrue(); v != test.istrue {
+			t.Errorf("%#v: Object.IsTrue: expected %v, present %v",
+				test.expr, test.istrue, v)
+		}
+		if v := obj.IsFalse(); v != test.isfalse {
+			t.Errorf("%#v: Object.IsFalse: expected %v, present %v",
+				test.expr, test.isfalse, v)
+		}
+		if v := obj.IsError(); v != test.iserror {
+			t.Errorf("%#v: Object.IsError: expected %v, present %v",
+				test.expr, test.iserror, v)
 		}
 	}
 }

@@ -732,6 +732,37 @@ func (obj *Object) IsType() bool {
 	return objDoNoError(obj, pyGate.isType)
 }
 
+// IsTrue returns true if the Object has a Boolean value of true.
+//
+// This is a convenience method that combines Bool() and error checking:
+//
+//	v, err := obj.Bool()
+//	return err == nil && v
+func (obj *Object) IsTrue() bool {
+	v, err := obj.Bool()
+	return err == nil && v
+}
+
+// IsFalse returns true if the Object has a Boolean value of false.
+//
+// This is a convenience method that combines Bool() and error checking:
+//
+//	v, err := obj.Bool()
+//	return err == nil && !v
+func (obj *Object) IsFalse() bool {
+	v, err := obj.Bool()
+	return err == nil && !v
+}
+
+// IsError returns true if Object is an error Object.
+//
+// This is a shortcut for the following expression:
+//
+//	obj.Err() != nil
+func (obj *Object) IsError() bool {
+	return obj.err != nil
+}
+
 // objDo is the convenience wrapper for the pyGate methods
 // with the following signature:
 //
