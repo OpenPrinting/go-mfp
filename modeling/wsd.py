@@ -6,12 +6,12 @@
 #
 # WS-Scan definitions
 
-from helpers import collection
+from helpers import collection, keyword, iskeyword
 from dataclasses import dataclass
 
 # WS-Scan types
 class ActiveJobs(collection): pass
-class ADF(collection): pass
+class ADF(collection, keyword): pass
 class ADFSide(collection): pass
 class CancelJobRequest(collection): pass
 class CancelJobResponse(collection): pass
@@ -24,10 +24,10 @@ class Dimensions(collection): pass
 class Document(collection): pass
 class DocumentDescription(collection): pass
 class DocumentParameters(collection): pass
-class Documents(collection): pass
+class Documents(collection, keyword): pass
 class Exposure(collection): pass
 class ExposureSettings(collection): pass
-class Film(collection): pass
+class Film(collection, keyword): pass
 class GetActiveJobsRequest(collection): pass
 class GetActiveJobsResponse(collection): pass
 class GetJobElementsRequest(collection): pass
@@ -47,7 +47,7 @@ class JobSummary(collection): pass
 class MediaSide(collection): pass
 class MediaSideImageInfo(collection): pass
 class MediaSides(collection): pass
-class Platen(collection): pass
+class Platen(collection, keyword): pass
 class Range(collection): pass
 class Resolution(collection): pass
 class Resolutions(collection): pass
@@ -56,12 +56,71 @@ class RetrieveImageResponse(collection): pass
 class Scaling(collection): pass
 class ScalingRangeSupported(collection): pass
 class ScanData(collection): pass
-class ScannerConfiguration(collection): pass
-class ScannerDescription(collection): pass
+class ScannerConfiguration(collection, keyword): pass
+class ScannerDescription(collection, keyword): pass
 class ScannerElemData(collection): pass
-class ScannerStatus(collection): pass
+class ScannerStatus(collection, keyword): pass
 class ScanRegion(collection): pass
 class ScanTicket(collection): pass
+
+# Keywords
+class Aborted (keyword): pass
+class ADFDuplex (keyword): pass
+class AttentionRequired (keyword): pass
+class Auto (keyword): pass
+class BlackAndWhite1 (keyword): pass
+class BlackandWhiteNegativeFilm (keyword): pass
+class Calibrating (keyword): pass
+class Canceled (keyword): pass
+class ColorNegativeFilm (keyword): pass
+class ColorSlideFilm (keyword): pass
+class Completed (keyword): pass
+class CoverOpen (keyword): pass
+class Creating (keyword): pass
+class Critical (keyword): pass
+class DefaultScanTicket (keyword): pass
+class DocumentFormatError (keyword): pass
+class Grayscale16 (keyword): pass
+class Grayscale4 (keyword): pass
+class Grayscale8 (keyword): pass
+class Halftone (keyword): pass
+class Held (keyword): pass
+class Idle (keyword): pass
+class ImageTransferError (keyword): pass
+class Informational (keyword): pass
+class InputTrayEmpty (keyword): pass
+class InterlockOpen (keyword): pass
+class InternalStorageFull (keyword): pass
+class InvalidScanTicket (keyword): pass
+class JobCanceledAtDevice (keyword): pass
+class JobCompletedWithErrors (keyword): pass
+class JobCompletedWithWarnings (keyword): pass
+class JobScanningAndTransferring (keyword): pass
+class JobScanning (keyword): pass
+class JobTimedOut (keyword): pass
+class JobTransferring (keyword): pass
+class LampError (keyword): pass
+class LampWarming (keyword): pass
+class MediaJam (keyword): pass
+class MediaPath (keyword): pass
+class Mixed (keyword): pass
+class MultipleFeedError (keyword): pass
+class NotApplicable (keyword): pass
+class Paused (keyword): pass
+class Pending (keyword): pass
+class Photo (keyword): pass
+class Processing (keyword): pass
+class RGB24 (keyword): pass
+class RGB48 (keyword): pass
+class RGBa32 (keyword): pass
+class RGBa64 (keyword): pass
+class ScannerStopped (keyword): pass
+class Started (keyword): pass
+class Stopped (keyword): pass
+class Terminating (keyword): pass
+class Text (keyword): pass
+class VendorSection (keyword): pass
+class Warning (keyword): pass
 
 # Boolean represents the WSD boolean value.
 #
@@ -76,6 +135,11 @@ class Boolean(str):
 # class with additional Boolean options: MustHonor, Override
 # and UsedDefault
 def WithOptions(value, *, MustHonor: Boolean = None, Override: Boolean = None, UsedDefault: Boolean = None):
+    # FIXME, WithOptions is currently broken for keyword values.
+    # This is the temporary solution.
+    if iskeyword(value):
+        value = str(value)
+
     base_type = type(value)
 
     # Wrap value into DynamicWithOptions

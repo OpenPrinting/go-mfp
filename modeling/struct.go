@@ -21,6 +21,12 @@ import (
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
+var (
+	// Reflection package paths to escl and wsscan modules
+	pkgPathESCL = reflect.TypeOf(escl.ColorMode(0)).PkgPath()
+	pkgPathWSD  = reflect.TypeOf(wsscan.ColorEntry(0)).PkgPath()
+)
+
 // structExport converts the protocol object, represented as Go
 // structure or pointer to structure, into the Python dictionary.
 //
@@ -160,6 +166,21 @@ func structExportValue(py *cpython.Python,
 
 	// fmt.Stringer becomes Python string
 	case fmt.Stringer:
+		// Use keyword, provided by module, if available
+		module := ""
+		switch reflect.TypeOf(v).PkgPath() {
+		case pkgPathESCL:
+			module = "escl"
+		case pkgPathWSD:
+			module = "wsd"
+		}
+
+		s := v.String()
+		obj := py.Eval(module + "." + s)
+		if py.Eval("helpers.iskeyword").Call(obj).IsTrue() {
+			return obj
+		}
+
 		return py.NewObject(v.String())
 	}
 

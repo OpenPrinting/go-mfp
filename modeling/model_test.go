@@ -584,7 +584,7 @@ func TestWSDValWithOptions(t *testing.T) {
 			},
 			obj: pyDocumentParameters.CallKW(
 				map[string]any{
-					"ContentType": "Text",
+					"ContentType": py.Eval("wsd.Text"),
 				},
 			),
 		},
@@ -620,7 +620,10 @@ func TestWSDValWithOptions(t *testing.T) {
 
 		if expected != present {
 			t.Errorf("%s: export error\n%s",
-				test.name, testutils.Diff(expected, present))
+				test.name,
+				testutils.DiffLines(
+					"expected", expected,
+					"present", present))
 			continue
 		}
 

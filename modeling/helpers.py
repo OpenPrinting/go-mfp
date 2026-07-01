@@ -119,3 +119,36 @@ class collection(SimpleNamespace):
         class_name = self.__class__.__module__ + "." + self.__class__.__name__
 
         return f"{class_name}(\n{joined_pieces},\n)"
+
+# meta_keyword is a hepler metaclass for keyword implementation
+class meta_keyword (type):
+    def __str__ (self):
+        return self.__name__
+
+    def __repr__ (self):
+        return self.__module__ + "." + self.__name__
+
+# keyword is a base class of classes that can be used
+# as keywords.
+#
+# for classes, inherited from keyword:
+#   - str(cls) returns the keyword name (i.e., cls.__name__)
+#   - repr(cls) returns keyword representation in the Python
+#     syntax (i.e. cls.__module__ + "." + cls.__name__)
+class keyword (metaclass = meta_keyword):
+    pass
+
+# iskeyword reports if cls is a keyword
+def iskeyword(cls):
+    # issubclass will trow an exception, if cls is not
+    # a type object. Just catch it and return false, if
+    # it happens.
+    try:
+        return issubclass(cls, keyword)
+    except:
+        pass
+
+    return False
+
+# Purge unexported symbols from the module namespace.
+del meta_keyword
