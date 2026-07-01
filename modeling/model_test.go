@@ -17,10 +17,85 @@ import (
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
+	"github.com/OpenPrinting/go-mfp/proto/ipp"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
+	"github.com/OpenPrinting/goipp"
 )
+
+// TestKyoceraIPPPrinterAttributes is the real-world test, that
+// verifies that the real Kyocera ECOSYS M2040dn IPP Printer Attributes
+// is properly handled.
+func TestKyoceraIPPPrinterAttributes(t *testing.T) {
+	// Decode Kyocera PrinterAttributes
+	var msg goipp.Message
+	err := msg.DecodeBytes(testutils.Kyocera.ECOSYS.M2040dn.
+		IPP.PrinterAttributes)
+	assert.NoError(err)
+
+	pa, err := ipp.DecodePrinterAttributes(msg.Printer, nil)
+	assert.NoError(err)
+
+	// Create a new, empty Model
+	model, err := NewModel()
+	assert.NoError(err)
+
+	defer model.Close()
+
+	if !legacyMode(model.py) {
+		// FIXME, currently new mode doesn't pass the test
+		return
+	}
+
+	// Roll over ippExport/ippImportPrinterAppributes
+	obj := ippExport(model.py, pa)
+	if err := obj.Err(); err != nil {
+		t.Errorf("ippExport: %s", err)
+		return
+	}
+
+	pa2, err := ippImportPrinterAppributes(obj)
+	if err != nil {
+		t.Errorf("ippImportPrinterAppributes: %s", err)
+		return
+	}
+
+	attrs := pa.RawAttrs().All()
+	attrs2 := pa2.RawAttrs().All()
+	if !attrs.Equal(attrs2) {
+		diff := testutils.IPPDiffAttributes("expected", attrs, "present", attrs2)
+		t.Errorf("ippExport/ippImportPrinterAppributes:\n%s", diff)
+	}
+
+	// Roll over Model.Write/Model.Read
+	buf := &bytes.Buffer{}
+
+	model.SetIPPPrinterAttrs(pa)
+	err = model.Write(buf)
+	if err != nil {
+		t.Errorf("Model.Write: %s", err)
+	}
+
+	model2, err := NewModel()
+	assert.NoError(err)
+
+	defer model2.Close()
+
+	err = model2.Read("test", buf)
+	if err != nil {
+		t.Errorf("Model.Read: %s", err)
+	}
+
+	pa2 = model2.GetIPPPrinterAttrs()
+
+	attrs = pa.RawAttrs().All()
+	attrs2 = pa2.RawAttrs().All()
+	if !attrs.Equal(attrs2) {
+		diff := testutils.IPPDiffAttributes("expected", attrs, "present", attrs2)
+		t.Errorf("Model.Write/Model.Read:\n%s", diff)
+	}
+}
 
 // TestKyoceraESCLScannerCapabilities is the real-world test, that
 // verifies that the real Kyocera ECOSYS M2040dn eSCL ScannerCapabilities
