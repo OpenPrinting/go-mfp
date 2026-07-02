@@ -189,12 +189,12 @@ class TAG(Enum):
 # IPP_TAG_UNSUPPORTED_VALUE
 class UNSUPPORTED_VALUE:
     def __repr__ (self):
-        return 'ipp.UNSUPPORTED_VALUE'
+        return 'ipp.UNSUPPORTED_VALUE()'
 
 # IPP_TAG_DEFAULT
 class DEFAULT:
     def __repr__ (self):
-        return 'ipp.DEFAULT'
+        return 'ipp.DEFAULT()'
 
 # IPP_TAG_UNKNOWN
 class UNKNOWN:
