@@ -59,6 +59,54 @@ automatically at the first build attrmpt:
   * github.com/google/go-cmp - used only for testing
   * github.com/peterh/liner - line editor for the interactive shell
 
+### Building and running on Windows (WSL2)
+
+The project builds and runs under the Windows Subsystem for Linux
+(WSL2). The USB device emulation relies on the USB/IP kernel
+support (the `vhci_hcd` module), which recent WSL2 kernels already
+include, so a separate virtual machine is not required.
+
+The instructions below were tested on Ubuntu 24.04 under WSL2
+(kernel 6.6.87 microsoft-standard-WSL2).
+
+Install the build dependencies together with the USB/IP client
+tools:
+
+    sudo apt-get install -y \
+        golang gcc pkg-config make \
+        libavahi-client-dev libjpeg-dev libpng-dev \
+        libusb-1.0-0-dev python3-dev \
+        linux-tools-generic linux-tools-common linux-tools-virtual \
+        usbutils
+
+Note that Ubuntu has no standalone `usbip` package: the `usbip`
+client is shipped as part of `linux-tools` and installed under
+`/usr/lib/linux-tools-*/usbip`. Put it on the PATH, for example:
+
+    sudo ln -sf "$(ls /usr/lib/linux-tools-*/usbip | head -1)" \
+        /usr/local/bin/usbip
+
+Ubuntu does not package `libppd`, which is needed by a full
+`make`. To just build and try the virtual MFP simulator, build
+only that command:
+
+    go build -o mfp-virtual ./cmd/mfp-virtual
+
+Run the simulator in USB/IP mode:
+
+    ./mfp-virtual --usbip -d
+
+In another terminal, load the kernel module and attach the
+emulated device:
+
+    sudo modprobe vhci-hcd
+    sudo usbip attach -r localhost -b 1-1
+
+The virtual MFP now appears as a real USB device (`lsusb` lists it
+as `OpenPrinting Virtual MFP`) and can be driven by the usual Linux
+printing and scanning stack, including
+[ipp-usb](https://github.com/OpenPrinting/ipp-usb).
+
 ## Source tree organization
 
 ### import github.com/OpenPrinting/go-mfp/abstract"
