@@ -20,11 +20,11 @@ import (
 
 // Printer implements the IPP printer.
 type Printer struct {
-	options PrinterOptions       // Printer options
-	server  *Server              // Underlying IPP server
-	attrs   *PrinterAttributes   // Printer attributes
-	q       *queue               // Job queue
-	backend abstract.Printer // Print backend
+	options PrinterOptions     // Printer options
+	server  *Server            // Underlying IPP server
+	attrs   *PrinterAttributes // Printer attributes
+	q       *queue             // Job queue
+	backend abstract.Printer   // Print backend
 }
 
 // PrinterOptions extends [ServerOptions] with printer-specific
