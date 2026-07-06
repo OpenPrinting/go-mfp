@@ -210,6 +210,9 @@ func TestIppCodecStandardTypes(t *testing.T) {
 		&ValidateJobResponse{},
 
 		&DeviceAttributes{},
+		&DocumentStatus{},
+		&GetNextDocumentDataRequest{},
+		&GetNextDocumentDataResponse{},
 		&GetPrinterAttributesRequest{},
 		&GetPrinterAttributesResponse{},
 		&JobStatus{},
