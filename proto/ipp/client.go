@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -224,4 +224,50 @@ func (c *Client) GetPrinterAttributes(ctx context.Context,
 	}
 
 	return rsp.Printer, nil
+}
+
+// CreateJob sends a Create-Job request.
+//
+// For scan jobs (PWG5100.17), op.InputAttributes must be set.
+// For print jobs, document data must be supplied separately using
+// Send-Document.
+func (c *Client) CreateJob(
+	ctx context.Context,
+	op JobCreateOperation, job *JobAttributes) (
+	*CreateJobResponse, error) {
+
+	if job == nil {
+		job = &JobAttributes{}
+	}
+
+	rq := &CreateJobRequest{
+		RequestHeader:      DefaultRequestHeader,
+		JobCreateOperation: op,
+		Job:                job,
+	}
+
+	rsp := &CreateJobResponse{}
+
+	err := c.Do(ctx, rq, rsp)
+	if err != nil {
+		return nil, err
+	}
+
+	return rsp, nil
+}
+
+// GetNextDocumentData sends a Get-Next-Document-Data request.
+func (c *Client) GetNextDocumentData(
+	ctx context.Context,
+	rq *GetNextDocumentDataRequest) (
+	*GetNextDocumentDataResponse, error) {
+
+	rsp := &GetNextDocumentDataResponse{}
+
+	err := c.DoWithBody(ctx, rq, rsp)
+	if err != nil {
+		return nil, err
+	}
+
+	return rsp, nil
 }
