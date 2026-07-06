@@ -204,11 +204,21 @@ func buildPrinterAttrGroups() map[string]generic.Set[string] {
 		printerDescription.Del(name)
 	})
 
-	return map[string]generic.Set[string]{
+	attrGroups := map[string]generic.Set[string]{
 		"all":                 all,
 		"printer-description": printerDescription,
 		"job-template":        jobTemplate,
 	}
+
+	known := generic.NewSet[string]()
+	for _, group := range attrGroups {
+		known.Merge(group)
+	}
+
+	known.Add("media-col-database")
+	attrGroups[""] = known
+
+	return attrGroups
 }
 
 // filterAttributes filters encoded against the requested groups/names
@@ -221,17 +231,39 @@ func filterAttributes(
 	attrGroups map[string]generic.Set[string],
 ) (filtered goipp.Attributes, unsupported []string) {
 
+	// Roll over all attributes, supported by device. Build
+	// the following sets:
+	//   - supported -- all attributes, supported by device
+	//   - nonstandard -- attributes, supported by device,
+	//     but not found in the standard groups
 	supported := generic.NewSet[string]()
+	standard := attrGroups[""]
+	nonstandard := generic.NewSet[string]()
+
 	for _, attr := range encoded {
 		supported.Add(attr.Name)
+		if !standard.Contains(attr.Name) {
+			nonstandard.Add(attr.Name)
+		}
 	}
 
+	// Roll over the requested attributes. Build the following sets:
+	//   - filter -- set of requested attributes with groups
+	//     expanded and unknown attributes excluded
+	//   - seenUnsupported is the set of requested but unsupported
+	//     attributes
 	filter := generic.NewSet[string]()
 	seenUnsupported := generic.NewSet[string]()
 
 	for _, name := range requestedAttrs {
-		if group, ok := attrGroups[name]; ok {
+		// Note, name == "" refers to the pseudo-group of
+		// all standard attributes and should not be used
+		// here.
+		if group, ok := attrGroups[name]; name != "" && ok {
 			filter.Merge(group)
+			if name == "all" {
+				filter.Merge(nonstandard)
+			}
 		} else if supported.Contains(name) {
 			filter.Add(name)
 		} else if seenUnsupported.TestAndAdd(name) {
@@ -239,6 +271,7 @@ func filterAttributes(
 		}
 	}
 
+	// Now match present attributes against the filter
 	for _, attr := range encoded {
 		if filter.Contains(attr.Name) {
 			filtered = append(filtered, attr)
@@ -265,8 +298,13 @@ func (rq *GetPrinterAttributesRequest) Apply(
 		encoded = enc.Encode(attrs)
 	}
 
+	requestedAttrs := rq.RequestedAttributes
+	if len(requestedAttrs) == 0 {
+		requestedAttrs = []string{"all"}
+	}
+
 	filtered, unsupported := filterAttributes(
-		rq.RequestedAttributes, encoded, printerAttrGroups)
+		requestedAttrs, encoded, printerAttrGroups)
 
 	status := goipp.StatusOk
 	if len(unsupported) > 0 {
