@@ -167,7 +167,7 @@ func (rsp *GetPrinterAttributesResponse) EncodeRaw(
 	return msg
 }
 
-// printerAttrGroups maps the standard attribute-group keywords
+// getPrinterAttrubutesFilter maps the standard attribute-group keywords
 // ("all", "printer-description", "job-template") to the set of
 // individual attribute names that belong to each group, for
 // Get-Printer-Attributes requests (used by both Print Services
@@ -175,11 +175,11 @@ func (rsp *GetPrinterAttributesResponse) EncodeRaw(
 //
 // Other Get-XXX-Attributes operations (e.g. Get-Job-Attributes)
 // will define their own analogous group maps.
-var printerAttrGroups = buildPrinterAttrGroups()
+var getPrinterAttrubutesFilter = buildGetPrinterAttrubutesFilter()
 
-// buildPrinterAttrGroups constructs the printer attribute-group
-// expansion map from the IANA registration database.
-func buildPrinterAttrGroups() map[string]generic.Set[string] {
+// buildGetPrinterAttrubutesFilter constructs filterAttributes for
+// Get-Printer-Attributes operation
+func buildGetPrinterAttrubutesFilter() *filterAttributes {
 	all := generic.NewSet[string]()
 	for name := range iana.PrinterDescription {
 		all.Add(name)
@@ -204,81 +204,22 @@ func buildPrinterAttrGroups() map[string]generic.Set[string] {
 		printerDescription.Del(name)
 	})
 
-	attrGroups := map[string]generic.Set[string]{
-		"all":                 all,
-		"printer-description": printerDescription,
-		"job-template":        jobTemplate,
+	filter := &filterAttributes{
+		groups: map[string]generic.Set[string]{
+			"all":                 all,
+			"printer-description": printerDescription,
+			"job-template":        jobTemplate,
+		},
+		standard: generic.NewSet[string](),
 	}
 
-	known := generic.NewSet[string]()
-	for _, group := range attrGroups {
-		known.Merge(group)
+	for _, group := range filter.groups {
+		filter.standard.Merge(group)
 	}
 
-	known.Add("media-col-database")
-	attrGroups[""] = known
+	filter.standard.Add("media-col-database")
 
-	return attrGroups
-}
-
-// filterAttributes filters encoded against the requested groups/names
-// defined by attrGroups. Returns the filtered subset (preserving the
-// original order of encoded) and the list of requested names that were
-// neither a known group nor a supported attribute.
-func filterAttributes(
-	requestedAttrs []string,
-	encoded goipp.Attributes,
-	attrGroups map[string]generic.Set[string],
-) (filtered goipp.Attributes, unsupported []string) {
-
-	// Roll over all attributes, supported by device. Build
-	// the following sets:
-	//   - supported -- all attributes, supported by device
-	//   - nonstandard -- attributes, supported by device,
-	//     but not found in the standard groups
-	supported := generic.NewSet[string]()
-	standard := attrGroups[""]
-	nonstandard := generic.NewSet[string]()
-
-	for _, attr := range encoded {
-		supported.Add(attr.Name)
-		if !standard.Contains(attr.Name) {
-			nonstandard.Add(attr.Name)
-		}
-	}
-
-	// Roll over the requested attributes. Build the following sets:
-	//   - filter -- set of requested attributes with groups
-	//     expanded and unknown attributes excluded
-	//   - seenUnsupported is the set of requested but unsupported
-	//     attributes
-	filter := generic.NewSet[string]()
-	seenUnsupported := generic.NewSet[string]()
-
-	for _, name := range requestedAttrs {
-		// Note, name == "" refers to the pseudo-group of
-		// all standard attributes and should not be used
-		// here.
-		if group, ok := attrGroups[name]; name != "" && ok {
-			filter.Merge(group)
-			if name == "all" {
-				filter.Merge(nonstandard)
-			}
-		} else if supported.Contains(name) {
-			filter.Add(name)
-		} else if seenUnsupported.TestAndAdd(name) {
-			unsupported = append(unsupported, name)
-		}
-	}
-
-	// Now match present attributes against the filter
-	for _, attr := range encoded {
-		if filter.Contains(attr.Name) {
-			filtered = append(filtered, attr)
-		}
-	}
-
-	return
+	return filter
 }
 
 // Apply applies the request's requested-attributes filter to attrs and
@@ -303,8 +244,8 @@ func (rq *GetPrinterAttributesRequest) Apply(
 		requestedAttrs = []string{"all"}
 	}
 
-	filtered, unsupported := filterAttributes(
-		requestedAttrs, encoded, printerAttrGroups)
+	filtered, unsupported := getPrinterAttrubutesFilter.Apply(
+		requestedAttrs, encoded)
 
 	status := goipp.StatusOk
 	if len(unsupported) > 0 {
