@@ -22,6 +22,7 @@ type job struct {
 	JobCreateOperation            // Job create-time operation attributes
 	JobAttributes                 // Job creation attributes
 	SendDocumentActive bool       // Send-Document in progress
+	cancelPending      bool       // Cancel-Job accepted, not yet canceled
 	lock               sync.Mutex // Access lock
 }
 
