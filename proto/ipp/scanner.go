@@ -89,6 +89,7 @@ func NewScanner(attrs *PrinterAttributes, options ScannerOptions) *Scanner {
 	server.RegisterHandler(NewHandler(scanner.handleGetPrinterAttributes))
 	server.RegisterHandler(NewHandler(scanner.handleCreateScanJob))
 	server.RegisterHandler(NewHandler(scanner.handleGetNextDocumentData))
+	server.RegisterHandler(NewHandler(scanner.handleCancelJob))
 
 	return scanner
 }
@@ -256,6 +257,65 @@ func (scanner *Scanner) documentDataGetInterval() int {
 		return scanner.options.DocumentDataGetInterval
 	}
 	return 5
+}
+
+// handleCancelJob handles Cancel-Job request on the Scan Service.
+func (scanner *Scanner) handleCancelJob(
+	ctx context.Context,
+	rq *CancelJobRequest) (*goipp.Message, io.ReadCloser, error) {
+
+	var j *job
+
+	switch {
+	case rq.PrinterURI != nil && rq.JobID != nil:
+		j = scanner.q.JobByID(*rq.JobID)
+		if j == nil {
+			return nil, nil, NewErrIPPFromRequest(rq,
+				goipp.StatusErrorNotFound,
+				"job not found (job-id=%d)", *rq.JobID)
+		}
+
+	case rq.JobURI != nil:
+		j = scanner.q.JobByURI(*rq.JobURI)
+		if j == nil {
+			return nil, nil, NewErrIPPFromRequest(rq,
+				goipp.StatusErrorNotFound,
+				"job not found (job-uri=%q)", *rq.JobURI)
+		}
+
+	default:
+		return nil, nil, NewErrIPPFromRequest(rq,
+			goipp.StatusErrorBadRequest,
+			"missing job-id and job-uri attributes")
+	}
+
+	j.Lock()
+	if !j.isCancelable() {
+		j.Unlock()
+		return nil, nil, NewErrIPPFromRequest(rq,
+			goipp.StatusErrorNotPossible,
+			"job cannot be canceled in %v state", j.JobState)
+	}
+
+	j.beginCancel()
+	jobID := j.JobID
+	j.Unlock()
+
+	scanner.lock.Lock()
+	if scanner.activeJob == jobID {
+		scanner.cleanupActiveScan()
+	}
+	scanner.lock.Unlock()
+
+	j.Lock()
+	j.finishCancel()
+	j.Unlock()
+
+	rsp := CancelJobResponse{
+		ResponseHeader: rq.ResponseHeader(goipp.StatusOk),
+	}
+
+	return rsp.Encode(), nil, nil
 }
 
 func (scanner *Scanner) cleanupActiveScan() {
