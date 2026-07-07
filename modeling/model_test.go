@@ -43,11 +43,6 @@ func TestKyoceraIPPPrinterAttributes(t *testing.T) {
 
 	defer model.Close()
 
-	if !legacyMode(model.py) {
-		// FIXME, currently new mode doesn't pass the test
-		return
-	}
-
 	// Roll over ippExport/ippImportPrinterAppributes
 	obj := ippExport(model.py, pa)
 	if err := obj.Err(); err != nil {

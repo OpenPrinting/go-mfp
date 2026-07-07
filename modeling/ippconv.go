@@ -10,7 +10,6 @@ package modeling
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/cpython"
@@ -32,15 +31,16 @@ func ippExportAttrs(py *cpython.Python,
 	attrs goipp.Attributes) *cpython.Object {
 
 	// Roll over all IPP attributes
-	kwargs := make([]cpython.KWArg, len(attrs))
-	for i, attr := range attrs {
+	collection := py.Eval("ipp.COLLECTION").Call()
+	for _, attr := range attrs {
 		vals := ippExportValues(py, attr)
-		name := ippAttrNameToPython(attr.Name)
-		kwargs[i] = cpython.KWArg{Name: name, Value: vals}
+		err := collection.SetItem(attr.Name, vals)
+		if err != nil {
+			return py.NewError(err)
+		}
 	}
 
-	// Create collection object
-	return py.Eval("ipp.COLLECTION").CallKWArgs(kwargs)
+	return collection
 }
 
 // ippExportValues exports IPP attribute values into the [cpython.Object].
@@ -156,25 +156,31 @@ func ippImportIPPAttrs(obj *cpython.Object) (
 func ippImportIPPAttrsInt(obj *cpython.Object) (
 	attrs goipp.Attributes, err error) {
 
-	// Retrieve attribute names as a slice of obj.__dict__ key objects
-	var keyobjs []*cpython.Object
-	keyobjs, err = obj.Get("__dict__").Keys()
+	if typename := obj.TypeName(); typename != "ipp.COLLECTION" {
+		err = fmt.Errorf("%s cannot be converted to IPP collection",
+			typename)
+		return
+	}
+
+	// Retrieve IPP attribute names
+	keyobjs, err := obj.Keys()
 	if err != nil {
 		return
 	}
 
-	for i := range keyobjs {
+	// Roll over all attributes
+	for _, keyobj := range keyobjs {
+		// Obtain key name, as a string
 		var key string
-		var valobj *cpython.Object
-
-		// Obtain key name and value
-		key, err = keyobjs[i].Str()
-		if err == nil {
-			valobj = obj.Get(key)
-			err = valobj.Err()
+		key, err = keyobj.Str()
+		if err != nil {
+			return
 		}
 
-		if err != nil {
+		// Obtain item value
+		valobj := obj.GetItem(keyobj)
+		if valobj.Err() != nil {
+			err = errImportWrap(key, valobj.Err())
 			return
 		}
 
@@ -186,8 +192,7 @@ func ippImportIPPAttrsInt(obj *cpython.Object) (
 		}
 
 		// Append the attribute
-		name := ippPythonToAttrName(key)
-		attrs.Add(goipp.Attribute{Name: name, Values: vals})
+		attrs.Add(goipp.Attribute{Name: key, Values: vals})
 	}
 
 	return
@@ -404,16 +409,6 @@ func ippImportIPPTextWithLang(obj *cpython.Object, tag goipp.Tag) (
 	}
 
 	return
-}
-
-// ippAttrNameToPython translates IPP attribute name to Python identifier
-func ippAttrNameToPython(name string) string {
-	return strings.ReplaceAll(name, "-", "_")
-}
-
-// ippAttrNameToPython translates IPP attribute name from Python identifier
-func ippPythonToAttrName(name string) string {
-	return strings.ReplaceAll(name, "_", "-")
 }
 
 // ippTagName maps goipp.Tag to its Python name

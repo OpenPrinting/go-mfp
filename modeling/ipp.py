@@ -9,6 +9,7 @@
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from helpers import collection
+from collections.abc import Mapping
 
 # IPP operation codes
 class OP(IntEnum):
@@ -329,8 +330,180 @@ class MIMETYPE(str):
     def __repr__ (self):
         return 'ipp.MIMETYPE(' + repr(str(self)) + ')'
 
-# IPP_TAG_BEGIN_COLLECTION/IPP_TAG_END_COLLECTION
-class COLLECTION(collection): pass
+# ATTR is a helper class that allows to embed attributes with
+# the non-standard names into COLLECTION:
+#
+#    ipp.printer = ipp.COLLECTION(
+#        # Standard names, mapped into Python identifiers
+#        charset_configured = ipp.TEXT('utf-8'),
+#        charset_supported = ipp.CHARSET('utf-8'),
+
+#        # Non-standard names:
+#        **ipp.ATTR('print_wfds', ipp.TEXT('T')),
+#    )
+class ATTR(dict):
+    # This class acts as a specialized dictionary that infixes
+    # a prefix strictly incompatible with standard Python identifiers.
+    def __init__(self, name: str, value):
+        super().__init__({f"__raw_attr-{name}": value})
+
+# COLLECTION represents an IPP collection
+class COLLECTION:
+    # The '/' syntax ensures 'self' is positional-only (Python 3.8+).
+    # This prevents conflicts if an IPP attribute named 'self' is passed.
+    def __init__(self, /, **kwargs):
+        self.__dict__['attributes'] = {}
+        for key, value in kwargs.items():
+            # If the key contains our unique prefix from ATTR
+            if key.startswith("__raw_attr-"):
+                original_name = key[11:]  # Cut off "__raw_attr-" (11 chars)
+                self.attributes[original_name] = value
+            else:
+                # Standard Python arguments written without quotes
+                self.attributes[key.replace('_', '-')] = value
+
+    # --- Core dictionary protocols ---
+
+    def __getitem__(self, key: str):
+        return self.attributes[key]
+
+    def __setitem__(self, key: str, value):
+        self.attributes[key] = value
+
+    def __delitem__(self, key: str):
+        del self.attributes[key]
+
+    def __contains__(self, key: str):
+        return key in self.attributes
+
+    def __len__(self):
+        return len(self.attributes)
+
+    def __iter__(self):
+        return iter(self.attributes)
+
+    def __eq__(self, other):
+        if not isinstance(other, COLLECTION):
+            return NotImplemented
+        return self.attributes == other.attributes
+
+    # --- Standard dictionary methods ---
+
+    def keys(self):
+        return self.attributes.keys()
+
+    def values(self):
+        return self.attributes.values()
+
+    def items(self):
+        return self.attributes.items()
+
+    def get(self, key: str, default=None):
+        return self.attributes.get(key, default)
+
+    def pop(self, key: str, *args):
+        return self.attributes.pop(key, *args)
+
+    def popitem(self):
+        return self.attributes.popitem()
+
+    def clear(self):
+        self.attributes.clear()
+
+    def update(self, other=None, **kwargs):
+        if other is not None:
+            if isinstance(other, COLLECTION):
+                self.attributes.update(other.attributes)
+            elif isinstance(other, Mapping):
+                self.attributes.update(other)
+            else:
+                for k, v in other:
+                    self.attributes[k] = v
+        for k, v in kwargs.items():
+            if k.startswith("__raw_attr-"):
+                self.attributes[k[11:]] = v
+            else:
+                self.attributes[k.replace('_', '-')] = v
+
+    def setdefault(self, key: str, default=None):
+        return self.attributes.setdefault(key, default)
+
+    def copy(self):
+        new_obj = COLLECTION()
+        new_obj.attributes = self.attributes.copy()
+        return new_obj
+
+    # --- Attribute access protocols ---
+
+    def __getattr__(self, name: str):
+        dash_name = name.replace('_', '-')
+        if dash_name in self.attributes:
+            return self.attributes[dash_name]
+        raise AttributeError(
+            f"'COLLECTION' object has no attribute '{name}'"
+        )
+
+    def __setattr__(self, name: str, value):
+        if 'attributes' not in self.__dict__:
+            super().__setattr__(name, value)
+            return
+
+        dash_name = name.replace('_', '-')
+        self.attributes[dash_name] = value
+
+    def __delattr__(self, name: str):
+        dash_name = name.replace('_', '-')
+        if dash_name in self.attributes:
+            del self.attributes[dash_name]
+        else:
+            raise AttributeError(
+                f"'COLLECTION' object has no attribute '{name}'"
+            )
+
+    # --- String representation ---
+
+    def _repr_list(self, lst, current_indent):
+        next_indent = current_indent + 4
+        spaces = " " * next_indent
+        closing_spaces = " " * current_indent
+
+        parts = []
+        for item in lst:
+            parts.append(f"{spaces}{self._repr_item(item, next_indent)}")
+
+        return "[\n" + ",\n".join(parts) + f",\n{closing_spaces}]"
+
+    def _repr_item(self, item, current_indent):
+        if isinstance(item, COLLECTION):
+            return item.__repr__(_indent=current_indent)
+        elif isinstance(item, list):
+            return self._repr_list(item, current_indent)
+        return repr(item)
+
+    # Generates a valid Python literal string with indentation
+    def __repr__(self, _indent=0):
+        next_indent = _indent + 4
+        spaces = " " * next_indent
+        closing_spaces = " " * _indent
+
+        parts = []
+        for key, value in self.attributes.items():
+            val_repr = self._repr_item(value, next_indent)
+            py_key = key.replace('-', '_')
+
+            # Standard IPP name rules for literal
+            if py_key.isidentifier() and '_' not in key:
+                # Outputted as standard keyword arguments (named parameters)
+                parts.append(f"{spaces}{py_key} = {val_repr}")
+            else:
+                # Non-standard name: formatted using the explicit ipp.ATTR class
+                parts.append(f"{spaces}**ipp.ATTR({repr(key)}, {val_repr})")
+
+        if not parts:
+            return "ipp.COLLECTION()"
+
+        indented_parts = ",\n".join(parts)
+        return f"ipp.COLLECTION(\n{indented_parts},\n{closing_spaces})"
 
 # attrs is the model-settable variable that defines the
 # IPP printer attributes
