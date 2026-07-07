@@ -60,7 +60,7 @@ func Decode(ns Namespace, in io.Reader) (Element, error) {
 				if attr.Name.Space == "xmlns" {
 					// Skip xmlns attributes, they
 					// are for XML namespace management.
-					// On encoding we are insert them
+					// On encoding we insert them
 					// automatically, so they are
 					// removed on decoding, for symmetry.
 					continue
