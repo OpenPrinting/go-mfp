@@ -115,10 +115,14 @@ class collection(SimpleNamespace):
             pieces.append(f"{indent}{key} = {val_repr}")
 
         # Join formatted attributes
-        joined_pieces = ",\n".join(pieces)
+        joined_pieces = ""
+        if len(pieces) > 0:
+            joined_pieces = ",\n".join(pieces)
+            joined_pieces = f"\n{joined_pieces},\n"
+
         class_name = self.__class__.__module__ + "." + self.__class__.__name__
 
-        return f"{class_name}(\n{joined_pieces},\n)"
+        return f"{class_name}({joined_pieces})"
 
 # meta_keyword is a hepler metaclass for keyword implementation
 class meta_keyword (type):
