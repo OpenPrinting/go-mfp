@@ -9,4 +9,4 @@
 from uuid import UUID
 from datetime import datetime
 
-__use_legacy_format = True
+#__use_legacy_format = True
