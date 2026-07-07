@@ -11,6 +11,7 @@ package ipp
 import (
 	"io"
 
+	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/goipp"
 )
 
@@ -42,9 +43,10 @@ type ResponseHeader struct {
 	Status    goipp.Status
 
 	// Common Operation attributes.
-	AttributesCharset         string `ipp:"attributes-charset"`
-	AttributesNaturalLanguage string `ipp:"attributes-natural-language"`
-	StatusMessage             string `ipp:"status-message"`
+	AttributesCharset         string               `ipp:"attributes-charset"`
+	AttributesNaturalLanguage string               `ipp:"attributes-natural-language"`
+	StatusMessage             string               `ipp:"status-message"`
+	DetailedStatusMessage     optional.Val[string] `ipp:"detailed-status-message"`
 
 	// Raw IPP message.
 	//
