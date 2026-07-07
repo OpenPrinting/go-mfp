@@ -82,16 +82,22 @@ func (model *Model) GetESCLScanCaps() *escl.ScannerCapabilities {
 // be preloaded into the Model's Python interpreter (model.py).
 func (model *Model) esclLoad() error {
 	// Load and decode ScannerCapabilities
-	obj := model.py.Eval("escl.caps")
+	name := "escl.scanner"
+	obj := model.py.Eval(name)
+	if obj.Err() != nil {
+		name = "escl.caps"
+		obj = model.py.Eval(name)
+	}
+
 	if err := obj.Err(); err != nil {
-		err = fmt.Errorf("escl.caps: %w", err)
+		err = fmt.Errorf("%s: %w", name, err)
 		return err
 	}
 
 	if !obj.IsNone() {
 		caps, err := esclImportScannerCapabilities(obj)
 		if err != nil {
-			err = fmt.Errorf("escl.caps: %w", err)
+			err = fmt.Errorf("%s: %w", name, err)
 			return err
 		}
 

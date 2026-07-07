@@ -46,13 +46,13 @@ func TestKyoceraIPPPrinterAttributes(t *testing.T) {
 	// Roll over ippExport/ippImportPrinterAppributes
 	obj := ippExport(model.py, pa)
 	if err := obj.Err(); err != nil {
-		t.Errorf("ippExport: %s", err)
+		t.Fatalf("ippExport: %s", err)
 		return
 	}
 
 	pa2, err := ippImportPrinterAppributes(obj)
 	if err != nil {
-		t.Errorf("ippImportPrinterAppributes: %s", err)
+		t.Fatalf("ippImportPrinterAppributes: %s", err)
 		return
 	}
 
@@ -69,7 +69,7 @@ func TestKyoceraIPPPrinterAttributes(t *testing.T) {
 	model.SetIPPPrinterAttrs(pa)
 	err = model.Write(buf)
 	if err != nil {
-		t.Errorf("Model.Write: %s", err)
+		t.Fatalf("Model.Write: %s", err)
 	}
 
 	model2, err := NewModel()
@@ -79,10 +79,13 @@ func TestKyoceraIPPPrinterAttributes(t *testing.T) {
 
 	err = model2.Read("test", buf)
 	if err != nil {
-		t.Errorf("Model.Read: %s", err)
+		t.Fatalf("Model.Read: %s", err)
 	}
 
 	pa2 = model2.GetIPPPrinterAttrs()
+	if pa2 == nil {
+		t.Fatalf("Model.Read: missed IPP printer attributes")
+	}
 
 	attrs = pa.RawAttrs().All()
 	attrs2 = pa2.RawAttrs().All()
@@ -114,14 +117,14 @@ func TestKyoceraESCLScannerCapabilities(t *testing.T) {
 	// Roll over structExport/structImport
 	obj := structExport(model.py, keywordMapESCL, scancaps)
 	if err := obj.Err(); err != nil {
-		t.Errorf("structExport: %s", err)
+		t.Fatalf("structExport: %s", err)
 		return
 	}
 
 	var scancaps2 *escl.ScannerCapabilities
 	err = structImport(obj, keywordMapESCL, &scancaps2)
 	if err != nil {
-		t.Errorf("structImport: %s", err)
+		t.Fatalf("structImport: %s", err)
 		return
 	}
 
@@ -136,7 +139,7 @@ func TestKyoceraESCLScannerCapabilities(t *testing.T) {
 	model.SetESCLScanCaps(scancaps)
 	err = model.Write(buf)
 	if err != nil {
-		t.Errorf("Model.Write: %s", err)
+		t.Fatalf("Model.Write: %s", err)
 	}
 
 	model2, err := NewModel()
@@ -146,10 +149,14 @@ func TestKyoceraESCLScannerCapabilities(t *testing.T) {
 
 	err = model2.Read("test", buf)
 	if err != nil {
-		t.Errorf("Model.Read: %s", err)
+		t.Fatalf("Model.Read: %s", err)
 	}
 
 	scancaps2 = model2.GetESCLScanCaps()
+	if scancaps2 == nil {
+		t.Fatalf("Model.Read: missed eSCL scanner capabilities")
+	}
+
 	diff = testutils.Diff(scancaps, scancaps2)
 	if diff != "" {
 		t.Errorf("Model.Write/Model.Read:\n%s", diff)
@@ -180,14 +187,14 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 	// Roll over structExport/structImport
 	obj := structExport(model.py, keywordMapWSD, scancaps)
 	if err := obj.Err(); err != nil {
-		t.Errorf("structExport: %s", err)
+		t.Fatalf("structExport: %s", err)
 		return
 	}
 
 	var scancaps2 *wsscan.GetScannerElementsResponse
 	err = structImport(obj, keywordMapWSD, &scancaps2)
 	if err != nil {
-		t.Errorf("structImport: %s", err)
+		t.Fatalf("structImport: %s", err)
 		return
 	}
 
@@ -202,7 +209,7 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 	model.SetWSDScanCaps(scancaps)
 	err = model.Write(buf)
 	if err != nil {
-		t.Errorf("Model.Write: %s", err)
+		t.Fatalf("Model.Write: %s", err)
 	}
 
 	model2, err := NewModel()
@@ -212,10 +219,14 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 
 	err = model2.Read("test", buf)
 	if err != nil {
-		t.Errorf("Model.Read: %s", err)
+		t.Fatalf("Model.Read: %s", err)
 	}
 
 	scancaps2 = model2.GetWSDScanCaps()
+	if scancaps2 == nil {
+		t.Fatalf("Model.Read: missed WSD scanner capabilities")
+	}
+
 	diff = testutils.Diff(scancaps, scancaps2)
 	if diff != "" {
 		t.Errorf("Model.Write/Model.Read:\n%s", diff)

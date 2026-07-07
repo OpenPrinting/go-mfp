@@ -44,16 +44,22 @@ func (model *Model) NewIPPServer() *ipp.Printer {
 // be already loaded into the Model's Python interpreter (model.py).
 func (model *Model) ippLoad() error {
 	// Load and decode printer capabilities
-	obj := model.py.Eval("ipp.attrs")
+	name := "ipp.printer"
+	obj := model.py.Eval(name)
+	if obj.Err() != nil {
+		name = "ipp.attrs"
+		obj = model.py.Eval(name)
+	}
+
 	if err := obj.Err(); err != nil {
-		err = fmt.Errorf("ipp.attrs: %s", err)
+		err = fmt.Errorf("%s: %w", name, err)
 		return err
 	}
 
 	if !obj.IsNone() {
 		pa, err := ippImportPrinterAppributes(obj)
 		if err != nil {
-			err = fmt.Errorf("ipp.attrs: %s", err)
+			err = fmt.Errorf("%s: %w", name, err)
 			return err
 		}
 

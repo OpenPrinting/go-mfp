@@ -62,9 +62,15 @@ func (model *Model) NewWSDServer(
 // be preloaded into the Model's Python interpreter (model.py).
 func (model *Model) wsdLoad() error {
 	// Load wsscan.GetScannerElementsResponse
-	obj := model.py.Eval("wsd.caps")
+	name := "wsd.scanner"
+	obj := model.py.Eval(name)
+	if obj.Err() != nil {
+		name = "wsd.caps"
+		obj = model.py.Eval(name)
+	}
+
 	if err := obj.Err(); err != nil {
-		err = fmt.Errorf("wsd.caps: %w", err)
+		err = fmt.Errorf("%s: %w", name, err)
 		return err
 	}
 
@@ -76,7 +82,7 @@ func (model *Model) wsdLoad() error {
 	var caps *wsscan.GetScannerElementsResponse
 	err := structImport(obj, keywordMapWSD, &caps)
 	if err != nil {
-		err = fmt.Errorf("wsd.caps: %w", err)
+		err = fmt.Errorf("%s: %w", name, err)
 		return err
 	}
 

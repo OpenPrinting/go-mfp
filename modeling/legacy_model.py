@@ -12,11 +12,11 @@
 
 #-ipp
 # IPP printer attributes:
-ipp.printer = $IPP
+ipp.attrs = $IPP
 
 #-escl
 # eSCL scanner parameters:
-escl.scanner = $ESCL
+escl.caps = $ESCL
 
 # ----- PUT YOUR ESCL HOOKS HERE -----
 
@@ -30,4 +30,4 @@ escl.scanner = $ESCL
 
 #-wsd
 # WS-Scan (WSD) scanner parameters:
-wsd.scanner = $WSD
+wsd.caps = $WSD

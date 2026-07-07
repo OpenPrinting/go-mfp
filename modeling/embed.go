@@ -13,6 +13,9 @@ import _ "embed" // For go:embed to work
 //go:embed model.py
 var embedPyModel string
 
+//go:embed legacy_model.py
+var embedPyLegacyModel string
+
 //go:embed init.py
 var embedPyInit string
 
