@@ -16,6 +16,7 @@ class Camera(collection, keyword): pass
 class DiscreteResolution(collection): pass
 class InputSourceCaps(collection): pass
 class JobInfo(collection): pass
+class Justification(collection): pass
 class Platen(collection, keyword): pass
 class Range(collection): pass
 class Region(collection): pass
