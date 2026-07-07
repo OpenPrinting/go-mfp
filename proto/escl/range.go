@@ -10,6 +10,7 @@ package escl
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
@@ -27,6 +28,43 @@ type Range struct {
 // decodeRange decodes [Range] from the XML tree
 func decodeRange(root xmldoc.Element) (r Range, err error) {
 	defer func() { err = xmldoc.XMLErrWrap(root, err) }()
+
+	// The Range element is a special case. The Mopria eSCL specification
+	// references it as scan:RangeAndStepOfIntType. However, it fails to
+	// define the type itself, and the official examples lack any usage
+	// cases.
+	//
+	// As a result, some firmwares use invalid namespace prefixes for the
+	// child elements, or omit namespace prefixes entirely.
+	//
+	// For example, the Xerox B235 encodes this element as follows:
+	//
+	//    <scan:BrightnessSupport>
+	//       <Min>1</Min>
+	//       <Max>9</Max>
+	//       <Normal>5</Normal>
+	//       <Step>1</Step>
+	//    </scan:BrightnessSupport>
+	//
+	// This causes our strict XML parser to fail due to missing expected
+	// elements (e.g., <scan:Min>).
+	//
+	// As a workaround, we force all child elements of a Range block
+	// to use the "scan:" prefix.
+	//
+	// This solution is not perfect, as it silently bypasses a firmware
+	// bug without logging a warning or preserving information about the
+	// original prefix.
+	//
+	// But for now, this is better than nothing. -- FIXME
+	for i := range root.Children {
+		chld := &root.Children[i]
+		if i := strings.IndexByte(chld.Name, ':'); i >= 0 {
+			chld.Name = NsScan + chld.Name[i:]
+		} else {
+			chld.Name = NsScan + ":" + chld.Name
+		}
+	}
 
 	// Lookup relevant XML elements
 	min := xmldoc.Lookup{Name: NsScan + ":Min", Required: true}
