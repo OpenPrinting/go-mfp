@@ -242,10 +242,6 @@ func TestWSDTextWithLang(t *testing.T) {
 	py := model.py
 	defer model.Close()
 
-	if legacyMode(py) {
-		return
-	}
-
 	pyScannerDescription := py.Eval("wsd.ScannerDescription")
 	pyWithLang := py.Eval("wsd.WithLang")
 
@@ -464,10 +460,6 @@ func TestWSDValWithOptions(t *testing.T) {
 	assert.NoError(err)
 	py := model.py
 	defer model.Close()
-
-	if legacyMode(py) {
-		return
-	}
 
 	pyDocumentParameters := py.Eval("wsd.DocumentParameters")
 	pyWithOptions := py.Eval("wsd.WithOptions")

@@ -37,17 +37,6 @@ var (
 func structExport(py *cpython.Python,
 	kwmap map[string]string, s any) *cpython.Object {
 
-	if legacyMode(py) {
-		return legacyStructExport(py, kwmap, s)
-	}
-
-	return structExportInt(py, kwmap, s)
-}
-
-// structExportInt is the internal function behind the structExport.
-func structExportInt(py *cpython.Python,
-	kwmap map[string]string, s any) *cpython.Object {
-
 	// Normalize input parameter and obtain the reflect.Value for it.
 	v := reflect.ValueOf(s)
 	if v.Kind() == reflect.Pointer && v.Elem().Kind() == reflect.Struct {
@@ -187,7 +176,7 @@ func structExportValue(py *cpython.Python,
 	// Switch by reflect.Kind
 	switch v.Kind() {
 	case reflect.Struct:
-		return structExportInt(py, kwmap, data)
+		return structExport(py, kwmap, data)
 
 	case reflect.Slice:
 		return structExportSlice(py, kwmap, v)

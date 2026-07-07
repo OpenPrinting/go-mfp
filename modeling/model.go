@@ -191,10 +191,6 @@ func (model *Model) Write(w io.Writer) (err error) {
 
 	// Split template into lines. Trim terminating empty lines, if any.
 	template := strings.Split(embedPyModel, "\n")
-	if legacyMode(model.py) {
-		template = strings.Split(embedPyLegacyModel, "\n")
-	}
-
 	for len(template) > 0 && template[len(template)-1] == "" {
 		template = template[:len(template)-1]
 	}

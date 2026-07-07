@@ -19,10 +19,6 @@ import (
 
 // ippExport converts the [ipp.Object] into the [cpython.Object].
 func ippExport(py *cpython.Python, s ipp.Object) *cpython.Object {
-	if legacyMode(py) {
-		return legacyIPPExport(py, s)
-	}
-
 	return ippExportAttrs(py, s.RawAttrs().All())
 }
 
