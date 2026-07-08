@@ -19,9 +19,6 @@ import (
 	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
-	"github.com/OpenPrinting/go-mfp/proto/escl"
-	"github.com/OpenPrinting/go-mfp/proto/ipp"
-	"github.com/OpenPrinting/go-mfp/proto/wsscan"
 	"github.com/OpenPrinting/go-mfp/transport"
 )
 
@@ -212,21 +209,26 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Query printer and scanner capabilities
-	var ippattrs *ipp.PrinterAttributes
-	var esclcaps *escl.ScannerCapabilities
-	var wsdcaps *wsscan.GetScannerElementsResponse
-
 	if optIPP != nil {
-		ippattrs, err = queryIPPPrinterAttributes(ctx, optIPP)
+		err = model.DownloadIPPPrinterAttrs(ctx, optIPP)
 		if err != nil {
 			err = fmt.Errorf(
 				"Can't get IPP Printer Attributes: %s", err)
 			return err
 		}
+
+		attrs := model.GetIPPPrinterAttrs()
+		if errors := attrs.Errors(); errors != nil {
+			log.Warning(ctx, "ipp: printer attributes decoded with warnings:")
+			for _, err := range errors {
+				log.Warning(ctx, "  %s", err)
+			}
+		}
+
 	}
 
 	if optESCL != nil {
-		esclcaps, err = queryESCLScannerCapabilities(ctx, optESCL)
+		err = model.DownloadESCLScannerCapabilities(ctx, optESCL)
 		if err != nil {
 			err = fmt.Errorf(
 				"Can't get eSCL ScannerCapabilities: %s", err)
@@ -235,7 +237,7 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	if optWSD != nil {
-		wsdcaps, err = queryWSDScannerCapabilities(ctx, optWSD)
+		err = model.DownloadWSDScannerCapabilities(ctx, optWSD)
 		if err != nil {
 			err = fmt.Errorf(
 				"Can't get WSD ScannerCapabilities: %s", err)
@@ -245,11 +247,6 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	// Save model to file
 	file, _ := inv.Get("-m")
-
-	model.SetIPPPrinterAttrs(ippattrs)
-	model.SetESCLScanCaps(esclcaps)
-	model.SetWSDScanCaps(wsdcaps)
-
 	if file == "-" {
 		return model.Write(os.Stdout)
 	}
