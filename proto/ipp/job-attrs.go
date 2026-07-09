@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/abstract"
+	"github.com/OpenPrinting/go-mfp/proto/ipp/iana"
+	"github.com/OpenPrinting/go-mfp/util/generic"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/goipp"
 )
@@ -344,4 +346,35 @@ type JobPresets struct {
 	PresetCategory string `ipp:"preset-category"`
 	PresetName     string `ipp:"preset-name"`
 	JobAttributes
+}
+
+// jobAttrGroups maps the standard attribute-group keywords used by
+// Get-Jobs and Get-Job-Attributes to individual attribute names.
+var jobAttrGroups = buildJobAttrGroups()
+
+func buildJobAttrGroups() map[string]generic.Set[string] {
+	description := generic.NewSet[string]()
+	for name := range iana.JobDescription {
+		description.Add(name)
+	}
+
+	template := generic.NewSet[string]()
+	for name := range iana.JobTemplate {
+		template.Add(name)
+	}
+
+	jobStatus := generic.NewSet[string]()
+	for name := range iana.JobStatus {
+		jobStatus.Add(name)
+	}
+
+	all := description.Clone()
+	all.Merge(template)
+	all.Merge(jobStatus)
+
+	return map[string]generic.Set[string]{
+		"all":             all,
+		"job-description": description,
+		"job-template":    template,
+	}
 }
