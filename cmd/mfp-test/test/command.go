@@ -41,6 +41,7 @@ var Command = argv.Command{
 			Aliases:   []string{"--model"},
 			Help:      "printer model file",
 			HelpArg:   "file",
+			Required:  true,
 			Singleton: true,
 			Validate:  argv.ValidateAny,
 			Complete:  argv.CompleteOSPath,
