@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -120,30 +120,41 @@ func (op *JobCreateOperation) ToAbstract() abstract.ScannerRequest {
 	return req
 }
 
-// JobStatus contains Job status attributes
-type JobStatus struct {
-	ObjectRawAttrs
-
+// JobDescriptionAttrs contains IANA "job-description" attributes —
+// static identity fields set once at creation that never change.
+type JobDescriptionAttrs struct {
 	JobDescriptionGroup
+
+	JobID                  int                  `ipp:"job-id"`
+	JobName                optional.Val[string] `ipp:"job-name"`
+	JobOriginatingUserName optional.Val[string] `ipp:"job-originating-user-name"`
+	JobURI                 string               `ipp:"job-uri"`
+}
+
+// JobStatusAttrs contains IANA "job-status" attributes —
+// dynamic state fields updated throughout the job lifecycle.
+type JobStatusAttrs struct {
 	JobStatusGroup
 
-	JobID                   int                  `ipp:"job-id"`
 	JobImpressionsCompleted optional.Val[int]    `ipp:"job-impressions-completed"`
 	JobMediaSheetsCompleted optional.Val[int]    `ipp:"job-media-sheets-completed"`
-	JobName                 optional.Val[string] `ipp:"job-name"`
-	JobOriginatingUserName  optional.Val[string] `ipp:"job-originating-user-name"`
 	JobState                EnJobState           `ipp:"job-state"`
 	JobStateMessage         optional.Val[string] `ipp:"job-state-message"`
 	JobStateReasons         []KwJobStateReasons  `ipp:"job-state-reasons"`
-	JobURI                  string               `ipp:"job-uri"`
 }
 
-// DecodeJobStatusAttributes decodes [JobStatus] from
-// [goipp.Attributes].
-func DecodeJobStatusAttributes(attrs goipp.Attributes, opt *DecoderOptions) (
-	*JobStatus, error) {
+type JobDescriptionAndStatus struct {
+	ObjectRawAttrs
+	JobDescriptionAttrs
+	JobStatusAttrs
+}
 
-	job := &JobStatus{}
+// DecodeJobDescriptionAndStatus decodes [JobDescriptionAndStatus] from
+// [goipp.Attributes].
+func DecodeJobDescriptionAndStatus(attrs goipp.Attributes, opt *DecoderOptions) (
+	*JobDescriptionAndStatus, error) {
+
+	job := &JobDescriptionAndStatus{}
 	dec := NewDecoder(opt)
 	defer dec.Free()
 
@@ -350,12 +361,17 @@ type JobPresets struct {
 
 // jobAttrGroups maps the standard attribute-group keywords used by
 // Get-Jobs and Get-Job-Attributes to individual attribute names.
+//
+// See RFC8011, 4.3.4.
 var jobAttrGroups = buildJobAttrGroups()
 
 func buildJobAttrGroups() map[string]generic.Set[string] {
-	description := generic.NewSet[string]()
+	jobDescription := generic.NewSet[string]()
 	for name := range iana.JobDescription {
-		description.Add(name)
+		jobDescription.Add(name)
+	}
+	for name := range iana.JobStatus {
+		jobDescription.Add(name)
 	}
 
 	template := generic.NewSet[string]()
@@ -363,18 +379,12 @@ func buildJobAttrGroups() map[string]generic.Set[string] {
 		template.Add(name)
 	}
 
-	jobStatus := generic.NewSet[string]()
-	for name := range iana.JobStatus {
-		jobStatus.Add(name)
-	}
-
-	all := description.Clone()
+	all := jobDescription.Clone()
 	all.Merge(template)
-	all.Merge(jobStatus)
 
 	return map[string]generic.Set[string]{
 		"all":             all,
-		"job-description": description,
+		"job-description": jobDescription,
 		"job-template":    template,
 	}
 }
