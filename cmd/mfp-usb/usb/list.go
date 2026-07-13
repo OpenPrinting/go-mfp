@@ -42,14 +42,11 @@ func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
 	all := inv.Flag("--all")
 	pager := env.NewPager()
 	for _, info := range list {
-		desc := info.Desc
-
-		if !all &&
-			desc.BDeviceClass != 7 &&
-			!desc.Contains(7, -1, -1) {
+		if !all && !info.IsPrinter() {
 			continue
 		}
 
+		desc := info.Desc
 		pager.Printf("Bus %3.3d Device %3.3d ID %4.4x:%4.4x",
 			info.Loc.Bus, info.Loc.Dev,
 			desc.IDVendor, desc.IDProduct)

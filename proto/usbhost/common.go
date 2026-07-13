@@ -21,3 +21,11 @@ type DeviceInfo struct {
 	Loc  Location             // Device location
 	Desc usb.DeviceDescriptor // Device descriptor
 }
+
+// IsPrinter reports whether the device is a printer. More precisely, it
+// returns true if the device contains interfaces of the Printer class. Note
+// that this means an IPP-USB scanner without printing capabilities would
+// still be considered a printer.
+func (info *DeviceInfo) IsPrinter() bool {
+	return info.Desc.Contains(7, 1, -1)
+}
