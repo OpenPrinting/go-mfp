@@ -34,7 +34,7 @@ var cmdList = argv.Command{
 
 // cmdListHandler is the "list" command handler.
 func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
-	list, err := usbhost.ListDevices()
+	list, err := usbhost.ListDevices(true)
 	if err != nil {
 		return err
 	}
@@ -49,8 +49,6 @@ func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
 			!desc.Contains(7, -1, -1) {
 			continue
 		}
-
-		usbhost.LoadIEEE1284DeviceID(&info)
 
 		pager.Printf("Bus %3.3d Device %3.3d ID %4.4x:%4.4x",
 			info.Loc.Bus, info.Loc.Dev,

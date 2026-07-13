@@ -54,7 +54,10 @@ func (err libusbError) Error() string {
 }
 
 // ListDevices returns list of all connected USB devices.
-func ListDevices() ([]DeviceInfo, error) {
+//
+// This is the version of ListDevices, that works on a top of
+// the libusb
+func libusbListDevices(withIEEE1284id bool) ([]DeviceInfo, error) {
 	// Obtain libusb context
 	context, err := libusbContext()
 	if err != nil {
@@ -73,6 +76,9 @@ func ListDevices() ([]DeviceInfo, error) {
 	infos := make([]DeviceInfo, 0, cnt)
 	for _, dev := range unsafe.Slice(devlist, cnt) {
 		info, err := libusbDecodeDeviceInfo(dev)
+		if err == nil && withIEEE1284id {
+			err = libusbLoadIEEE1284DeviceID(&info)
+		}
 
 		if err != nil {
 			if err, ok := err.(libusbError); ok {
@@ -96,7 +102,7 @@ func ListDevices() ([]DeviceInfo, error) {
 //
 // Note, this function may have a side effect by changing the USB
 // device configuration.
-func LoadIEEE1284DeviceID(info *DeviceInfo) error {
+func libusbLoadIEEE1284DeviceID(info *DeviceInfo) error {
 	// Open the device
 	handle, err := libusbOpen(*info)
 	if err != nil {
@@ -372,16 +378,22 @@ func libusbDecodeEndpointDescriptor(dev *C.libusb_device,
 // libusbGetString returns string from the device by the string
 // descriptor index.
 func libusbGetString(handle *C.libusb_device_handle, i C.uint8_t) string {
+	if i == 0 {
+		// Index must not be zero
+		return ""
+	}
+
 	var buf [256]C.uchar
 
 	rc := C.libusb_get_string_descriptor_ascii(handle, i,
 		&buf[0], C.int(len(buf)))
 
-	if rc < 0 {
-		return ""
+	s := ""
+	if rc >= 0 {
+		s = C.GoString((*C.char)(unsafe.Pointer(&buf[0])))
 	}
 
-	return C.GoString((*C.char)(unsafe.Pointer(&buf[0])))
+	return s
 }
 
 // libusbGetDeviceID returns IEEE-1284 device ID using the particular
