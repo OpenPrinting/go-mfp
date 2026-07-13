@@ -74,6 +74,15 @@ const (
 
 	// USB 2.0 High Speed (480MBit/s).
 	SpeedHigh Speed = 3
+
+	// USB 3.0 / 3.1 Gen 1 Super Speed (5000 bit/s)
+	SpeedSuper = 4
+
+	// USB 3.1 Gen 2 Super Speed + (10000 bit/s)
+	SpeedSuperPlus = 5
+
+	// USB 3.2 Gen 2 Super Speed x2 (10000 bit/s)
+	SpeedSuperX2 = 6
 )
 
 // DescriptorType defines the type of the USB descriptor.
