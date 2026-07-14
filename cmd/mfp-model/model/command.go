@@ -13,12 +13,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
+	"github.com/OpenPrinting/go-mfp/proto/usbhost"
 	"github.com/OpenPrinting/go-mfp/transport"
 )
 
@@ -42,7 +44,7 @@ var Command = argv.Command{
 			Aliases:   []string{"--dnssd"},
 			Help:      "DNS-SD name of the device",
 			HelpArg:   "name",
-			Conflicts: []string{"-E", "-I", "-W"},
+			Conflicts: []string{"-E", "-I", "-W", "-U"},
 			Singleton: true,
 			Validate:  argv.ValidateAny,
 			Complete:  dnssd.ArgvCompleter,
@@ -78,6 +80,15 @@ var Command = argv.Command{
 			},
 		},
 		argv.Option{
+			Name:      "-U",
+			Aliases:   []string{"--usb"},
+			Help:      "USB device (identified by serial number)",
+			HelpArg:   "serial",
+			Singleton: true,
+			Validate:  argv.ValidateAny,
+			Complete:  usbCompleter,
+		},
+		argv.Option{
 			Name:      "-m",
 			Aliases:   []string{"--model"},
 			Help:      "write model to file (use - for stdout)",
@@ -109,6 +120,24 @@ var Command = argv.Command{
 		argv.HelpOption,
 	},
 	Handler: cmdModelHandler,
+}
+
+// usbCompleter is a the argv.Completer for -U option
+func usbCompleter(s string) []argv.Completion {
+	completions := []argv.Completion{}
+	list, _ := usbhost.ListDevices(false)
+	for _, info := range list {
+		if info.IsPrinter() {
+			serial := info.Desc.ISerialNumber
+			//println(serial, s)
+			if strings.HasPrefix(serial, s) {
+				completions = append(completions,
+					argv.Completion{String: serial})
+			}
+		}
+	}
+
+	return completions
 }
 
 // cmdModelHandler is the top-level handler for the 'model' command.
