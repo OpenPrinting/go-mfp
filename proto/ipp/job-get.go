@@ -91,17 +91,10 @@ func (rsp *GetJobsResponse) Encode() *goipp.Message {
 		})
 	}
 
-	for _, job := range rsp.Jobs {
-		var attrs goipp.Attributes
-		if job.Description != nil {
-			attrs = enc.Encode(job.Description)
-		}
-		if job.Template != nil {
-			attrs = append(attrs, enc.Encode(job.Template)...)
-		}
+	for i := range rsp.Jobs {
 		groups = append(groups, goipp.Group{
 			Tag:   goipp.TagJobGroup,
-			Attrs: attrs,
+			Attrs: enc.Encode(&rsp.Jobs[i]),
 		})
 	}
 
@@ -134,24 +127,9 @@ func (rsp *GetJobsResponse) Decode(
 			continue
 		}
 
-		var entry JobGroupEntry
-		var err error
-		entry.Description, err = DecodeJobDescriptionAndStatus(grp.Attrs, opt)
+		entry, err := DecodeJobGroupEntry(grp.Attrs, opt)
 		if err != nil {
 			return err
-		}
-		templateGroup := jobAttrGroups["job-template"]
-		var templateAttrs goipp.Attributes
-		for _, attr := range grp.Attrs {
-			if templateGroup.Contains(attr.Name) {
-				templateAttrs = append(templateAttrs, attr)
-			}
-		}
-		if len(templateAttrs) > 0 {
-			entry.Template, err = DecodeJobAttributes(templateAttrs, opt)
-			if err != nil {
-				return err
-			}
 		}
 		rsp.Jobs = append(rsp.Jobs, entry)
 	}
@@ -230,10 +208,14 @@ func (rq *GetJobsRequest) Apply(jobs []*job) *goipp.Message {
 	jobGroups := make(goipp.Groups, 0, len(matched))
 	for _, j := range matched {
 		j.Lock()
-		encoded := encodeJobListAttributes(&enc, j)
+		encoded := enc.Encode(&JobGroupEntry{
+			JobDescriptionAttrs: j.JobDescriptionAttrs,
+			JobStatusAttrs:      j.JobStatusAttrs,
+			JobTemplateAttrs:    j.JobTemplateAttrs,
+		})
 		j.Unlock()
 
-		filtered, _ := filterAttributes(requestedNames, encoded, jobAttrGroups)
+		filtered, _ := jobAttributesFilter.Apply(requestedNames, encoded)
 		jobGroups = append(jobGroups, goipp.Group{
 			Tag:   goipp.TagJobGroup,
 			Attrs: filtered,
@@ -246,8 +228,9 @@ func (rq *GetJobsRequest) Apply(jobs []*job) *goipp.Message {
 	}
 
 	rsp := &GetJobsResponse{
-		ResponseHeader:        rq.ResponseHeader(status),
-		UnsupportedAttributes: unsupportedAttrsFromNames("requested-attributes", unsupported),
+		ResponseHeader: rq.ResponseHeader(status),
+		UnsupportedAttributes: unsupportedAttrsFromNames(
+			"requested-attributes", unsupported),
 	}
 
 	return rsp.encodeWithJobGroups(jobGroups)

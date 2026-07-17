@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -15,12 +15,12 @@ import "image/color"
 //
 // It has the following layout:
 //
-//     0xRRGGBBAA
-//        | | | |
-//        | | | `- Alpha
-//        | | `--- Blue
-//        | `----- Green
-//        `------- Red
+//	0xRRGGBBAA
+//	   | | | |
+//	   | | | `- Alpha
+//	   | | `--- Blue
+//	   | `----- Green
+//	   `------- Red
 //
 // For convenience, it implements a color.Color interface.
 type Color uint32

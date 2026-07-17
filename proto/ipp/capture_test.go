@@ -70,7 +70,7 @@ func TestDocumentReceiverCalled(t *testing.T) {
 		JobCreateOperation: JobCreateOperation{
 			PrinterURI: ippURI,
 		},
-		Job: &JobAttributes{},
+		JobTemplate: &JobTemplate{},
 	}
 	createRsp := &CreateJobResponse{}
 	if err := client.Do(ctx, createRq, createRsp); err != nil {
@@ -87,7 +87,7 @@ func TestDocumentReceiverCalled(t *testing.T) {
 		JobID:          optional.New(createRsp.Job.JobID),
 		DocumentFormat: optional.New(wantFormat),
 		LastDocument:   true,
-		Job:            &JobAttributes{},
+		JobTemplate:    &JobTemplate{},
 	}
 	sendRq.Body = bytes.NewReader(wantData)
 
@@ -126,7 +126,7 @@ func TestDocumentReceiverNilNoPanic(t *testing.T) {
 		JobCreateOperation: JobCreateOperation{
 			PrinterURI: ippURI,
 		},
-		Job: &JobAttributes{},
+		JobTemplate: &JobTemplate{},
 	}
 	createRsp := &CreateJobResponse{}
 	if err := client.Do(ctx, createRq, createRsp); err != nil {
@@ -138,7 +138,7 @@ func TestDocumentReceiverNilNoPanic(t *testing.T) {
 		PrinterURI:    optional.New(ippURI),
 		JobID:         optional.New(createRsp.Job.JobID),
 		LastDocument:  true,
-		Job:           &JobAttributes{},
+		JobTemplate:   &JobTemplate{},
 	}
 	sendRq.Body = bytes.NewReader([]byte("test data"))
 
@@ -168,7 +168,7 @@ func TestDocumentReceiverLargeDoc(t *testing.T) {
 		JobCreateOperation: JobCreateOperation{
 			PrinterURI: ippURI,
 		},
-		Job: &JobAttributes{},
+		JobTemplate: &JobTemplate{},
 	}
 	createRsp := &CreateJobResponse{}
 	if err := client.Do(ctx, createRq, createRsp); err != nil {
@@ -183,7 +183,7 @@ func TestDocumentReceiverLargeDoc(t *testing.T) {
 		PrinterURI:    optional.New(ippURI),
 		JobID:         optional.New(createRsp.Job.JobID),
 		LastDocument:  true,
-		Job:           &JobAttributes{},
+		JobTemplate:   &JobTemplate{},
 	}
 	sendRq.Body = bytes.NewReader(wantData)
 

@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -24,8 +24,8 @@ type CreateJobRequest struct {
 	// Operation attributes
 	JobCreateOperation
 
-	// Job attributes
-	Job *JobAttributes
+	// Job Template attributes (RFC8011 Group 2)
+	JobTemplate *JobTemplate
 }
 
 // CreateJobResponse is the Create-Job response.
@@ -41,7 +41,7 @@ type CreateJobResponse struct {
 	UnsupportedAttributes goipp.Attributes
 
 	// Job status
-	Job *JobStatus
+	Job *JobDescriptionAndStatus
 }
 
 // GetOp returns CreateJobRequest IPP Operation code.
@@ -61,7 +61,7 @@ func (rq *CreateJobRequest) Encode() *goipp.Message {
 
 		{
 			Tag:   goipp.TagJobGroup,
-			Attrs: enc.Encode(rq.Job),
+			Attrs: enc.Encode(rq.JobTemplate),
 		},
 	}
 
@@ -86,7 +86,7 @@ func (rq *CreateJobRequest) Decode(
 		return err
 	}
 
-	rq.Job, err = DecodeJobAttributes(msg.Job, opt)
+	rq.JobTemplate, err = DecodeJobTemplate(msg.Job, opt)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (rsp *CreateJobResponse) Decode(
 	rsp.UnsupportedAttributes = msg.Unsupported
 
 	var err error
-	rsp.Job, err = DecodeJobStatusAttributes(msg.Job, opt)
+	rsp.Job, err = DecodeJobDescriptionAndStatus(msg.Job, opt)
 	if err != nil {
 		return err
 	}

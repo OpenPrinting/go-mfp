@@ -590,6 +590,21 @@ const (
 	KwWhichJobsFetchable KwWhichJobs = "fetchable"
 )
 
+// KwRequestedAttribute represents a keyword value of the
+// "requested-attributes" operation attribute.
+type KwRequestedAttribute string
+
+const (
+	// Standard Get-Job-Attributes group keywords.
+	KwRequestedAttributeAll            KwRequestedAttribute = "all"
+	KwRequestedAttributeJobDescription KwRequestedAttribute = "job-description"
+	KwRequestedAttributeJobTemplate    KwRequestedAttribute = "job-template"
+
+	// Default Get-Jobs attributes when requested-attributes is omitted.
+	KwRequestedAttributeJobID  KwRequestedAttribute = "job-id"
+	KwRequestedAttributeJobURI KwRequestedAttribute = "job-uri"
+)
+
 // kwRegisteredTypes lists all registered keyword types for IPP codec.
 var kwRegisteredTypes = map[reflect.Type]struct{}{
 	// Types, defined here
@@ -607,6 +622,7 @@ var kwRegisteredTypes = map[reflect.Type]struct{}{
 	reflect.TypeOf(KwURIAuthentication("")):        struct{}{},
 	reflect.TypeOf(KwURISecurity("")):              struct{}{},
 	reflect.TypeOf(KwWhichJobs("")):                struct{}{},
+	reflect.TypeOf(KwRequestedAttribute("")):       struct{}{},
 
 	// Types, defined at separate source files
 	reflect.TypeOf(KwColor("")):       struct{}{},

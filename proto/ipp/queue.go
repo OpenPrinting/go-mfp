@@ -52,11 +52,21 @@ func (q *queue) JobByID(id int) *job {
 	return q.byID[id]
 }
 
-// JobByID returns job by its URI
+// JobByURI returns job by its URI
 func (q *queue) JobByURI(uri string) *job {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	return q.byURI[uri]
+}
+
+// Jobs returns a snapshot of queued jobs in submission order.
+func (q *queue) Jobs() []*job {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	out := make([]*job, len(q.jobs))
+	copy(out, q.jobs)
+	return out
 }
 
 // allocJobID allocates the next JobID.
