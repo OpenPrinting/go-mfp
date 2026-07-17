@@ -199,7 +199,7 @@ func Test_Scanner_HappyPath(t *testing.T) {
 	createRq := &CreateJobRequest{
 		RequestHeader:      DefaultRequestHeader,
 		JobCreateOperation: testScanJobCreateOperation(ippURI),
-		Job:                &JobAttributes{},
+		JobTemplate:        &JobTemplate{},
 	}
 	createRsp := &CreateJobResponse{}
 	if err := client.Do(ctx, createRq, createRsp); err != nil {

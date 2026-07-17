@@ -87,6 +87,8 @@ func NewScanner(attrs *PrinterAttributes, options ScannerOptions) *Scanner {
 
 	// Install scan-service handlers.
 	server.RegisterHandler(NewHandler(scanner.handleGetPrinterAttributes))
+	server.RegisterHandler(NewHandler(scanner.handleGetJobs))
+	server.RegisterHandler(NewHandler(scanner.handleGetJobAttributes))
 	server.RegisterHandler(NewHandler(scanner.handleCreateScanJob))
 	server.RegisterHandler(NewHandler(scanner.handleGetNextDocumentData))
 	server.RegisterHandler(NewHandler(scanner.handleCancelJob))
@@ -106,6 +108,26 @@ func (scanner *Scanner) handleGetPrinterAttributes(
 	rq *GetPrinterAttributesRequest) (*goipp.Message, io.ReadCloser, error) {
 
 	return rq.Apply(scanner.attrs, scanner.options.UseRawPrinterAttributes), nil, nil
+}
+
+// handleGetJobs handles Get-Jobs request.
+func (scanner *Scanner) handleGetJobs(
+	ctx context.Context,
+	rq *GetJobsRequest) (*goipp.Message, io.ReadCloser, error) {
+
+	return rq.Apply(scanner.q.Jobs()), nil, nil
+}
+
+// handleGetJobAttributes handles Get-Job-Attributes request.
+func (scanner *Scanner) handleGetJobAttributes(
+	ctx context.Context,
+	rq *GetJobAttributesRequest) (*goipp.Message, io.ReadCloser, error) {
+
+	msg, err := rq.Apply(scanner.q.Jobs())
+	if err != nil {
+		return nil, nil, err
+	}
+	return msg, nil, nil
 }
 
 // handleCreateScanJob handles Create-Job request on the Scan Service
@@ -147,7 +169,7 @@ func (scanner *Scanner) handleCreateScanJob(
 			"scan failed: %s", err)
 	}
 
-	j := newJob(&rq.JobCreateOperation, rq.Job)
+	j := newJob(&rq.JobCreateOperation, rq.JobTemplate)
 	scanner.q.Push(j)
 
 	scanner.activeDoc = doc
@@ -166,11 +188,15 @@ func (scanner *Scanner) handleCreateScanJob(
 
 	rsp := CreateJobResponse{
 		ResponseHeader: rq.ResponseHeader(goipp.StatusOk),
-		Job: &JobStatus{
-			JobID:           j.JobID,
-			JobState:        j.JobState,
-			JobStateReasons: j.JobStateReasons,
-			JobURI:          j.JobURI,
+		Job: &JobDescriptionAndStatus{
+			JobDescriptionAttrs: JobDescriptionAttrs{
+				JobID:  j.JobID,
+				JobURI: j.JobURI,
+			},
+			JobStatusAttrs: JobStatusAttrs{
+				JobState:        j.JobState,
+				JobStateReasons: j.JobStateReasons,
+			},
 		},
 	}
 

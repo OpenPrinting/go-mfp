@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -22,7 +22,8 @@ type ValidateJobRequest struct {
 	// Operation attributes
 	JobCreateOperation
 
-	Job *JobAttributes
+	// Job Template attributes (RFC8011 Group 2)
+	JobTemplate *JobTemplate
 }
 
 // ValidateJobResponse is the Validate-Job response.
@@ -52,7 +53,7 @@ func (rq *ValidateJobRequest) Encode() *goipp.Message {
 
 		{
 			Tag:   goipp.TagJobGroup,
-			Attrs: enc.Encode(rq.Job),
+			Attrs: enc.Encode(rq.JobTemplate),
 		},
 	}
 
@@ -77,7 +78,7 @@ func (rq *ValidateJobRequest) Decode(
 		return err
 	}
 
-	rq.Job, err = DecodeJobAttributes(msg.Job, opt)
+	rq.JobTemplate, err = DecodeJobTemplate(msg.Job, opt)
 	if err != nil {
 		return err
 	}

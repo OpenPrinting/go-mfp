@@ -233,17 +233,17 @@ func (c *Client) GetPrinterAttributes(ctx context.Context,
 // Send-Document.
 func (c *Client) CreateJob(
 	ctx context.Context,
-	op JobCreateOperation, job *JobAttributes) (
+	op JobCreateOperation, job *JobTemplate) (
 	*CreateJobResponse, error) {
 
 	if job == nil {
-		job = &JobAttributes{}
+		job = &JobTemplate{}
 	}
 
 	rq := &CreateJobRequest{
 		RequestHeader:      DefaultRequestHeader,
 		JobCreateOperation: op,
-		Job:                job,
+		JobTemplate:        job,
 	}
 
 	rsp := &CreateJobResponse{}
@@ -270,4 +270,67 @@ func (c *Client) GetNextDocumentData(
 	}
 
 	return rsp, nil
+}
+
+// CancelJob cancels the job identified by jobID on the IPP object at c.URL.
+func (c *Client) CancelJob(ctx context.Context, jobID int,
+	message string) error {
+
+	rq := &CancelJobRequest{
+		RequestHeader: DefaultRequestHeader,
+		JobCancelOperation: JobCancelOperation{
+			PrinterURI: optional.New(c.URL.String()),
+			JobID:      optional.New(jobID),
+			Message:    optional.NotZero(message),
+		},
+	}
+
+	rsp := &CancelJobResponse{}
+
+	return c.Do(ctx, rq, rsp)
+}
+
+// GetJobs returns jobs from the IPP object at c.URL.
+func (c *Client) GetJobs(ctx context.Context,
+	which KwWhichJobs, myJobs bool, limit int,
+	attrs []KwRequestedAttribute) ([]JobGroupEntry, error) {
+
+	rq := &GetJobsRequest{
+		RequestHeader:       DefaultRequestHeader,
+		PrinterURI:          c.URL.String(),
+		RequestedAttributes: attrs,
+		WhichJobs:           optional.NotZero(which),
+		MyJobs:              optional.New(myJobs),
+		Limit:               optional.NotZero(limit),
+	}
+
+	rsp := &GetJobsResponse{}
+
+	err := c.Do(ctx, rq, rsp)
+	if err != nil {
+		return nil, err
+	}
+
+	return rsp.Jobs, nil
+}
+
+// GetJobAttributes returns attributes for jobID on the IPP object at c.URL.
+func (c *Client) GetJobAttributes(ctx context.Context, jobID int,
+	attrs []KwRequestedAttribute) (JobGroupEntry, error) {
+
+	rq := &GetJobAttributesRequest{
+		RequestHeader:       DefaultRequestHeader,
+		PrinterURI:          optional.New(c.URL.String()),
+		JobID:               optional.New(jobID),
+		RequestedAttributes: attrs,
+	}
+
+	rsp := &GetJobAttributesResponse{}
+
+	err := c.Do(ctx, rq, rsp)
+	if err != nil {
+		return JobGroupEntry{}, err
+	}
+
+	return rsp.Job, nil
 }

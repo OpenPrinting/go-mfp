@@ -201,7 +201,7 @@ func TestIppCodecStandardTypes(t *testing.T) {
 
 		&CreateJobRequest{},
 		&CreateJobResponse{},
-		&JobAttributes{},
+		&JobTemplate{},
 		&PPDAttributes{},
 		&PrinterAttributes{},
 		&SendDocumentRequest{},
@@ -210,6 +210,10 @@ func TestIppCodecStandardTypes(t *testing.T) {
 		&ValidateJobResponse{},
 		&CancelJobRequest{},
 		&CancelJobResponse{},
+		&GetJobsRequest{},
+		&GetJobsResponse{},
+		&GetJobAttributesRequest{},
+		&GetJobAttributesResponse{},
 
 		&DeviceAttributes{},
 		&DocumentStatus{},
@@ -217,7 +221,7 @@ func TestIppCodecStandardTypes(t *testing.T) {
 		&GetNextDocumentDataResponse{},
 		&GetPrinterAttributesRequest{},
 		&GetPrinterAttributesResponse{},
-		&JobStatus{},
+		&JobDescriptionAndStatus{},
 	}
 
 	for _, test := range tests {

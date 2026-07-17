@@ -20,15 +20,15 @@ import (
 type job struct {
 	JobDescriptionAttrs            // set once at creation, never mutated
 	JobStatusAttrs                 // updated as the job progresses
+	JobTemplateAttrs               // Job Template attributes (settings)
 	JobCreateOperation             // Job create-time operation attributes
-	JobAttributes                  // Job creation attributes
 	SendDocumentActive  bool       // Send-Document in progress
 	cancelPending       bool       // Cancel-Job accepted, not yet canceled
 	lock                sync.Mutex // Access lock
 }
 
 // newJob creates a new job.
-func newJob(ops *JobCreateOperation, attrs *JobAttributes) *job {
+func newJob(ops *JobCreateOperation, attrs *JobTemplate) *job {
 	uu := uuid.Random()
 	uri := strings.Join([]string{ops.PrinterURI, "jobs", uu.String()}, "/")
 
@@ -44,8 +44,8 @@ func newJob(ops *JobCreateOperation, attrs *JobAttributes) *job {
 			JobState:                EnJobStatePendingHeld,
 			JobStateReasons:         []KwJobStateReasons{KwJobStateReasonsJobIncoming},
 		},
+		JobTemplateAttrs:   attrs.JobTemplateAttrs,
 		JobCreateOperation: *ops,
-		JobAttributes:      *attrs,
 	}
 
 	return j

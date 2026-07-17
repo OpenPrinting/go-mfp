@@ -33,8 +33,8 @@ type SendDocumentRequest struct {
 	DocumentNaturalLanguage optional.Val[string]        `ipp:"document-natural-language"`
 	LastDocument            bool                        `ipp:"last-document"`
 
-	// Job attributes
-	Job *JobAttributes
+	// Job Template attributes (RFC8011 Group 2)
+	JobTemplate *JobTemplate
 }
 
 // SendDocumentResponse is the Create-Job response.
@@ -47,7 +47,7 @@ type SendDocumentResponse struct {
 	UnsupportedAttributes goipp.Attributes
 
 	// Job status
-	Job *JobStatus
+	Job *JobDescriptionAndStatus
 }
 
 // GetOp returns SendDocumentRequest IPP Operation code.
@@ -67,7 +67,7 @@ func (rq *SendDocumentRequest) Encode() *goipp.Message {
 
 		{
 			Tag:   goipp.TagJobGroup,
-			Attrs: enc.Encode(rq.Job),
+			Attrs: enc.Encode(rq.JobTemplate),
 		},
 	}
 
@@ -92,7 +92,7 @@ func (rq *SendDocumentRequest) Decode(
 		return err
 	}
 
-	rq.Job, err = DecodeJobAttributes(msg.Job, opt)
+	rq.JobTemplate, err = DecodeJobTemplate(msg.Job, opt)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (rsp *SendDocumentResponse) Decode(
 	rsp.UnsupportedAttributes = msg.Unsupported
 
 	var err error
-	rsp.Job, err = DecodeJobStatusAttributes(msg.Job, opt)
+	rsp.Job, err = DecodeJobDescriptionAndStatus(msg.Job, opt)
 	if err != nil {
 		return err
 	}

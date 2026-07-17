@@ -52,7 +52,7 @@ type PrinterAttributes struct {
 
 	PrinterDescription
 	ScannerDescription
-	JobTemplate
+	JobTemplateCapabilities
 	MediaColDatabase
 }
 
@@ -138,9 +138,9 @@ type PrinterDescription struct {
 
 	// PWG5100.13: IPP Driver Replacement Extensions v2.0 (NODRIVER)
 	// 6.5 Printer Description Attributes
-	DocumentPasswordSupported         optional.Val[int]         `ipp:"document-password-supported"`
-	IdentifyActionsDefault            []string                  `ipp:"identify-actions-default"`
-	IdentifyActionsSupported          []string                  `ipp:"identify-actions-supported"`
+	DocumentPasswordSupported optional.Val[int] `ipp:"document-password-supported"`
+	IdentifyActionsDefault    []string          `ipp:"identify-actions-default"`
+	IdentifyActionsSupported  []string          `ipp:"identify-actions-supported"`
 	// Scan Services MUST include "scan" in this list (PWG5100.17, 9.2).
 	IppFeaturesSupported              []string                  `ipp:"ipp-features-supported"`
 	JobPresetsSupported               []JobPresets              `ipp:"job-presets-supported"`

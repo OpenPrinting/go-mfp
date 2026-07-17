@@ -141,12 +141,26 @@ type JobStatusAttrs struct {
 	JobState                EnJobState           `ipp:"job-state"`
 	JobStateMessage         optional.Val[string] `ipp:"job-state-message"`
 	JobStateReasons         []KwJobStateReasons  `ipp:"job-state-reasons"`
+	NumberOfInterveningJobs optional.Val[int]    `ipp:"number-of-intervening-jobs"`
 }
 
 type JobDescriptionAndStatus struct {
 	ObjectRawAttrs
 	JobDescriptionAttrs
 	JobStatusAttrs
+}
+
+// JobGroupEntry holds the complete set of attributes returned for a single
+// Job object in a Get-Jobs or Get-Job-Attributes response.
+//
+// On the wire, job-description, job-status and job-template attributes all
+// arrive in a single flat Job group, so they are combined here into one
+// flat structure decoded and encoded in a single pass.
+type JobGroupEntry struct {
+	ObjectRawAttrs
+	JobDescriptionAttrs
+	JobStatusAttrs
+	JobTemplateAttrs
 }
 
 // DecodeJobDescriptionAndStatus decodes [JobDescriptionAndStatus] from
@@ -165,9 +179,13 @@ func DecodeJobDescriptionAndStatus(attrs goipp.Attributes, opt *DecoderOptions) 
 	return job, nil
 }
 
-// JobAttributes are attributes, supplied with Job creation request
-type JobAttributes struct {
+type JobTemplate struct {
 	ObjectRawAttrs
+	JobTemplateAttrs
+}
+
+// JobTemplateAttrs contains the IANA "job-template" attributes only.
+type JobTemplateAttrs struct {
 	JobTemplateGroup
 
 	// RFC8011, Internet Printing Protocol/1.1: Model and Semantics
@@ -224,12 +242,12 @@ type JobAttributes struct {
 	PclmSourceResolution optional.Val[goipp.Resolution] `ipp:"pclm-source-resolution"`
 }
 
-// DecodeJobAttributes decodes [JobAttributes] from
+// DecodeJobTemplate decodes [JobTemplate] from
 // [goipp.Attributes].
-func DecodeJobAttributes(attrs goipp.Attributes, opt *DecoderOptions) (
-	*JobAttributes, error) {
+func DecodeJobTemplate(attrs goipp.Attributes, opt *DecoderOptions) (
+	*JobTemplate, error) {
 
-	job := &JobAttributes{}
+	job := &JobTemplate{}
 	dec := NewDecoder(opt)
 	defer dec.Free()
 
@@ -240,9 +258,29 @@ func DecodeJobAttributes(attrs goipp.Attributes, opt *DecoderOptions) (
 	return job, nil
 }
 
-// JobTemplate are attributes, included into the Printer Description and
-// describing possible settings for JobAttributes
-type JobTemplate struct {
+// DecodeJobGroupEntry decodes a single Job attribute group (as returned
+// in Get-Jobs and Get-Job-Attributes responses) into a [JobGroupEntry].
+//
+// The whole flat group (job-description, job-status and job-template
+// attributes) is decoded in a single pass.
+func DecodeJobGroupEntry(attrs goipp.Attributes, opt *DecoderOptions) (
+	JobGroupEntry, error) {
+
+	var entry JobGroupEntry
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	if err := dec.Decode(&entry, attrs); err != nil {
+		return JobGroupEntry{}, err
+	}
+
+	return entry, nil
+}
+
+// JobTemplateCapabilities are attributes, included into the Printer
+// Description and describing possible settings for a [JobTemplate]
+// (the "*-default", "*-supported" and "*-ready" values).
+type JobTemplateCapabilities struct {
 	// RFC8011, Internet Printing Protocol/1.1: Model and Semantics
 	// 5.2 Job Template Attributes
 	CopiesDefault                     optional.Val[int]                        `ipp:"copies-default"`
@@ -344,7 +382,7 @@ type JobTemplate struct {
 }
 
 // JobSheets represents "job-sheets-col" collection entry in
-// JobAttributes
+// JobTemplate
 type JobSheets struct {
 	JobSheets KwJobSheets `ipp:"job-sheets"`
 	Media     string      `ipp:"media"`
@@ -356,7 +394,7 @@ type JobSheets struct {
 type JobPresets struct {
 	PresetCategory string `ipp:"preset-category"`
 	PresetName     string `ipp:"preset-name"`
-	JobAttributes
+	JobTemplate
 }
 
 // jobAttrGroups maps the standard attribute-group keywords used by
@@ -364,6 +402,13 @@ type JobPresets struct {
 //
 // See RFC8011, 4.3.4.
 var jobAttrGroups = buildJobAttrGroups()
+
+// jobAttributesFilter filters job attributes against the requested
+// groups/names for Get-Jobs and Get-Job-Attributes responses.
+var jobAttributesFilter = &filterAttributes{
+	groups:   jobAttrGroups,
+	standard: jobAttrGroups["all"],
+}
 
 func buildJobAttrGroups() map[string]generic.Set[string] {
 	jobDescription := generic.NewSet[string]()

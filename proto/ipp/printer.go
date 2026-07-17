@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -57,9 +57,12 @@ func NewPrinter(attrs *PrinterAttributes, options PrinterOptions) *Printer {
 
 	// Install request handlers
 	server.RegisterHandler(NewHandler(printer.handleGetPrinterAttributes))
+	server.RegisterHandler(NewHandler(printer.handleGetJobs))
+	server.RegisterHandler(NewHandler(printer.handleGetJobAttributes))
 	server.RegisterHandler(NewHandler(printer.handleValidateJob))
 	server.RegisterHandler(NewHandler(printer.handleCreateJob))
 	server.RegisterHandler(NewHandler(printer.handleSendDocument))
+	server.RegisterHandler(NewHandler(printer.handleCancelJob))
 
 	return printer
 }
@@ -84,6 +87,26 @@ func (printer *Printer) handleGetPrinterAttributes(
 	return rq.Apply(printer.attrs, printer.options.UseRawPrinterAttributes), nil, nil
 }
 
+// handleGetJobs handles Get-Jobs request.
+func (printer *Printer) handleGetJobs(
+	ctx context.Context,
+	rq *GetJobsRequest) (*goipp.Message, io.ReadCloser, error) {
+
+	return rq.Apply(printer.q.Jobs()), nil, nil
+}
+
+// handleGetJobAttributes handles Get-Job-Attributes request.
+func (printer *Printer) handleGetJobAttributes(
+	ctx context.Context,
+	rq *GetJobAttributesRequest) (*goipp.Message, io.ReadCloser, error) {
+
+	msg, err := rq.Apply(printer.q.Jobs())
+	if err != nil {
+		return nil, nil, err
+	}
+	return msg, nil, nil
+}
+
 // handleValidateJob handles Validate-Job request.
 func (printer *Printer) handleValidateJob(
 	ctx context.Context,
@@ -102,7 +125,7 @@ func (printer *Printer) handleCreateJob(
 	rq *CreateJobRequest) (*goipp.Message, io.ReadCloser, error) {
 
 	// Create new job
-	j := newJob(&rq.JobCreateOperation, rq.Job)
+	j := newJob(&rq.JobCreateOperation, rq.JobTemplate)
 	j.Lock()
 	defer j.Unlock()
 
@@ -111,11 +134,15 @@ func (printer *Printer) handleCreateJob(
 	// Prepare the CreateJobResponse
 	rsp := CreateJobResponse{
 		ResponseHeader: rq.ResponseHeader(goipp.StatusOk),
-		Job: &JobStatus{
-			JobID:           j.JobID,
-			JobState:        j.JobState,
-			JobStateReasons: j.JobStateReasons,
-			JobURI:          j.JobURI,
+		Job: &JobDescriptionAndStatus{
+			JobDescriptionAttrs: JobDescriptionAttrs{
+				JobID:  j.JobID,
+				JobURI: j.JobURI,
+			},
+			JobStatusAttrs: JobStatusAttrs{
+				JobState:        j.JobState,
+				JobStateReasons: j.JobStateReasons,
+			},
 		},
 	}
 
@@ -187,21 +214,21 @@ func (printer *Printer) handleSendDocument(
 		}
 		if rq.DocumentName != nil {
 			params.JobName = *rq.DocumentName
-		} else if j.JobStatus.JobName != nil {
-			params.JobName = *j.JobStatus.JobName
+		} else if j.JobDescriptionAttrs.JobName != nil {
+			params.JobName = *j.JobDescriptionAttrs.JobName
 		}
-		if rq.Job != nil {
-			if rq.Job.Copies != nil {
-				params.Copies = *rq.Job.Copies
+		if rq.JobTemplate != nil {
+			if rq.JobTemplate.Copies != nil {
+				params.Copies = *rq.JobTemplate.Copies
 			}
-			if rq.Job.Sides != nil {
-				params.Sides = sidesToAbstract(*rq.Job.Sides)
+			if rq.JobTemplate.Sides != nil {
+				params.Sides = sidesToAbstract(*rq.JobTemplate.Sides)
 			}
-			if rq.Job.PrintColorMode != nil {
-				params.ColorMode = colorModeToAbstract(*rq.Job.PrintColorMode)
+			if rq.JobTemplate.PrintColorMode != nil {
+				params.ColorMode = colorModeToAbstract(*rq.JobTemplate.PrintColorMode)
 			}
-			if rq.Job.Media != nil {
-				params.Media = mediaSizeToAbstract(*rq.Job.Media)
+			if rq.JobTemplate.Media != nil {
+				params.Media = mediaSizeToAbstract(*rq.JobTemplate.Media)
 			}
 		}
 
@@ -220,15 +247,69 @@ func (printer *Printer) handleSendDocument(
 
 	j.Lock()
 	j.SendDocumentActive = false
+	j.finishCancel()
 
 	// Generate response
 	rsp := &SendDocumentResponse{
-		Job: &JobStatus{
-			JobID:           j.JobID,
-			JobState:        j.JobState,
-			JobStateReasons: j.JobStateReasons,
-			JobURI:          j.JobURI,
+		Job: &JobDescriptionAndStatus{
+			JobDescriptionAttrs: JobDescriptionAttrs{
+				JobID:  j.JobID,
+				JobURI: j.JobURI,
+			},
+			JobStatusAttrs: JobStatusAttrs{
+				JobState:        j.JobState,
+				JobStateReasons: j.JobStateReasons,
+			},
 		},
+	}
+
+	return rsp.Encode(), nil, nil
+}
+
+// handleCancelJob handles Cancel-Job request.
+func (printer *Printer) handleCancelJob(
+	ctx context.Context,
+	rq *CancelJobRequest) (*goipp.Message, io.ReadCloser, error) {
+
+	// Lookup the job
+	var j *job
+
+	switch {
+	case rq.PrinterURI != nil && rq.JobID != nil:
+		j = printer.q.JobByID(*rq.JobID)
+		if j == nil {
+			return nil, nil, NewErrIPPFromRequest(rq,
+				goipp.StatusErrorNotFound,
+				"job not found (job-id=%d)", *rq.JobID)
+		}
+
+	case rq.JobURI != nil:
+		j = printer.q.JobByURI(*rq.JobURI)
+		if j == nil {
+			return nil, nil, NewErrIPPFromRequest(rq,
+				goipp.StatusErrorNotFound,
+				"job not found (job-uri=%q)", *rq.JobURI)
+		}
+
+	default:
+		return nil, nil, NewErrIPPFromRequest(rq,
+			goipp.StatusErrorBadRequest,
+			"missing job-id and job-uri attributes")
+	}
+
+	j.Lock()
+	defer j.Unlock()
+
+	if !j.isCancelable() {
+		return nil, nil, NewErrIPPFromRequest(rq,
+			goipp.StatusErrorNotPossible,
+			"job cannot be canceled in %v state", j.JobState)
+	}
+
+	j.beginCancel()
+
+	rsp := CancelJobResponse{
+		ResponseHeader: rq.ResponseHeader(goipp.StatusOk),
 	}
 
 	return rsp.Encode(), nil, nil
