@@ -595,13 +595,23 @@ const (
 type KwRequestedAttribute string
 
 const (
-	// Standard Get-Job-Attributes group keywords.
-	KwRequestedAttributeAll            KwRequestedAttribute = "all"
-	KwRequestedAttributeJobDescription KwRequestedAttribute = "job-description"
-	KwRequestedAttributeJobTemplate    KwRequestedAttribute = "job-template"
+	// KwRequestedAttributeAll requests all Job attribute groups.
+	KwRequestedAttributeAll KwRequestedAttribute = "all"
 
-	// Default Get-Jobs attributes when requested-attributes is omitted.
-	KwRequestedAttributeJobID  KwRequestedAttribute = "job-id"
+	// KwRequestedAttributeJobDescription requests the job-description
+	// attribute group.
+	KwRequestedAttributeJobDescription KwRequestedAttribute = "job-description"
+
+	// KwRequestedAttributeJobTemplate requests the job-template
+	// attribute group.
+	KwRequestedAttributeJobTemplate KwRequestedAttribute = "job-template"
+
+	// KwRequestedAttributeJobID is the default "job-id" attribute
+	// returned by Get-Jobs when requested-attributes is omitted.
+	KwRequestedAttributeJobID KwRequestedAttribute = "job-id"
+
+	// KwRequestedAttributeJobURI is the default "job-uri" attribute
+	// returned by Get-Jobs when requested-attributes is omitted.
 	KwRequestedAttributeJobURI KwRequestedAttribute = "job-uri"
 )
 

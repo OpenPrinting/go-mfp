@@ -144,6 +144,8 @@ type JobStatusAttrs struct {
 	NumberOfInterveningJobs optional.Val[int]    `ipp:"number-of-intervening-jobs"`
 }
 
+// JobDescriptionAndStatus holds job-description and job-status attributes
+// without job-template attributes.
 type JobDescriptionAndStatus struct {
 	ObjectRawAttrs
 	JobDescriptionAttrs
@@ -179,6 +181,7 @@ func DecodeJobDescriptionAndStatus(attrs goipp.Attributes, opt *DecoderOptions) 
 	return job, nil
 }
 
+// JobTemplate holds job-template attributes with raw attribute storage.
 type JobTemplate struct {
 	ObjectRawAttrs
 	JobTemplateAttrs
