@@ -10,11 +10,13 @@ package modeling
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
+	"github.com/OpenPrinting/go-mfp/proto/usbhost"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
 	"github.com/OpenPrinting/go-mfp/transport"
 )
@@ -155,4 +157,25 @@ func (model *Model) DownloadWSDScannerCapabilities(ctx context.Context,
 	}
 
 	return err
+}
+
+// DownloadUSBDeviceDescriptor downloads USB device configuration.
+//
+// Upon successful completion, Model is updated.
+func (model *Model) DownloadUSBDeviceDescriptor(ctx context.Context,
+	serial string) error {
+
+	devices, err := usbhost.ListDevices(true)
+	if err != nil {
+		return err
+	}
+
+	for _, dev := range devices {
+		if dev.Desc.ISerialNumber == serial {
+			model.SetUSBDeviceDescriptor(&dev.Desc)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%s: device not found", serial)
 }

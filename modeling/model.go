@@ -17,6 +17,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
+	"github.com/OpenPrinting/go-mfp/proto/usb"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
 )
 
@@ -33,12 +34,16 @@ type Model struct {
 	esclScanCaps    *escl.ScannerCapabilities
 	wsdScanCaps     *wsscan.GetScannerElementsResponse
 
+	// USB stuff
+	usbDevice *usb.DeviceDescriptor
+
 	// Modules
 	modHelpers *cpython.Object // helpers.py
 	modQuery   *cpython.Object // query.py
 	modIPP     *cpython.Object // ipp.py
 	modEscl    *cpython.Object // escl.py
 	modWSScan  *cpython.Object // wsd.py
+	modUSB     *cpython.Object // usb.py
 
 	// Important Python class constructors
 	clsHTTPMessage     *cpython.Object // query.HTTPMessage
@@ -103,6 +108,11 @@ func NewModel() (*Model, error) {
 		return nil, err
 	}
 
+	model.modUSB = py.Load(embedPyUSB, "usb", "usb.py")
+	if err := model.modUSB.Err(); err != nil {
+		return nil, err
+	}
+
 	// Load commonly used class constructors
 	model.clsQuery = py.Eval("query.Query")
 	if err := model.clsQuery.Err(); err != nil {
@@ -148,7 +158,7 @@ func (model *Model) Reset() error {
 
 // Write writes model into the [io.Writer]
 func (model *Model) Write(w io.Writer) (err error) {
-	var ipp, escl, wsd string
+	var ipp, escl, wsd, usb string
 
 	// Format parts
 	if model.ippPrinterAttrs != nil {
@@ -175,6 +185,14 @@ func (model *Model) Write(w io.Writer) (err error) {
 		}
 	}
 
+	if model.usbDevice != nil {
+		obj := structExport(model.py, keywordMapUSB, model.usbDevice)
+		usb, err = formatPython(obj)
+		if err != nil {
+			return
+		}
+	}
+
 	// Expand callback
 	expand := func(name string) string {
 		switch name {
@@ -184,6 +202,8 @@ func (model *Model) Write(w io.Writer) (err error) {
 			return escl
 		case "WSD":
 			return wsd
+		case "USB":
+			return usb
 		}
 
 		return ""
@@ -205,6 +225,8 @@ func (model *Model) Write(w io.Writer) (err error) {
 			skip = model.esclScanCaps == nil
 		case strings.HasPrefix(t, "#-wsd"):
 			skip = model.wsdScanCaps == nil
+		case strings.HasPrefix(t, "#-usb"):
+			skip = model.usbDevice == nil
 		case strings.HasPrefix(t, "#-"):
 			skip = false
 		default:

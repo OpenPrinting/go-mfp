@@ -31,3 +31,8 @@ escl.scanner = $ESCL
 #-wsd
 # WS-Scan (WSD) scanner parameters:
 wsd.scanner = $WSD
+
+#-usb
+# USB device descriptor
+usb.device = $USB
+

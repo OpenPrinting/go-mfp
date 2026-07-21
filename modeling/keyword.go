@@ -18,6 +18,10 @@ var keywordMapESCL = map[string]string{}
 // for WSD keywords.
 var keywordMapWSD = map[string]string{}
 
+// keywordMapUSB contains str.ToLower(GoName)->ProtocolName mappings
+// for USB keywords.
+var keywordMapUSB = map[string]string{}
+
 // init populates keywordMapESCL and keywordMapWSD
 func init() {
 	for _, kw := range keywordListESCL {

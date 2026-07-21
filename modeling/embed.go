@@ -30,3 +30,6 @@ var embedPyEscl string
 
 //go:embed wsd.py
 var embedPyWSD string
+
+//go:embed usb.py
+var embedPyUSB string
