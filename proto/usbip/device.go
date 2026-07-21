@@ -277,7 +277,7 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 		attrs |= usb.ConfAttrReserved
 		enc.PutU8(uint8(attrs)) // bmAttributes
 
-		enc.PutU8(conf.MaxPower) // bMaxPower
+		enc.PutU8(conf.BMaxPower) // bMaxPower
 
 		// Encode interfaces and endpoints
 		epnum := 1

@@ -247,7 +247,7 @@ type ConfigurationDescriptor struct {
 	BConfigurationValue uint8          // Identifier of this configuration
 	IConfiguration      string         // Configuration description
 	BMAttributes        ConfAttributes // Attribute bits
-	MaxPower            uint8          // Max power, in 2mA units
+	BMaxPower           uint8          // Max power, in 2mA units
 	Interfaces          []Interface    // Interfaces grouped by alt settings
 }
 

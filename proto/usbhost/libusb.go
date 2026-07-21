@@ -255,7 +255,7 @@ func libusbDecodeConfigurationDescriptor(dev *C.libusb_device,
 		BConfigurationValue: uint8(cconf.bConfigurationValue),
 		IConfiguration:      libusbGetString(handle, cconf.iConfiguration),
 		BMAttributes:        usb.ConfAttributes(cconf.bmAttributes),
-		MaxPower:            uint8(cconf.MaxPower),
+		BMaxPower:           uint8(cconf.MaxPower),
 	}
 
 	// Roll over all interfaces

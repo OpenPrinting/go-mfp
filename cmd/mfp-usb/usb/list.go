@@ -80,7 +80,7 @@ func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
 				conf.BMAttributes,
 				strings.Join(attrs, ","))
 
-			pager.Printf("    Max Power:   %d mA", int(conf.MaxPower)*2)
+			pager.Printf("    Max Power:   %d mA", int(conf.BMaxPower)*2)
 
 			for iffno, iff := range conf.Interfaces {
 				pager.Printf("")

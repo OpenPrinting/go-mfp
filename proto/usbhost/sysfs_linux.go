@@ -354,7 +354,7 @@ func (name devname) LoadConfigurations(withIEEE1284id bool) (
 				BConfigurationValue: raw.BConfigurationValue,
 				IConfiguration:      "", // Kept empty as requested
 				BMAttributes:        usb.ConfAttributes(raw.BMAttributes),
-				MaxPower:            raw.MaxPower,
+				BMaxPower:           raw.MaxPower,
 				Interfaces:          []usb.Interface{},
 			}
 			configs = append(configs, config)

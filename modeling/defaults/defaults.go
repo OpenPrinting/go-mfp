@@ -108,7 +108,7 @@ func USBIPPDescriptor() usb.DeviceDescriptor {
 		ISerialNumber:   "NN-001122334455",
 		Configurations: []usb.ConfigurationDescriptor{{
 			BMAttributes: usb.ConfAttrSelfPowered,
-			MaxPower:     1,
+			BMaxPower:    1,
 			Interfaces: []usb.Interface{
 				{
 					AltSettings: []usb.InterfaceDescriptor{
