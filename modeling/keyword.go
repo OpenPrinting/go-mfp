@@ -31,6 +31,10 @@ func init() {
 	for _, kw := range keywordListWSD {
 		keywordMapWSD[strings.ToLower(kw)] = kw
 	}
+
+	for _, kw := range keywordListUSB {
+		keywordMapUSB[strings.ToLower(kw)] = kw
+	}
 }
 
 // keywordNormalize returns the protocol keyword with the normalized spelling.
@@ -170,4 +174,38 @@ var keywordListESCL = []string{
 // models for WSD.
 var keywordListWSD = []string{
 	"JobId",
+}
+
+// keywordListUSB defines proper spelling of the keywords used in the MFP
+// models for USB.
+var keywordListUSB = []string{
+	// Device Descriptor
+	"bcdUSB",
+	"bDeviceClass",
+	"bDeviceSubClass",
+	"bDeviceProtocol",
+	"bMaxPacketSize",
+	"idVendor",
+	"idProduct",
+	"bcdDevice",
+	"iManufacturer",
+	"iProduct",
+	"iSerialNumber",
+
+	// Configuration Descriptor
+	"bConfigurationValue",
+	"iConfiguration",
+	"bmAttributes",
+	"bMaxPower",
+
+	// Interface Descriptor
+	"bInterfaceNumber",
+	"bInterfaceClass",
+	"bInterfaceSubClass",
+	"bInterfaceProtocol",
+	"bAlternateSetting",
+	"iInterface",
+
+	// Endpoint Descriptor
+	"wMaxPacketSize",
 }
