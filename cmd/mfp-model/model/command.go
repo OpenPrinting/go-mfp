@@ -165,11 +165,12 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 	optESCL := inv.Values("--escl")
 	optIPP := inv.Values("--ipp")
 	optWSD := inv.Values("--wsd")
+	optUSB, haveUSB := inv.Get("--usb")
 
 	if !haveDNSSD && !validate &&
-		optIPP == nil && optESCL == nil && optWSD == nil {
+		optIPP == nil && optESCL == nil && optWSD == nil && !haveUSB {
 
-		err := errors.New("at least one option required: --dnssd, --escl, --ipp, --wsd or --validate")
+		err := errors.New("at least one option required: --dnssd, --escl, --ipp, --wsd, --usb or --validate")
 		return err
 	}
 
@@ -270,6 +271,15 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 		if err != nil {
 			err = fmt.Errorf(
 				"Can't get WSD ScannerCapabilities: %s", err)
+			return err
+		}
+	}
+
+	if haveUSB {
+		err = model.DownloadUSBDeviceDescriptor(ctx, optUSB)
+		if err != nil {
+			err = fmt.Errorf(
+				"Can't get USBDeviceDescripto: %s", err)
 			return err
 		}
 	}
