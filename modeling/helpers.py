@@ -132,6 +132,16 @@ class meta_keyword (type):
     def __repr__ (self):
         return self.__module__ + "." + self.__name__
 
+# Here we pretend that type() of any class, derived from keyword,
+# returns "keyword", not "meta_keyword".
+#
+# It makes error messages more readable:
+#   with this quirk:
+#     can't convert helpers.keyword to usb.EndpointType
+#   without that:
+#     can't convert helpers.meta_keyword to usb.EndpointType
+meta_keyword.__name__ = "keyword"
+
 # keyword is a base class of classes that can be used
 # as keywords.
 #
