@@ -398,6 +398,19 @@ func structImportValueInt(obj *cpython.Object,
 		return structDecodeTextWithLangList(obj, v)
 
 	// USB types
+	case usb.Version:
+		s, err := obj.Str()
+		if err != nil {
+			return err
+		}
+
+		ver, err := usb.ParseVersion(s)
+		if err == nil {
+			v.Set(reflect.ValueOf(ver))
+		}
+
+		return err
+
 	case usb.EndpointType:
 		s, err := obj.Str()
 		if err != nil {
@@ -414,9 +427,6 @@ func structImportValueInt(obj *cpython.Object,
 		}
 
 		return err
-
-	case usb.Version:
-		return nil
 
 	// other types
 	case uuid.UUID:

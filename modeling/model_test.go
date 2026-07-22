@@ -238,9 +238,6 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 // verifies that the real Kyocera ECOSYS M2040dn USB Device Descriptor
 // is properly handled.
 func TestKyoceraUSBDeviceDescriptor(t *testing.T) {
-	// FIXME -- disabled for now
-	return
-
 	// Obtain USB device descriptor
 	desc := &testutils.Kyocera.ECOSYS.M2040dn.USB.DeviceDescriptor
 
