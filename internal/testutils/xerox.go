@@ -30,9 +30,9 @@ var Xerox struct {
 
 func init() {
 	Xerox.B235.IPP.PrinterAttributes =
-		kyoceraECOSYSM2040dnPrinterAttributes
+		xeroxB235PrinterAttributes
 	Xerox.B235.ESCL.ScannerCapabilities =
-		kyoceraECOSYSM2040dnScannerCapabilities
+		xeroxB235ScannerCapabilities
 }
 
 //go:embed "data/Xerox-B235-Printer-Attributes.ipp"
