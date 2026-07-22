@@ -11,6 +11,8 @@ package usb
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/util/generic"
 )
@@ -56,6 +58,48 @@ const (
 // String returns string representation of [Version]
 func (v Version) String() string {
 	return fmt.Sprintf("%d.%d", v>>8, v&0xff)
+}
+
+// MakeVersion makes a [Version] from major and minor parts, i.e.:
+//
+//	MakeVersion(2,0)  -> "2.0"
+//	MakeVersion(2,1)  -> "2.1"
+//	MakeVersion(2,12) -> "2.12"
+func MakeVersion(major, minor int) Version {
+	ver := Version(major<<8) & 0xff00
+	ver += Version(minor & 0xff)
+
+	return ver
+}
+
+// ParseVersion parses Version out of its string representation.
+func ParseVersion(s string) (Version, error) {
+	var major, minor uint64
+	var err error
+
+	dot := strings.IndexByte(s, '.')
+	if dot == -1 {
+		goto ERROR
+	}
+
+	major, err = strconv.ParseUint(s[:dot], 10, 8)
+	if err != nil {
+		goto ERROR
+	}
+
+	minor, err = strconv.ParseUint(s[dot+1:], 10, 8)
+	if err != nil {
+		goto ERROR
+	}
+
+	if minor >= 100 {
+		goto ERROR
+	}
+
+	return MakeVersion(int(major), int(minor)), nil
+
+ERROR:
+	return 0, fmt.Errorf("%q: invalid USB version", s)
 }
 
 // Speed defines the USB speed codes.
