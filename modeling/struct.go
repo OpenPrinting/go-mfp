@@ -16,6 +16,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/cpython"
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
+	"github.com/OpenPrinting/go-mfp/proto/usb"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
@@ -152,6 +153,14 @@ func structExportValue(py *cpython.Python,
 		}
 
 		return py.Eval("wsd.WithOptions").CallKWArgs(kwargs, obj)
+
+	case usb.EndpointType:
+		switch data {
+		case usb.EndpointIn:
+			return py.Eval("usb.IN")
+		case usb.EndpointOut:
+			return py.Eval("usb.OUT")
+		}
 
 	// fmt.Stringer becomes Python string
 	case fmt.Stringer:

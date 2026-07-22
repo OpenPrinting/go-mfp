@@ -8,12 +8,16 @@
 
 from helpers import collection, keyword
 
-# eSCL types
+# USB types
 class DeviceDescriptor(collection): pass
 class ConfigurationDescriptor(collection): pass
 class Interface(collection): pass
 class InterfaceDescriptor(collection): pass
 class EndpointDescriptor(collection): pass
+
+# Keywords
+class IN(keyword): pass
+class OUT(keyword): pass
 
 # device is the model-settable variable that defines the
 # USB device parameters.
