@@ -1031,3 +1031,152 @@ escl.scanner = escl.ScannerCapabilities(
 #
 # def escl_onNextDocumentResponse (q: query.Query, flt: escl.ImageFilter):
 
+# USB device descriptor
+usb.device = usb.DeviceDescriptor(
+    bcdUSB = '2.0',
+    Speed = 3,
+    bDeviceClass = 0,
+    bDeviceSubClass = 0,
+    bDeviceProtocol = 0,
+    bMaxPacketSize = 64,
+    idVendor = 1154,
+    idProduct = 1693,
+    bcdDevice = '0.0',
+    iManufacturer = 'Kyocera',
+    iProduct = 'Kyocera ECOSYS M2040dn',
+    iSerialNumber = 'VCF9192281',
+    Configurations = [
+        usb.ConfigurationDescriptor(
+            bConfigurationValue = 1,
+            iConfiguration = '',
+            bmAttributes = 192,
+            bMaxPower = 1,
+            Interfaces = [
+                usb.Interface(
+                    bInterfaceNumber = 0,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 2,
+                            bAlternateSetting = 0,
+                            iInterface = '',
+                            IEEE1284DeviceID = 'ID:ECOSYS M2040dn;MFG:Kyocera;CMD:PCLXL,PostScript Emulation,PCL5E,PJL;MDL:ECOSYS M2040dn;CLS:PRINTER;DES:Kyocera ECOSYS M2040dn;CID:KY_XPS_MonoA4FID;SER:VCF9192281;',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 4,
+                            bAlternateSetting = 1,
+                            iInterface = '',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 1,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 255,
+                            bInterfaceProtocol = 255,
+                            bAlternateSetting = 0,
+                            iInterface = '',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 4,
+                            bAlternateSetting = 1,
+                            iInterface = '',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 2,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 255,
+                            bInterfaceProtocol = 255,
+                            bAlternateSetting = 0,
+                            iInterface = '',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [],
+                        ),
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 4,
+                            bAlternateSetting = 1,
+                            iInterface = '',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    ],
+)
