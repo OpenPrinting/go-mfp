@@ -397,6 +397,27 @@ func structImportValueInt(obj *cpython.Object,
 	case wsscan.TextWithLangList:
 		return structDecodeTextWithLangList(obj, v)
 
+	// USB types
+	case usb.EndpointType:
+		s, err := obj.Str()
+		if err != nil {
+			return err
+		}
+
+		switch s {
+		case "IN":
+			v.Set(reflect.ValueOf(usb.EndpointIn))
+		case "OUT":
+			v.Set(reflect.ValueOf(usb.EndpointOut))
+		default:
+			err = errPy2Go(obj, v)
+		}
+
+		return err
+
+	case usb.Version:
+		return nil
+
 	// other types
 	case uuid.UUID:
 		s, err := obj.Str()
@@ -426,8 +447,15 @@ func structImportValueInt(obj *cpython.Object,
 	case reflect.Slice:
 		return structImportSlice(obj, kwmap, v)
 
-	case reflect.Int:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
 		i, err := obj.Int()
+		if err == nil {
+			v.Set(reflect.ValueOf(int(i)).Convert(v.Type()))
+		}
+		return err
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		i, err := obj.Uint()
 		if err == nil {
 			v.Set(reflect.ValueOf(int(i)).Convert(v.Type()))
 		}
@@ -441,7 +469,7 @@ func structImportValueInt(obj *cpython.Object,
 		return err
 	}
 
-	return nil
+	return errPy2Go(obj, v)
 }
 
 // structDecodeEnum decodes enum-alike value from the Python str object,

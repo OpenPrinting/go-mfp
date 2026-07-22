@@ -18,6 +18,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
+	"github.com/OpenPrinting/go-mfp/proto/usb"
 	"github.com/OpenPrinting/go-mfp/proto/wsscan"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/go-mfp/util/xmldoc"
@@ -228,6 +229,71 @@ func TestKyoceraWSDScannerCapabilities(t *testing.T) {
 	}
 
 	diff = testutils.Diff(scancaps, scancaps2)
+	if diff != "" {
+		t.Errorf("Model.Write/Model.Read:\n%s", diff)
+	}
+}
+
+// TestKyoceraUSBDeviceDescriptor is the real-world test, that
+// verifies that the real Kyocera ECOSYS M2040dn USB Device Descriptor
+// is properly handled.
+func TestKyoceraUSBDeviceDescriptor(t *testing.T) {
+	// FIXME -- disabled for now
+	return
+
+	// Obtain USB device descriptor
+	desc := &testutils.Kyocera.ECOSYS.M2040dn.USB.DeviceDescriptor
+
+	// Create a new, empty Model
+	model, err := NewModel()
+	assert.NoError(err)
+
+	defer model.Close()
+
+	// Roll over structExport/structImport
+	obj := structExport(model.py, keywordMapUSB, desc)
+	if err := obj.Err(); err != nil {
+		t.Fatalf("structExport: %s", err)
+		return
+	}
+
+	var desc2 *usb.DeviceDescriptor
+	err = structImport(obj, keywordMapUSB, &desc2)
+	if err != nil {
+		t.Fatalf("structImport: %s", err)
+		return
+	}
+
+	diff := testutils.Diff(desc, desc2)
+	if diff != "" {
+		t.Errorf("structExport/structImport:\n%s", diff)
+	}
+
+	// Roll over Model.Write/Model.Read
+	buf := &bytes.Buffer{}
+
+	model.SetUSBDeviceDescriptor(desc)
+	err = model.Write(buf)
+	if err != nil {
+		t.Fatalf("Model.Write: %s", err)
+	}
+
+	model2, err := NewModel()
+	assert.NoError(err)
+
+	defer model2.Close()
+
+	err = model2.Read("test", buf)
+	if err != nil {
+		t.Fatalf("Model.Read: %s", err)
+	}
+
+	desc2 = model2.GetUSBDeviceDescriptor()
+	if desc2 == nil {
+		t.Fatalf("Model.Read: missed USB Device Descriptor")
+	}
+
+	diff = testutils.Diff(desc, desc2)
 	if diff != "" {
 		t.Errorf("Model.Write/Model.Read:\n%s", diff)
 	}
