@@ -7,32 +7,15 @@
 // Fuzz tests for Python <-> Go type conversions (Object.Bool, Int,
 // Float, etc. and Python.NewObject).
 //
-// Each fuzz target here reuses a single, shared *Python interpreter
-// across all iterations rather than creating one per call. Interpreter
-// creation/teardown is the concern of python_fuzz_test.go
-// (FuzzSubInterpreterLifecycle); this file is only exercising the
-// marshaling logic, so sharing one interpreter lets the fuzzer run far
-// more iterations per second.
+// Each target reuses a single shared *Python interpreter across all
+// iterations instead of creating one per call, so more iterations/sec
+// are possible. Interpreter create/teardown itself is covered by a
+// separate fuzz target.
 //
-// A periodic countObjID() check still runs across iterations, as a
-// cheap backstop for objects that conversions might fail to release.
-//
-// IMPORTANT: countObjID() counts entries in the binding's own live-
-// object table (see Python.objects), which are normally released by
-// an Object's runtime.SetFinalizer when the Go GC collects it. Go
-// finalizers run asynchronously and are *not* guaranteed to have
-// completed just because runtime.GC() was called - under fuzzing load
-// (many workers, tens of thousands of execs/sec) a backlog of
-// not-yet-finalized Objects is expected and is NOT a leak; it just
-// looks like unbounded growth if you sample the count too eagerly.
-//
-// To keep the leak check deterministic, every Object created in these
-// fuzz targets is explicitly released with Object.Invalidate() as soon
-// as it's no longer needed, instead of relying on the Go GC finalizer
-// to get around to it. That removes the timing race entirely: after
-// Invalidate(), the object is *synchronously* gone from py.objects, so
-// countObjID() reflects only genuinely-leaked objects, never a
-// finalizer backlog.
+// A periodic countObjID() check is a cheap backstop for objects that
+// conversions might fail to release. Every Object is explicitly
+// released with Invalidate() rather than left to the GC finalizer, to
+// keep that check deterministic.
 package cpython
 
 import (
@@ -42,14 +25,12 @@ import (
 	"unicode/utf8"
 )
 
-// conversionFuzzGCCheckEvery controls how often (in fuzz executions,
-// within a single worker process) we force a GC and check that the
-// live-object count is not trending upward without bound.
+// How often (in executions) to force a GC and check the live-object
+// count isn't trending upward without bound.
 const conversionFuzzGCCheckEvery = 500
 
-// newConversionFuzzPython creates the single shared interpreter used by
-// the conversion fuzz targets in this file, and registers its teardown
-// with f.Cleanup.
+// newConversionFuzzPython creates the shared interpreter used by the
+// conversion fuzz targets, and registers teardown via f.Cleanup.
 func newConversionFuzzPython(f *testing.F) *Python {
 	py, err := NewPython()
 	if err != nil {
@@ -59,19 +40,17 @@ func newConversionFuzzPython(f *testing.F) *Python {
 	return py
 }
 
-// conversionFuzzObjCounter tracks executions per fuzz target, for the
-// periodic GC/leak sanity check. Separate targets get separate counters
-// via closures, so each has its own baseline.
+// conversionFuzzGCTracker tracks executions per fuzz target for the
+// periodic GC/leak check. Each target gets its own tracker/baseline.
 type conversionFuzzGCTracker struct {
 	iterations int
 	baseline   int
 	haveBase   bool
 }
 
-// check runs a periodic countObjID() sanity check. It is intentionally
-// lenient (a growing-without-bound trend, not an exact count) since
-// legitimate short-lived helper objects may still be pending Go GC for
-// anything not explicitly released via Invalidate().
+// check runs a periodic countObjID() sanity check. Intentionally
+// lenient (growth trend, not exact count), since short-lived helper
+// objects may still be pending GC if not explicitly Invalidate()'d.
 func (g *conversionFuzzGCTracker) check(t *testing.T, py *Python) {
 	g.iterations++
 	if g.iterations%conversionFuzzGCCheckEvery != 0 {
@@ -79,7 +58,7 @@ func (g *conversionFuzzGCTracker) check(t *testing.T, py *Python) {
 	}
 
 	runtime.GC()
-	runtime.GC() // second pass to let finalizers queued by the first run
+	runtime.GC() // second pass for finalizers queued by the first
 
 	count := py.countObjID()
 	if !g.haveBase {
@@ -88,8 +67,8 @@ func (g *conversionFuzzGCTracker) check(t *testing.T, py *Python) {
 		return
 	}
 
-	// Generous multiplier: we're looking for unbounded growth, not
-	// exact parity, since finalizers race with the Go GC.
+	// Generous multiplier: looking for unbounded growth, not exact
+	// parity, since finalizers race with the Go GC.
 	if count > g.baseline*4+100 {
 		t.Fatalf(
 			"possible object leak in conversions: object count grew from %d to %d after %d iterations",
@@ -109,12 +88,9 @@ func FuzzObjectRoundTripString(f *testing.F) {
 	f.Fuzz(func(t *testing.T, s string) {
 		obj := py.NewObject(s)
 
-		// Go strings are arbitrary byte sequences and need not be
-		// valid UTF-8. Python strings must be. A non-UTF-8 Go string
-		// is expected to fail conversion cleanly (a returned error,
-		// not a panic or crash) - that is correct behavior, not a
-		// leak or bug, so we only require an exact round trip for
-		// valid UTF-8 input.
+		// Go strings need not be valid UTF-8; Python strings must be.
+		// Invalid UTF-8 should fail conversion cleanly (an error, not
+		// a panic), so we only require an exact round trip otherwise.
 		if !utf8.ValidString(s) {
 			if obj.Err() == nil {
 				t.Fatalf(
@@ -262,9 +238,9 @@ func FuzzObjectRoundTripBool(f *testing.F) {
 	})
 }
 
-// FuzzObjectRoundTripList fuzzes []any (built from a fuzzed []int64) ->
-// Python list -> []any, exercising newPyList's per-element ref/unref
-// bookkeeping (python.go).
+// FuzzObjectRoundTripList fuzzes []any (from a fuzzed []int64) -> Python
+// list -> []any, exercising newPyList's per-element ref/unref
+// bookkeeping.
 func FuzzObjectRoundTripList(f *testing.F) {
 	py := newConversionFuzzPython(f)
 	tracker := &conversionFuzzGCTracker{}
@@ -273,9 +249,8 @@ func FuzzObjectRoundTripList(f *testing.F) {
 	f.Add([]byte{1, 2, 3})
 	f.Add([]byte{0, 0, 0, 0, 0, 0, 0, 0})
 
-	// Native fuzzing has no []int64 corpus type, so a []byte seed is
-	// reinterpreted as a sequence of small ints - plenty to exercise
-	// the list path without needing a custom corpus encoder.
+	// No []int64 corpus type exists, so a []byte seed is reinterpreted
+	// as small ints - exercises the list path without a custom encoder.
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		want := make([]any, len(raw))
 		for i, b := range raw {
@@ -311,8 +286,8 @@ func FuzzObjectRoundTripList(f *testing.F) {
 	})
 }
 
-// FuzzObjectRoundTripDict fuzzes map[string]any (keys derived from a
-// fuzzed string, values from its byte length) -> Python dict -> back,
+// FuzzObjectRoundTripDict fuzzes map[string]any (keys from a fuzzed
+// string, values from byte position) -> Python dict -> back,
 // exercising newPyDict's key-sort and per-entry ref/unref bookkeeping.
 func FuzzObjectRoundTripDict(f *testing.F) {
 	py := newConversionFuzzPython(f)
@@ -323,9 +298,9 @@ func FuzzObjectRoundTripDict(f *testing.F) {
 	f.Add("hello world this is a longer key set for more entries")
 
 	f.Fuzz(func(t *testing.T, s string) {
-		// Turn each byte position into a distinct single-character key
-		// (skipping duplicates), so map size and content vary with the
-		// fuzzed input without needing a multi-argument corpus.
+		// Turn each byte position into a distinct key (skipping
+		// duplicates), so map size/content vary without needing a
+		// multi-argument corpus.
 		want := map[string]any{}
 		for i, r := range s {
 			key := string(r) + string(rune('a'+(i%26)))
@@ -358,12 +333,10 @@ func FuzzObjectRoundTripDict(f *testing.F) {
 	})
 }
 
-// FuzzObjectListConversionErrorPath deliberately poisons one element of
-// an otherwise-valid list with an unconvertible Go value (a channel),
-// at a fuzzed position. This repeatedly drives newPyList's mid-loop
-// error return - the exact kind of early-exit cleanup path where a
-// forgotten unref is easy to introduce and easy to miss in normal
-// testing, since it only runs when conversion fails partway through.
+// FuzzObjectListConversionErrorPath poisons one element of a valid list
+// with an unconvertible Go value (a channel) at a fuzzed position,
+// driving newPyList's mid-loop error return - an early-exit cleanup
+// path where a forgotten unref is easy to miss in normal testing.
 func FuzzObjectListConversionErrorPath(f *testing.F) {
 	py := newConversionFuzzPython(f)
 	tracker := &conversionFuzzGCTracker{}
@@ -383,9 +356,7 @@ func FuzzObjectListConversionErrorPath(f *testing.F) {
 			list[i] = int64(i)
 		}
 
-		// Poison exactly one slot, wherever the fuzzed index lands
-		// (mod n keeps it in range regardless of what the fuzzer
-		// generates).
+		// Poison exactly one slot (mod n keeps it in range).
 		idx := ((poisonAt % n) + n) % n
 		list[idx] = make(chan int) // unsupported: reflect.Chan
 
@@ -396,9 +367,8 @@ func FuzzObjectListConversionErrorPath(f *testing.F) {
 			t.Fatalf("NewObject unexpectedly succeeded with a poisoned element at %d", idx)
 		}
 
-		// The conversion must fail cleanly, and must not leak any of
-		// the successfully-converted elements that came before the
-		// poisoned one.
+		// Must fail cleanly without leaking elements converted before
+		// the poisoned one.
 		runtime.GC()
 		after := py.countObjID()
 		if after > before {
@@ -413,7 +383,7 @@ func FuzzObjectListConversionErrorPath(f *testing.F) {
 
 // FuzzObjectRoundTripFloat fuzzes Go float64 -> Python float -> Go
 // float64, including NaN/Inf, and cross-checks the int64/uint64
-// boundary-conversion logic in float.go via Int()/Uint().
+// boundary-conversion logic via Int()/Uint().
 func FuzzObjectRoundTripFloat(f *testing.F) {
 	py := newConversionFuzzPython(f)
 	tracker := &conversionFuzzGCTracker{}
@@ -451,10 +421,8 @@ func FuzzObjectRoundTripFloat(f *testing.F) {
 		}
 
 		// Int()/Uint() must not panic or hang regardless of magnitude;
-		// whether they succeed depends on float.go's boundary
-		// constants, which is exactly what we're probing here. We
-		// only assert on crash-freedom, not on which side of the
-		// boundary any given value falls.
+		// whether they succeed depends on internal boundary constants,
+		// which is what we're probing - we only assert on crash-freedom.
 		_, _ = obj.Int()
 		_, _ = obj.Uint()
 
