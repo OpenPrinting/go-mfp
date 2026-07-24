@@ -767,4 +767,3 @@ func TestGateDecodeBytesError(t *testing.T) {
 		t.Fatalf("Bytes: expected error for string")
 	}
 }
-
