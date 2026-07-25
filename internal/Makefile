@@ -1,3 +1,3 @@
-SUBDIRS	= assert env netstate random testutils zone
+SUBDIRS	= assert env evaluate netstate random testutils zone
 
 include ../Rules.mak
