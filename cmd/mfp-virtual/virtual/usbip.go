@@ -14,7 +14,6 @@ import (
 	"net/http"
 
 	"github.com/OpenPrinting/go-mfp/internal/assert"
-	"github.com/OpenPrinting/go-mfp/modeling/defaults"
 	"github.com/OpenPrinting/go-mfp/proto/ieee1284"
 	"github.com/OpenPrinting/go-mfp/proto/usb"
 	"github.com/OpenPrinting/go-mfp/proto/usbip"
@@ -27,10 +26,8 @@ import (
 // address and forwards incoming IPP over USB requests (which
 // are essentially the HTTP requests) to the provided http.Handler.
 func newUsbipServer(ctx context.Context,
+	desc *usb.DeviceDescriptor,
 	addr net.Addr, handler http.Handler) (*usbip.Server, error) {
-
-	// Obtain device descriptor
-	desc := defaults.USBIPPDescriptor()
 
 	// Create enough IEEE-1284 virtual printers
 	match711 := usb.ClassID{Class: 7, SubClass: 1, Protocol: 1}
@@ -45,7 +42,7 @@ func newUsbipServer(ctx context.Context,
 	}
 
 	// Create the USB printer device
-	dev, err := usbip.NewPrinter(ctx, desc, handler, ieeeprinters)
+	dev, err := usbip.NewPrinter(ctx, *desc, handler, ieeeprinters)
 	assert.NoError(err)
 
 	// Create USBIP server

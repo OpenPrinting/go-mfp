@@ -107,6 +107,11 @@ func simulate(ctx context.Context, model *modeling.Model,
 
 		defer srvr.Close()
 	} else {
+		desc := model.GetUSBDeviceDescriptor()
+		if desc == nil {
+			return errors.New("model lack USB support")
+		}
+
 		addr := &net.TCPAddr{
 			IP:   net.IPv4(127, 0, 0, 1),
 			Port: 3240,
@@ -117,7 +122,7 @@ func simulate(ctx context.Context, model *modeling.Model,
 		log.Info(ctx, "  sudo modprobe vhci-hcd")
 		log.Info(ctx, "  sudo usbip attach -r localhost -b 1-1")
 
-		_, err := newUsbipServer(ctx, addr, mux)
+		_, err := newUsbipServer(ctx, desc, addr, mux)
 		if err != nil {
 			return err
 		}
