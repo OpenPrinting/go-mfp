@@ -457,6 +457,13 @@ func structImportValueInt(obj *cpython.Object,
 	case reflect.Slice:
 		return structImportSlice(obj, kwmap, v)
 
+	case reflect.Bool:
+		b, err := obj.Bool()
+		if err == nil {
+			v.Set(reflect.ValueOf(b).Convert(v.Type()))
+		}
+		return err
+
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
 		i, err := obj.Int()
 		if err == nil {
