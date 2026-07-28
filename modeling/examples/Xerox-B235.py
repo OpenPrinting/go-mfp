@@ -4400,3 +4400,149 @@ escl.scanner = escl.ScannerCapabilities(
 #
 # def escl_onNextDocumentResponse (q: query.Query, flt: escl.ImageFilter):
 
+# USB device descriptor
+usb.device = usb.DeviceDescriptor(
+    bcdUSB = '2.0',
+    Speed = 3,
+    bDeviceClass = 0,
+    bDeviceSubClass = 0,
+    bDeviceProtocol = 0,
+    bMaxPacketSize = 64,
+    idVendor = 2340,
+    idProduct = 40251,
+    bcdDevice = '0.0',
+    iManufacturer = 'Xerox',
+    iProduct = 'Xerox(R) B235 MFP',
+    iSerialNumber = '34004H030206H',
+    Configurations = [
+        usb.ConfigurationDescriptor(
+            bConfigurationValue = 1,
+            iConfiguration = '',
+            bmAttributes = 192,
+            bMaxPower = 1,
+            Interfaces = [
+                usb.Interface(
+                    bInterfaceNumber = 0,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 255,
+                            bInterfaceProtocol = 255,
+                            bAlternateSetting = 0,
+                            iInterface = 'Scan',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 1,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 2,
+                            bAlternateSetting = 0,
+                            iInterface = 'Print',
+                            IEEE1284DeviceID = 'MANUFACTURER:Xerox;COMMAND SET:PCL 6 Emulation, PostScript Level 3 Emulation, URF, PWG, NPAP, PJL;MODEL:B235 MFP;CLS:PRINTER;DES:Xerox(R) B235 MFP;CID:XR_PCL6_XCPT_Mono_A4;COMMENT:ECP1.0, LV_0924, LP_9D3B, LF_00CC;',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 2,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 3,
+                            bInterfaceSubClass = 0,
+                            bInterfaceProtocol = 0,
+                            bAlternateSetting = 0,
+                            iInterface = 'HID',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 3,
+                                    wMaxPacketSize = 64,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 3,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 4,
+                            bAlternateSetting = 0,
+                            iInterface = 'IPP_Print',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 4,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 4,
+                            bAlternateSetting = 0,
+                            iInterface = 'IPP_Print',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    ],
+)
+
