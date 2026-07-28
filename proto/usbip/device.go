@@ -229,10 +229,10 @@ func (dev *Device) getStatus() ([]byte, syscall.Errno) {
 
 // GetDescriptor returns USB descriptor, in the USB wire representation.
 // If type or index is invalid, it returns nil and syscall.EPIPE.
-func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.Errno) {
+func (dev *Device) getDescriptor(t usb.DescriptorType, idx int) ([]byte, syscall.Errno) {
 	switch t {
 	case usb.DescriptorDevice:
-		if i > 0 {
+		if idx > 0 {
 			return nil, syscall.EPIPE
 		}
 
@@ -264,19 +264,19 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 		return enc.Bytes(), 0
 
 	case usb.DescriptorConfiguration:
-		if i > len(dev.Descriptor.Configurations) {
+		if idx > len(dev.Descriptor.Configurations) {
 			return nil, syscall.EPIPE
 		}
 
 		// Encode Configuration Descriptor
-		conf := dev.Descriptor.Configurations[i]
+		conf := dev.Descriptor.Configurations[idx]
 		enc := newEncoder(256)
 
 		enc.PutU8(9)                                  // bLength
 		enc.PutU8(uint8(usb.DescriptorConfiguration)) // bDescriptorType
 		enc.PutLE16(0)                                // wTotalLength, reserved
 		enc.PutU8(uint8(len(conf.Interfaces)))        // bNumInterfaces
-		enc.PutU8(uint8(i + 1))                       // bConfigurationValue
+		enc.PutU8(uint8(idx + 1))                     // bConfigurationValue
 
 		i := dev.getstring(conf.IConfiguration)
 		enc.PutU8(uint8(i)) // iConfiguration
@@ -305,7 +305,7 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 				i := dev.getstring(alt.IInterface)
 				enc.PutU8(uint8(i)) // iInterface
 
-				endpoints := dev.endpointsTree[i][iffno][altno]
+				endpoints := dev.endpointsTree[idx][iffno][altno]
 				for _, ep := range endpoints {
 					ty := ep.Type()
 					addr := epnum
@@ -336,7 +336,7 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 	case usb.DescriptorString:
 		// String Descriptor Zero is special: it contains list of
 		// supported languages.
-		if i == 0 {
+		if idx == 0 {
 			enc := newEncoder(4)
 			enc.PutU8(8)                           // bLength
 			enc.PutU8(uint8(usb.DescriptorString)) // bDescriptorType
@@ -344,11 +344,11 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 			return enc.Bytes(), 0
 		}
 
-		if i >= len(dev.strings) {
+		if idx >= len(dev.strings) {
 			return nil, syscall.EPIPE
 		}
 
-		s := []byte(dev.strings[i])
+		s := []byte(dev.strings[idx])
 		enc := newEncoder(4)
 		enc.PutU8(uint8(len(s)*2 + 2))         // bLength
 		enc.PutU8(uint8(usb.DescriptorString)) // bDescriptorType
@@ -356,7 +356,6 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 			enc.PutLE16(uint16(c)) // bString
 		}
 		return enc.Bytes(), 0
-
 	}
 
 	return nil, syscall.EPIPE
