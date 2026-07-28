@@ -23,7 +23,7 @@ import (
 // Data, that was written into the endpoint from the USB side appears
 // as data received from the connection and visa versa.
 type EndpointConn struct {
-	ep          *Endpoint          // Underlying endpoint
+	epp         EndpointPair       // Underlying endpoint
 	closectx    context.Context    // Canceled by Close()
 	closecancel context.CancelFunc // Cancels closectx
 	listener    atomic.Pointer[    // Parent listener, nil if none
@@ -31,9 +31,9 @@ type EndpointConn struct {
 }
 
 // NewEndpointConn creates the [EndpointConn] on a top of the existent
-// [Endpoint].
-func NewEndpointConn(ep *Endpoint) *EndpointConn {
-	conn := &EndpointConn{ep: ep}
+// [EndpointPair].
+func NewEndpointConn(epp EndpointPair) *EndpointConn {
+	conn := &EndpointConn{epp: epp}
 
 	ctx := context.Background()
 	conn.closectx, conn.closecancel = context.WithCancel(ctx)
@@ -49,7 +49,7 @@ func (conn *EndpointConn) Close() error {
 	// Return connection to the listener's pool
 	listener := conn.listener.Swap(nil)
 	if listener != nil {
-		listener.endpoints <- conn.ep
+		listener.endpoints <- conn.epp
 	}
 
 	return nil
@@ -57,7 +57,7 @@ func (conn *EndpointConn) Close() error {
 
 // Read received data from the underlying [Endpoint].
 func (conn *EndpointConn) Read(buf []byte) (int, error) {
-	n, err := conn.ep.ReadContext(conn.closectx, buf)
+	n, err := conn.epp.ReadContext(conn.closectx, buf)
 	if err == context.Canceled {
 		err = net.ErrClosed
 	}
@@ -66,7 +66,7 @@ func (conn *EndpointConn) Read(buf []byte) (int, error) {
 
 // Write sends data into the underlying [Endpoint].
 func (conn *EndpointConn) Write(buf []byte) (int, error) {
-	n, err := conn.ep.WriteContext(conn.closectx, buf)
+	n, err := conn.epp.WriteContext(conn.closectx, buf)
 	if err == context.Canceled {
 		err = net.ErrClosed
 	}
@@ -111,21 +111,20 @@ func (conn *EndpointConn) SetWriteDeadline(t time.Time) error {
 // wrapped into the [EndpointConn] type. The [EndpointConn.Close]
 // returns connection into the pool.
 type EndpointListener struct {
-	endpoints chan *Endpoint // Queue of available endpoints
-	closechan chan struct{}  // Closed by EndpointListener.Close
+	endpoints chan EndpointPair // Queue of available endpoint pairs
+	closechan chan struct{}     // Closed by EndpointListener.Close
 }
 
 // NewEndpointListener creates the new [EndpointListener] on a top
-// of the group of existing [Endpoint]s.
-func NewEndpointListener(endpoints []*Endpoint) *EndpointListener {
-
+// of the group of existing [EndpointPair]s.
+func NewEndpointListener(endpoints []EndpointPair) *EndpointListener {
 	listener := &EndpointListener{
-		endpoints: make(chan *Endpoint, len(endpoints)),
+		endpoints: make(chan EndpointPair, len(endpoints)),
 		closechan: make(chan struct{}),
 	}
 
-	for _, ep := range endpoints {
-		listener.endpoints <- ep
+	for _, epp := range endpoints {
+		listener.endpoints <- epp
 	}
 
 	return listener

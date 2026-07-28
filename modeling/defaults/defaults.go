@@ -85,8 +85,14 @@ func ScannerCapabilities() *abstract.ScannerCapabilities {
 // USBIPPDescriptor returns the [usb.DeviceDescriptor]
 // for the typical IPP over USB device.
 func USBIPPDescriptor() usb.DeviceDescriptor {
-	ippusbEndpoint := usb.EndpointDescriptor{
-		Type:           usb.EndpointInOut,
+	ippusbEndpointIn := usb.EndpointDescriptor{
+		Type:           usb.EndpointIn,
+		BMAttributes:   usb.XferBulk,
+		WMaxPacketSize: 512,
+	}
+
+	ippusbEndpointOut := usb.EndpointDescriptor{
+		Type:           usb.EndpointOut,
 		BMAttributes:   usb.XferBulk,
 		WMaxPacketSize: 512,
 	}
@@ -118,7 +124,8 @@ func USBIPPDescriptor() usb.DeviceDescriptor {
 							BInterfaceProtocol: 2,
 							IEEE1284DeviceID:   deviceID,
 							Endpoints: []usb.EndpointDescriptor{
-								ippusbEndpoint,
+								ippusbEndpointIn,
+								ippusbEndpointOut,
 							},
 						},
 					},
@@ -130,7 +137,8 @@ func USBIPPDescriptor() usb.DeviceDescriptor {
 							BInterfaceSubClass: 1,
 							BInterfaceProtocol: 4,
 							Endpoints: []usb.EndpointDescriptor{
-								ippusbEndpoint,
+								ippusbEndpointIn,
+								ippusbEndpointOut,
 							},
 						},
 					},
@@ -142,7 +150,8 @@ func USBIPPDescriptor() usb.DeviceDescriptor {
 							BInterfaceSubClass: 1,
 							BInterfaceProtocol: 4,
 							Endpoints: []usb.EndpointDescriptor{
-								ippusbEndpoint,
+								ippusbEndpointIn,
+								ippusbEndpointOut,
 							},
 						},
 					},
@@ -154,7 +163,8 @@ func USBIPPDescriptor() usb.DeviceDescriptor {
 							BInterfaceSubClass: 1,
 							BInterfaceProtocol: 4,
 							Endpoints: []usb.EndpointDescriptor{
-								ippusbEndpoint,
+								ippusbEndpointIn,
+								ippusbEndpointOut,
 							},
 						},
 					},

@@ -61,11 +61,11 @@ func NewPrinter(ctx context.Context,
 		match := func(alt usb.InterfaceDescriptor) bool {
 			return alt.Match(match711) || alt.Match(match712)
 		}
-		endpoints := dev.EndpointsByFunc(match)
 
-		for i, endpoint := range endpoints {
+		endpointsByInterface := dev.EndpointsByFunc(match)
+		for i, endpoints := range endpointsByInterface {
 			if i < len(printers) {
-				go runLegacyPrinter(ctx, endpoint,
+				go runLegacyPrinter(ctx, endpoints,
 					printers[i])
 			}
 		}
@@ -76,8 +76,17 @@ func NewPrinter(ctx context.Context,
 	if cnt714 > 0 {
 		srv := transport.NewServer(ctx, nil, handler)
 
-		endpoints := dev.EndpointsByClassID(match714)
-		listener := NewEndpointListener(endpoints)
+		endpointsByInterface := dev.EndpointsByClassID(match714)
+		pairs := []EndpointPair{}
+
+		for _, endpoints := range endpointsByInterface {
+			in, out := EndpointsInOut(endpoints)
+			if in != nil && out != nil {
+				pairs = append(pairs, EndpointPair{in, out})
+			}
+		}
+
+		listener := NewEndpointListener(pairs)
 
 		go srv.Serve(listener)
 	}
@@ -89,35 +98,42 @@ func NewPrinter(ctx context.Context,
 // IEEE 1284 printer in both directions:
 //   - Host to printer: endpoint.Read() → printer.Write()
 //   - Printer to host: printer.Read() → endpoint.Write()
-func runLegacyPrinter(ctx context.Context, endpoint *Endpoint,
+func runLegacyPrinter(ctx context.Context, endpoints []*Endpoint,
 	printer *ieee1284.Printer) {
 
+	// Locate input and output endpoints
+	in, out := EndpointsInOut(endpoints)
+
 	// Host → Printer
-	go func() {
-		buf := make([]byte, 512)
-		for {
-			n, err := endpoint.Read(buf)
-			if err != nil {
-				log.Debug(ctx, "usbip: legacy printer: "+
-					"endpoint read: %s", err)
-				printer.Close()
-				return
+	if out != nil {
+		go func() {
+			buf := make([]byte, 512)
+			for {
+				n, err := out.Read(buf)
+				if err != nil {
+					log.Debug(ctx, "usbip: legacy printer: "+
+						"endpoint read: %s", err)
+					printer.Close()
+					return
+				}
+				printer.Write(buf[:n])
 			}
-			printer.Write(buf[:n])
-		}
-	}()
+		}()
+	}
 
 	// Printer → Host
-	go func() {
-		buf := make([]byte, 512)
-		for {
-			n, err := printer.Read(buf)
-			if err != nil {
-				log.Debug(ctx, "usbip: legacy printer: "+
-					"printer read: %s", err)
-				return
+	if in != nil {
+		go func() {
+			buf := make([]byte, 512)
+			for {
+				n, err := printer.Read(buf)
+				if err != nil {
+					log.Debug(ctx, "usbip: legacy printer: "+
+						"printer read: %s", err)
+					return
+				}
+				in.Write(buf[:n])
 			}
-			endpoint.Write(buf[:n])
-		}
-	}()
+		}()
+	}
 }

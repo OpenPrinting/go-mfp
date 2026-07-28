@@ -208,3 +208,20 @@ func (ep *Endpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
 
 	return n, nil
 }
+
+// EndpointsInOut accept a group of endpoints (assuming they all
+// belongs to the same interface/alt setting) and returns the first
+// input (EndpointIn) and the first output (EndpointOut) endpoint
+// in the group.
+func EndpointsInOut(endpoints []*Endpoint) (in, out *Endpoint) {
+	for _, ep := range endpoints {
+		switch {
+		case in == nil && ep.Type() == usb.EndpointIn:
+			in = ep
+		case out == nil && ep.Type() == usb.EndpointOut:
+			out = ep
+		}
+	}
+
+	return
+}

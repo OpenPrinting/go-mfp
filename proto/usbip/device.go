@@ -148,17 +148,21 @@ func MustNewDevice(desc usb.DeviceDescriptor) *Device {
 
 // EndpointsByFunc returns all device endpoints for which the matching
 // function returns true.
+//
+// Returned endpoints are grouped by [InterfaceDescriptor] they belong
+// to (i.e., for each InterfaceDescriptor, a small slice of endpoins
+// is returned).
 func (dev *Device) EndpointsByFunc(
-	match func(usb.InterfaceDescriptor) bool) []*Endpoint {
+	match func(usb.InterfaceDescriptor) bool) [][]*Endpoint {
 
-	found := []*Endpoint{}
+	found := [][]*Endpoint{}
 
 	for confno, conf := range dev.Descriptor.Configurations {
 		for iffno, iff := range conf.Interfaces {
 			for altno, alt := range iff.AltSettings {
 				if match(alt) {
 					endpoints := dev.endpointsTree[confno][iffno][altno]
-					found = append(found, endpoints...)
+					found = append(found, endpoints)
 				}
 			}
 		}
@@ -169,7 +173,11 @@ func (dev *Device) EndpointsByFunc(
 
 // EndpointsByClassID returns all device endpoints that match the
 // specified [usb.ClassID]
-func (dev *Device) EndpointsByClassID(id usb.ClassID) []*Endpoint {
+//
+// Returned endpoints are grouped by [InterfaceDescriptor] they belong
+// to (i.e., for each InterfaceDescriptor, a small slice of endpoins
+// is returned).
+func (dev *Device) EndpointsByClassID(id usb.ClassID) [][]*Endpoint {
 	match := func(alt usb.InterfaceDescriptor) bool {
 		return alt.Match(id)
 	}
@@ -300,33 +308,19 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, i int) ([]byte, syscall.E
 				endpoints := dev.endpointsTree[i][iffno][altno]
 				for _, ep := range endpoints {
 					ty := ep.Type()
-					if ty == usb.EndpointIn || ty == usb.EndpointInOut {
-						enc.PutU8(7) // bLength
-						enc.PutU8(   // bDescriptorType
-							uint8(usb.DescriptorEndpoint))
-
-						addr := epnum | 0x80
-						epnum++
-
-						enc.PutU8(uint8(addr))            // bEndpointAddress
-						enc.PutU8(uint8(ep.Attrs()))      // bmAttributes
-						enc.PutLE16(uint16(ep.PktSize())) // bmAttributes
-						enc.PutU8(0)                      // bInterval
+					addr := epnum
+					epnum++
+					if ty == usb.EndpointIn {
+						addr |= 0x80
 					}
 
-					if ty == usb.EndpointOut || ty == usb.EndpointInOut {
-						enc.PutU8(7) // bLength
-						enc.PutU8(   // bDescriptorType
-							uint8(usb.DescriptorEndpoint))
+					enc.PutU8(7)                             // bLength
+					enc.PutU8(uint8(usb.DescriptorEndpoint)) // bDescriptorType
 
-						addr := epnum
-						epnum++
-
-						enc.PutU8(uint8(addr))            // bEndpointAddress
-						enc.PutU8(uint8(ep.Attrs()))      // bmAttributes
-						enc.PutLE16(uint16(ep.PktSize())) // bmAttributes
-						enc.PutU8(0)                      // bInterval
-					}
+					enc.PutU8(uint8(addr))            // bEndpointAddress
+					enc.PutU8(uint8(ep.Attrs()))      // bmAttributes
+					enc.PutLE16(uint16(ep.PktSize())) // bmAttributes
+					enc.PutU8(0)                      // bInterval
 				}
 			}
 		}
@@ -401,17 +395,9 @@ func (dev *Device) setConfiguration(n int) ([]byte, syscall.Errno) {
 
 		for iffno, iff := range conf.Interfaces {
 			for altno, alt := range iff.AltSettings {
-				for epno, ep := range alt.Endpoints {
+				for epno := range alt.Endpoints {
 					epp := dev.endpointsTree[confno][iffno][altno][epno]
-
-					switch ep.Type {
-					case usb.EndpointIn, usb.EndpointOut:
-						dev.endpoints = append(dev.endpoints,
-							epp)
-					case usb.EndpointInOut:
-						dev.endpoints = append(dev.endpoints,
-							epp, epp)
-					}
+					dev.endpoints = append(dev.endpoints, epp)
 				}
 			}
 		}

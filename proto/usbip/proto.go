@@ -270,7 +270,7 @@ type protoIOHeader struct {
 	Command  protoIOCommand // Command code
 	Seqnum   uint32         // Sequence number
 	Location devLocation    // Device location
-	Input    bool           // Direction, true for input
+	Input    bool           // Direction, true for device->host input
 	Endpoint uint8          // Endpoint number (client only)
 }
 

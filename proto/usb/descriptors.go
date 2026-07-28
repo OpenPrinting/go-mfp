@@ -169,22 +169,13 @@ const (
 	ConfAttrRemoteWakeup ConfAttributes = 1 << 5
 )
 
-// EndpointType represents the endpoint type (in/out/bidir).
-//
-// Note, the hardware USB doesn't have such a thing that bidirectional
-// endpoint, but it is much more convenient from the software point of
-// view that having a pair of endpoints, one per direction, to implement
-// a logically bidirectional endpoint.
-//
-// So at the USB side the bidirectional endpoint are represented by
-// the pair of uni-directional endpoints.
+// EndpointType represents the endpoint type (in/out).
 type EndpointType int
 
 // Endpoint types:
 const (
 	EndpointIn    EndpointType = iota // Input (host->device)
 	EndpointOut                       // Output (device->host)
-	EndpointInOut                     // Input/Output (bidirectional)
 )
 
 // EndpointAttributes defines [EndpointDescriptor.BMAttributes] bits.
@@ -317,7 +308,7 @@ type Interface struct {
 func (iff Interface) CntEndpoints() int {
 	cnt := 0
 	for _, alt := range iff.AltSettings {
-		cnt = generic.Max(cnt, alt.CntEndpoints())
+		cnt = generic.Max(cnt, len(alt.Endpoints))
 	}
 	return cnt
 }
@@ -357,23 +348,6 @@ type EndpointDescriptor struct {
 	Type           EndpointType       // Endpoint type
 	BMAttributes   EndpointAttributes // Endpoint attribute bits
 	WMaxPacketSize uint16             // Max packet size, bytes
-}
-
-// CntEndpoints returns InterfaceDescriptor's count of endpoints.
-// Please notice that the [EndpointInOut] endpoints are counted twice.
-func (alt InterfaceDescriptor) CntEndpoints() int {
-	cnt := 0
-
-	for _, ep := range alt.Endpoints {
-		switch ep.Type {
-		case EndpointIn, EndpointOut:
-			cnt++
-		case EndpointInOut:
-			cnt += 2
-		}
-	}
-
-	return cnt
 }
 
 // SetupRequestType is the request type bits. It is used
