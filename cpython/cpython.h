@@ -12,7 +12,13 @@
 #define Py_LIMITED_API  0x03090000
 #define PY_SSIZE_T_CLEAN
 
+// Python.h redefines this macro (via /usr/include/python3.14/pyconfig-64.h)
+// so we must to #undef it here. This is ugly and dirty, but there is no
+// choice for us...
+#undef _POSIX_C_SOURCE
+
 #include <Python.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
