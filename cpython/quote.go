@@ -49,7 +49,7 @@ func QuoteSingle(s string) string {
 				sb.WriteRune(r)
 			} else {
 				// Escape non-printable control characters
-				if r <= 0xFF {
+				if r <= 0x7F {
 					sb.WriteString(fmt.Sprintf(`\x%02x`, r))
 				} else if r <= 0xFFFF {
 					sb.WriteString(fmt.Sprintf(`\u%04x`, r))
@@ -95,7 +95,7 @@ func QuoteDouble(s string) string {
 			if unicode.IsPrint(r) {
 				sb.WriteRune(r)
 			} else {
-				if r <= 0xFF {
+				if r <= 0x7F {
 					sb.WriteString(fmt.Sprintf(`\x%02x`, r))
 				} else if r <= 0xFFFF {
 					sb.WriteString(fmt.Sprintf(`\u%04x`, r))

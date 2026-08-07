@@ -39,6 +39,12 @@ func TestQuoteUTF8(t *testing.T) {
 		{"bad\x80byte", `'bad\x80byte'`, `"bad\x80byte"`},
 		// All control sequences
 		{"---\n\r\t\a\b\f\\---", `'---\n\r\t\x07\x08\x0c\\---'`, `"---\n\r\t\x07\x08\x0c\\---"`},
+		// \u escape that maps to normal ASCII
+		{"\u0058", `'X'`, `"X"`},
+		// Non-ASCII \u escape that maps to single byte
+		{"\u007f", `'\x7f'`, `"\x7f"`},
+		// \u escape that maps to double byte
+		{"\u0080", `'\u0080'`, `"\u0080"`},
 	}
 
 	for _, test := range tests {
@@ -48,13 +54,13 @@ func TestQuoteUTF8(t *testing.T) {
 				t.Errorf("QuoteSingle():\n"+
 					"expected: %q\n"+
 					"present:  %q",
-					got, test.wantSingle)
+					test.wantSingle, got)
 			}
 			if got := QuoteDouble(test.input); got != test.wantDouble {
-				t.Errorf("QuoteSingle():\n"+
+				t.Errorf("QuoteDouble():\n"+
 					"expected: %q\n"+
 					"present:  %q",
-					got, test.wantDouble)
+					test.wantDouble, got)
 			}
 		})
 	}
