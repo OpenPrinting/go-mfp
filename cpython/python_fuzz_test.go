@@ -1,4 +1,3 @@
-
 // MFP - Multi-Function Printers and scanners toolkit
 // CPython binding.
 //
@@ -16,6 +15,7 @@ package cpython
 
 import (
 	"bufio"
+	"flag"
 	"os"
 	"runtime"
 	"strconv"
@@ -24,14 +24,14 @@ import (
 )
 
 const (
-	// Create/exec/close cycles per fuzz input in full mode (used when
-	// actually fuzzing via `go test -fuzz=...`).
+	// Create/exec/close cycles per fuzz input when actually fuzzing
+	// (`go test -fuzz=...`).
 	subinterpFuzzIterations = 120
 
-	// Cycles per fuzz input under `go test -short`. Below
+	// Cycles per fuzz input for a plain `go test` run. Below
 	// subinterpRSSWarmupIterations, so the RSS-trend check is
 	// naturally skipped here (120 iters x 10 seeds costs ~20s).
-	subinterpFuzzIterationsShort = 10
+	subinterpFuzzIterationsDefault = 10
 
 	// How often (in iterations) RSS is sampled.
 	subinterpRSSSampleEvery = 10
@@ -43,6 +43,16 @@ const (
 	// Max tolerated RSS growth (KB) before flagging a likely leak.
 	subinterpRSSGrowthLimitKB = 20 * 1024 // 20 MiB
 )
+
+// isFuzzing reports whether `go test -fuzz=...` is actually driving
+// this run, as opposed to a plain `go test` replaying the seed corpus.
+// testing.Short() isn't useful here since it's off by default, so a
+// day-to-day `go test` (no flags) would still pay full cost; checking
+// the test.fuzz flag directly makes the fast path the default instead.
+func isFuzzing() bool {
+	fz := flag.Lookup("test.fuzz")
+	return fz != nil && fz.Value.String() != ""
+}
 
 // FuzzSubInterpreterLifecycle fuzzes Python interpreter creation, script
 // execution, and teardown, looking for leaked interpreter handles and
@@ -69,9 +79,9 @@ func FuzzSubInterpreterLifecycle(f *testing.F) {
 		f.Add(s.script, s.exec)
 	}
 
-	iterations := subinterpFuzzIterations
-	if testing.Short() {
-		iterations = subinterpFuzzIterationsShort
+	iterations := subinterpFuzzIterationsDefault
+	if isFuzzing() {
+		iterations = subinterpFuzzIterations
 	}
 
 	f.Fuzz(func(t *testing.T, script string, exec bool) {
