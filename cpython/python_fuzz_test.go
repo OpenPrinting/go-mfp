@@ -1,3 +1,4 @@
+
 // MFP - Multi-Function Printers and scanners toolkit
 // CPython binding.
 //
@@ -23,8 +24,14 @@ import (
 )
 
 const (
-	// Create/exec/close cycles per fuzz input.
+	// Create/exec/close cycles per fuzz input in full mode (used when
+	// actually fuzzing via `go test -fuzz=...`).
 	subinterpFuzzIterations = 120
+
+	// Cycles per fuzz input under `go test -short`. Below
+	// subinterpRSSWarmupIterations, so the RSS-trend check is
+	// naturally skipped here (120 iters x 10 seeds costs ~20s).
+	subinterpFuzzIterationsShort = 10
 
 	// How often (in iterations) RSS is sampled.
 	subinterpRSSSampleEvery = 10
@@ -62,11 +69,16 @@ func FuzzSubInterpreterLifecycle(f *testing.F) {
 		f.Add(s.script, s.exec)
 	}
 
+	iterations := subinterpFuzzIterations
+	if testing.Short() {
+		iterations = subinterpFuzzIterationsShort
+	}
+
 	f.Fuzz(func(t *testing.T, script string, exec bool) {
 		var baselineRSS, lastRSS uint64
 		var haveBaseline bool
 
-		for i := 0; i < subinterpFuzzIterations; i++ {
+		for i := 0; i < iterations; i++ {
 			before := PythonInstancesCount()
 
 			py, err := NewPython()
@@ -109,7 +121,7 @@ func FuzzSubInterpreterLifecycle(f *testing.F) {
 			if growth > subinterpRSSGrowthLimitKB {
 				t.Fatalf(
 					"possible memory leak: RSS grew by %d KB over %d iterations (script=%q exec=%v)",
-					growth, subinterpFuzzIterations-subinterpRSSWarmupIterations,
+					growth, iterations-subinterpRSSWarmupIterations,
 					script, exec)
 			}
 		}
