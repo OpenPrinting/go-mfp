@@ -3,14 +3,69 @@ import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import mean_squared_error
-import matplotlib.pyplot as plt
-from colormath.color_objects import sRGBColor, LabColor
-from colormath.color_conversions import convert_color
-from colormath.color_diff import delta_e_cie2000
 import collections
+import math
 import os
 from scipy import ndimage
 from scipy.stats import entropy
+
+
+def _delta_e_cie2000(L1, a1, b1, L2, a2, b2):
+    """Compute CIEDE2000 color difference between two Lab colors."""
+    C1 = math.sqrt(a1 * a1 + b1 * b1)
+    C2 = math.sqrt(a2 * a2 + b2 * b2)
+    C_avg = (C1 + C2) / 2.0
+    C_avg7 = C_avg ** 7
+    G = 0.5 * (1.0 - math.sqrt(C_avg7 / (C_avg7 + 25.0 ** 7)))
+    a1p = a1 * (1.0 + G)
+    a2p = a2 * (1.0 + G)
+    C1p = math.sqrt(a1p * a1p + b1 * b1)
+    C2p = math.sqrt(a2p * a2p + b2 * b2)
+    h1p = math.degrees(math.atan2(b1, a1p)) % 360
+    h2p = math.degrees(math.atan2(b2, a2p)) % 360
+
+    dLp = L2 - L1
+    dCp = C2p - C1p
+    if C1p * C2p == 0:
+        dhp = 0.0
+    elif abs(h2p - h1p) <= 180:
+        dhp = h2p - h1p
+    elif h2p - h1p > 180:
+        dhp = h2p - h1p - 360
+    else:
+        dhp = h2p - h1p + 360
+    dHp = 2.0 * math.sqrt(C1p * C2p) * math.sin(math.radians(dhp / 2.0))
+
+    Lp_avg = (L1 + L2) / 2.0
+    Cp_avg = (C1p + C2p) / 2.0
+    if C1p * C2p == 0:
+        hp_avg = h1p + h2p
+    elif abs(h1p - h2p) <= 180:
+        hp_avg = (h1p + h2p) / 2.0
+    elif h1p + h2p < 360:
+        hp_avg = (h1p + h2p + 360) / 2.0
+    else:
+        hp_avg = (h1p + h2p - 360) / 2.0
+
+    T = (1.0
+         - 0.17 * math.cos(math.radians(hp_avg - 30))
+         + 0.24 * math.cos(math.radians(2 * hp_avg))
+         + 0.32 * math.cos(math.radians(3 * hp_avg + 6))
+         - 0.20 * math.cos(math.radians(4 * hp_avg - 63)))
+    SL = 1.0 + 0.015 * (Lp_avg - 50) ** 2 / math.sqrt(20 + (Lp_avg - 50) ** 2)
+    SC = 1.0 + 0.045 * Cp_avg
+    SH = 1.0 + 0.015 * Cp_avg * T
+    Cp_avg7 = Cp_avg ** 7
+    RC = 2.0 * math.sqrt(Cp_avg7 / (Cp_avg7 + 25.0 ** 7))
+    d_theta = 30.0 * math.exp(-((hp_avg - 275) / 25.0) ** 2)
+    RT = -math.sin(math.radians(2 * d_theta)) * RC
+
+    return math.sqrt(
+        (dLp / SL) ** 2 +
+        (dCp / SC) ** 2 +
+        (dHp / SH) ** 2 +
+        RT * (dCp / SC) * (dHp / SH)
+    )
 
 class ImageComparator:
     def __init__(self, original_path, processed_path, output_dir=None):
@@ -232,11 +287,10 @@ class ImageComparator:
             lab1 = self.original_lab[y, x]
             lab2 = self.processed_lab[y, x]
             
-            color1 = LabColor(lab1[0], lab1[1], lab1[2])
-            color2 = LabColor(lab2[0], lab2[1], lab2[2])
-            
             try:
-                delta_e = delta_e_cie2000(color1, color2)
+                delta_e = _delta_e_cie2000(
+                    lab1[0], lab1[1], lab1[2],
+                    lab2[0], lab2[1], lab2[2])
                 delta_e_sum += delta_e
                 count += 1
             except Exception:
