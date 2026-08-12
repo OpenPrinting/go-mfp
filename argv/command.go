@@ -221,7 +221,7 @@ func (cmd *Command) Run(ctx context.Context, argv []string) error {
 		for _, c := range compl {
 			s := ""
 			for _, c := range c.String {
-				const escaped = `~!'"$\` + "`"
+				const escaped = `~!'"$\<>|&;(){}*?[]#` + "`"
 				if strings.ContainsRune(escaped, c) ||
 					unicode.IsSpace(c) {
 					s += "\\"
