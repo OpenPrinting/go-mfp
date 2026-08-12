@@ -122,7 +122,7 @@ func (back *backend) proc() {
 		// Attempt error recovery.
 		err = back.clnt.Restart(back.ctx)
 		if err == nil {
-			log.Debug(back.ctx, "avahi lient: restarted")
+			log.Debug(back.ctx, "avahi client: restarted")
 		}
 	}
 }
@@ -150,7 +150,7 @@ func (back *backend) startServiceBrowsers() error {
 
 // onClientEvent handles avahi.ClientEvent.
 func (back *backend) onClientEvent(evnt *avahi.ClientEvent) error {
-	log.Debug(back.ctx, "avahi lient: %s", evnt.State)
+	log.Debug(back.ctx, "avahi client: %s", evnt.State)
 	switch evnt.State {
 	case avahi.ClientStateFailure:
 		return evnt.Err
