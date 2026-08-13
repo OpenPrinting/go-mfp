@@ -54,9 +54,7 @@ func (s Set[T]) Merge(s2 Set[T]) {
 
 // Clear purges the set
 func (s Set[T]) Clear() {
-	for member := range s.members {
-		delete(s.members, member)
-	}
+	clear(s.members)
 }
 
 // Empty reports if set is empty
