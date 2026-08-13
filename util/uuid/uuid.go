@@ -9,6 +9,7 @@
 package uuid
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
@@ -216,6 +217,20 @@ func MustParse(s string) UUID {
 	uuid, err := Parse(s)
 	assert.NoError(err)
 	return uuid
+}
+
+// Compare returns an integer comparing two UUIDs lexicographically.
+//
+// The result will be 0 id uuid == uuid2, -1 if uuid < uuid2,
+// and +1 if uuid > uuid2
+func (uuid UUID) Compare(uuid2 UUID) int {
+	return bytes.Compare(uuid[:], uuid2[:])
+}
+
+// Less returns true if uuid is less that uuid2 in the lexicographical
+// order.
+func (uuid UUID) Less(uuid2 UUID) bool {
+	return uuid.Compare(uuid2) < 0
 }
 
 // String returns the string form of UUID:
