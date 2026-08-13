@@ -175,8 +175,8 @@ type UnitID struct {
 	Variant   string       // Finding variant of the same unit
 	SvcType   ServiceType  // Service type
 	SvcProto  ServiceProto // Service protocol
-	USBSerial string       // "" if not avaliable
-	USBHWID   string       // "" if not avaliable
+	USBSerial string       // "" if not available
+	USBHWID   string       // "" if not available
 }
 
 // SameDevice reports if two [UnitID]s belong to the same device.
