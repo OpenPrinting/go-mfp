@@ -59,7 +59,7 @@ func NewClientTm(ctx context.Context,
 		ctx:      ctx,
 		cancel:   cancel,
 		queue:    NewEventqueue(),
-		cache:    newCache(warmUpTime, stabilizationTime),
+		cache:    newCache(ctx, warmUpTime, stabilizationTime),
 		backends: make(map[Backend]struct{}),
 	}
 
@@ -188,8 +188,8 @@ func (clnt *Client) nextEvent() error {
 	rec := log.Begin(clnt.ctx)
 	defer rec.Commit()
 
-	rec.Debug("%s:", evnt.Name())
-	rec.Object(log.LevelDebug, 2, evnt.GetID())
+	rec.Trace("%s:", evnt.Name())
+	rec.Object(log.LevelTrace, 2, evnt.GetID())
 
 	switch evnt := evnt.(type) {
 	case *EventAddUnit:
@@ -203,10 +203,10 @@ func (clnt *Client) nextEvent() error {
 	case *EventFaxoutParameters:
 		err = clnt.cache.SetFaxoutParameters(evnt)
 	case *EventAddEndpoint:
-		rec.Debug("  Endpoint:  %s", evnt.Endpoint)
+		rec.Trace("  Endpoint:  %s", evnt.Endpoint)
 		err = clnt.cache.AddEndpoint(evnt)
 	case *EventDelEndpoint:
-		rec.Debug("  Endpoint:  %s", evnt.Endpoint)
+		rec.Trace("  Endpoint:  %s", evnt.Endpoint)
 		err = clnt.cache.DelEndpoint(evnt)
 	}
 

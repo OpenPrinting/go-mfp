@@ -9,9 +9,11 @@
 package discovery
 
 import (
+	"context"
 	"sort"
 	"time"
 
+	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
@@ -19,8 +21,9 @@ import (
 // the internal representation of the discovered information,
 // gathered in the cache
 type output struct {
-	devices []Device  // Cached output data
-	ttl     time.Time // Cache valid until this time
+	ctx     context.Context // Logging context
+	devices []Device        // Cached output data
+	ttl     time.Time       // Cache valid until this time
 }
 
 // Cached returns the cached output data (created by latest output.Generate)
@@ -40,6 +43,15 @@ func (out *output) Invalidate() {
 // Generate generates the discovery output from the discovery
 // information, gathered in the cache.
 func (out *output) Generate(ttl time.Time, units []unit) []Device {
+	// Setup logging
+	rec := log.Begin(out.ctx)
+	defer rec.Commit()
+
+	rec.Trace("preparing discovery output")
+
+	rec.Trace("units discovered:")
+	unitsToLogRecord(rec, units)
+
 	// Extract IP addresses
 	out.genExtractIPAddresses(units)
 
@@ -60,6 +72,12 @@ func (out *output) Generate(ttl time.Time, units []unit) []Device {
 
 	out.devices = outdevs
 	out.ttl = ttl
+
+	// Log result
+	rec.Trace("devices reported:")
+	for _, dev := range outdevs {
+		rec.Object(log.LevelTrace, 2, dev)
+	}
 
 	return outdevs
 }

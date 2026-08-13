@@ -9,6 +9,8 @@
 package discovery
 
 import (
+	"bytes"
+	"fmt"
 	"net/netip"
 
 	"github.com/OpenPrinting/go-mfp/util/generic"
@@ -57,6 +59,34 @@ type Device struct {
 	PrintUnits  []PrintUnit  // Print units
 	ScanUnits   []ScanUnit   // Scan units
 	FaxoutUnits []FaxoutUnit // Faxout units
+}
+
+// MarshalLog formats [Device] for logging.
+// It implements the [log.Marshaler] interface.
+func (dev Device) MarshalLog() []byte {
+	buf := bytes.Buffer{}
+
+	fmt.Fprintf(&buf, "%q (%s)\n", dev.DNSSDName, dev.DNSSDUUID)
+	for _, un := range dev.PrintUnits {
+		fmt.Fprintf(&buf, "  %s printer:\n", un.Proto)
+		for _, ep := range un.Endpoints {
+			fmt.Fprintf(&buf, "    %s\n", ep)
+		}
+	}
+	for _, un := range dev.ScanUnits {
+		fmt.Fprintf(&buf, "  %s scanner:\n", un.Proto)
+		for _, ep := range un.Endpoints {
+			fmt.Fprintf(&buf, "    %s\n", ep)
+		}
+	}
+	for _, un := range dev.FaxoutUnits {
+		fmt.Fprintf(&buf, "  %s faxout:\n", un.Proto)
+		for _, ep := range un.Endpoints {
+			fmt.Fprintf(&buf, "    %s\n", ep)
+		}
+	}
+
+	return buf.Bytes()
 }
 
 // device is the internal representation of the Device

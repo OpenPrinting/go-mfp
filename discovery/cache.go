@@ -9,6 +9,7 @@
 package discovery
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -33,10 +34,12 @@ type cacheEnt struct {
 }
 
 // newCache creates the new discovery cache
-func newCache(warmUpTime, stabilizationTime time.Duration) *cache {
+func newCache(ctx context.Context,
+	warmUpTime, stabilizationTime time.Duration) *cache {
 	return &cache{
 		readyAt:           time.Now().Add(warmUpTime),
 		entries:           make(map[UnitID]*cacheEnt),
+		out:               output{ctx: ctx},
 		stabilizationTime: stabilizationTime,
 	}
 }
@@ -105,7 +108,7 @@ func (c *cache) Snapshot() []Device {
 		}
 	}
 
-	var out output
+	out := output{ctx: c.out.ctx}
 	return out.Generate(ttl, units)
 }
 
@@ -329,9 +332,6 @@ func (ent *cacheEnt) stagingInProgress() bool {
 
 // stagingCheck checks if staging interval is expired. If so,
 // it merges publishes the staged endpoints and clears staging area.
-//
-// It returns 'true' if the previously started staging interval still
-// in progress.
 func (ent *cacheEnt) stagingCheck() {
 	if ent.stagingInProgress() && !ent.stagingDoneAt.After(time.Now()) {
 		ent.stagingEnd()

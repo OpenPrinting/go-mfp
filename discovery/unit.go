@@ -11,8 +11,10 @@ package discovery
 import (
 	"fmt"
 	"net/netip"
+	"sort"
 	"strings"
 
+	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
@@ -88,6 +90,54 @@ func (un unit) Export() any {
 	}
 
 	return nil
+}
+
+// unitsToLogRecord writes a slice of units into the log.Record
+func unitsToLogRecord(rec *log.Record, units []unit) {
+	// Group units by DNSSDName and UUID
+	type id struct {
+		name string
+		uuid uuid.UUID
+	}
+
+	grouped := make(map[id][]*unit)
+	for i := range units {
+		un := &units[i]
+		id := id{un.ID.DNSSDName, un.ID.UUID}
+		grouped[id] = append(grouped[id], un)
+	}
+
+	// Sort groups
+	sorted := make([][]*unit, 0, len(grouped))
+	for _, grp := range grouped {
+		sorted = append(sorted, grp)
+	}
+
+	sort.Slice(sorted, func(i, j int) bool {
+		g1 := sorted[i]
+		g2 := sorted[j]
+
+		switch {
+		case g1[0].ID.DNSSDName < g2[0].ID.DNSSDName:
+			return true
+		case g1[0].ID.DNSSDName > g2[0].ID.DNSSDName:
+			return false
+		}
+
+		return g1[0].ID.UUID.Less(g2[0].ID.UUID)
+	})
+
+	// Write to log record
+	for _, grp := range sorted {
+		rec.Trace("  %q (%s)",
+			grp[0].ID.DNSSDName,
+			grp[0].ID.UUID)
+
+		for _, un := range grp {
+			rec.Trace("    %s %s: %s",
+				un.ID.SvcProto, un.ID.SvcType, un.Endpoints)
+		}
+	}
 }
 
 // UnitID contains combination of parameters that identifies a device.
