@@ -164,7 +164,7 @@ func (out *output) genMergeDevicesByNameUUID(units []unit) []device {
 		key := UnitID{
 			DNSSDName: un.ID.DNSSDName,
 			UUID:      un.ID.UUID,
-			Realm:     un.ID.Realm,
+			Backend:   un.ID.Backend,
 		}
 		scratchpad[key] = append(scratchpad[key], un)
 	}
@@ -174,7 +174,7 @@ func (out *output) genMergeDevicesByNameUUID(units []unit) []device {
 	// Build slice of devices
 	devices := make([]device, 0, len(scratchpad))
 	for key, devunits := range scratchpad {
-		dev := device{realm: key.Realm, uuid: key.UUID, units: devunits}
+		dev := device{backend: key.Backend, uuid: key.UUID, units: devunits}
 		for _, un := range devunits {
 			dev.addrs = addrsMerge(dev.addrs, un.Addrs)
 		}
@@ -186,12 +186,11 @@ func (out *output) genMergeDevicesByNameUUID(units []unit) []device {
 	for i := range devices {
 		dev := &devices[i]
 		dev.units = out.genMergeUnitCrossZones(dev.units)
-
 	}
 
-	// Sort devices by realm
+	// Sort devices by backend name, just for reproducibility
 	sort.SliceStable(devices, func(i, j int) bool {
-		return devices[i].realm < devices[j].realm
+		return devices[i].backend.Name() < devices[j].backend.Name()
 	})
 
 	return devices
@@ -202,7 +201,7 @@ func (out *output) genMergeDevicesByUUID(devices []device) []device {
 	scratchpad := make(map[uuid.UUID]device)
 	for _, dev := range devices {
 		if prev, found := scratchpad[dev.uuid]; found {
-			prev.realm = RealmInvalid
+			prev.backend = nil
 			prev.units = append(prev.units, dev.units...)
 			prev.addrs = addrsMerge(prev.addrs, dev.addrs)
 			scratchpad[dev.uuid] = prev

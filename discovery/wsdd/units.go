@@ -157,7 +157,7 @@ func (ut *units) makeUnitID(ifidx int, svctype discovery.ServiceType,
 	addr wsd.AnyURI) discovery.UnitID {
 	return discovery.UnitID{
 		UUID:     addr.UUID(),
-		Realm:    discovery.RealmWSD,
+		Backend:  ut.back,
 		Zone:     zone.Name(ifidx),
 		SvcType:  svctype,
 		SvcProto: discovery.ServiceWSD,

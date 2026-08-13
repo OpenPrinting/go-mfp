@@ -266,7 +266,7 @@ func (back *backend) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 				return nil // Don't propagate the error
 			}
 
-			id := key.PrinterUnitID(txtPrinter)
+			id := key.PrinterUnitID(back, txtPrinter)
 			un := service.GetUnit(id.Queue)
 			if un == nil {
 				un = newPrinterUnit(back.queue, id, txtPrinter)
@@ -285,7 +285,7 @@ func (back *backend) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 			unName := "scan"
 			un := service.GetUnit(unName)
 			if un == nil {
-				id := key.ScannerUnitID(txtScanner)
+				id := key.ScannerUnitID(back, txtScanner)
 				un = newScannerUnit(back.queue, id, txtScanner)
 				service.AddUnit(unName, un)
 			} else {

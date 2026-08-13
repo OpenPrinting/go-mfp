@@ -156,8 +156,8 @@ func unitsToLogRecord(rec *log.Record, units []unit) {
 //	UUID       - device UUID
 //	Queue      - Job queue name for units with logical sub-units,
 //	             like LPD server with multiple queues
-//	Realm      - search realm. Different realms are treated as
-//	             independent namespaces.
+//	Backend    - backend that found the unit. Different backends
+//	             are treated as independent namespaces.
 //	Zone       - allows backend to further divide its namespace
 //	             (for example, to split it between network interfaces)
 //	Variant    - used to distinguish between logically equivalent
@@ -170,7 +170,7 @@ type UnitID struct {
 	DNSSDName string       // DNS-SD name, "" if not available
 	UUID      uuid.UUID    // uuid.NilUUID if not available
 	Queue     string       // Logical unit within a device
-	Realm     SearchRealm  // Search realm
+	Backend   Backend      // Backend that discovered the unit
 	Zone      string       // Namespace zone within the Realm
 	Variant   string       // Finding variant of the same unit
 	SvcType   ServiceType  // Service type
@@ -186,7 +186,7 @@ func (id UnitID) SameDevice(id2 UnitID) bool {
 	}
 
 	if id.DNSSDName == id2.DNSSDName &&
-		id.Realm == id2.Realm &&
+		id.Backend == id2.Backend &&
 		id.Zone == id2.Zone {
 		return true
 	}
@@ -225,8 +225,10 @@ func (id UnitID) MarshalLog() []byte {
 		lines = append(lines, line)
 	}
 
-	line = fmt.Sprintf("Realm:     %s", id.Realm)
-	lines = append(lines, line)
+	if id.Backend != nil {
+		line = fmt.Sprintf("Backend:   %s", id.Backend.Name())
+		lines = append(lines, line)
+	}
 
 	if id.Zone != "" {
 		line = fmt.Sprintf("Zone:      %s", id.Zone)

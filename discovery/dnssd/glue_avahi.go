@@ -410,7 +410,9 @@ func (key avahiServiceKey) HostnameKey(name string) avahiHostnameKey {
 
 // commonUnitID fills parts of discovery.UnitID, common for
 // printers, scanners and faxout devices
-func (key avahiServiceKey) commonUnitID() discovery.UnitID {
+func (key avahiServiceKey) commonUnitID(
+	backend discovery.Backend) discovery.UnitID {
+
 	var variant string
 
 	switch key.Proto {
@@ -429,7 +431,7 @@ func (key avahiServiceKey) commonUnitID() discovery.UnitID {
 
 	return discovery.UnitID{
 		DNSSDName: key.InstanceName,
-		Realm:     discovery.RealmDNSSD,
+		Backend:   backend,
 		Zone:      zone.Name(int(key.IfIdx)),
 		Variant:   variant,
 		SvcProto:  svcTypeToDiscoveryServiceProto(key.SvcType),
@@ -437,8 +439,10 @@ func (key avahiServiceKey) commonUnitID() discovery.UnitID {
 }
 
 // PrinterUnitID makes discovery.UnitID for printer
-func (key avahiServiceKey) PrinterUnitID(txt txtPrinter) discovery.UnitID {
-	id := key.commonUnitID()
+func (key avahiServiceKey) PrinterUnitID(backend discovery.Backend,
+	txt txtPrinter) discovery.UnitID {
+
+	id := key.commonUnitID(backend)
 
 	id.UUID = txt.uuid
 	id.Queue = txt.params.Queue
@@ -450,8 +454,10 @@ func (key avahiServiceKey) PrinterUnitID(txt txtPrinter) discovery.UnitID {
 }
 
 // ScannerUnitID makes discovery.UnitID for scanner
-func (key avahiServiceKey) ScannerUnitID(txt txtScanner) discovery.UnitID {
-	id := key.commonUnitID()
+func (key avahiServiceKey) ScannerUnitID(backend discovery.Backend,
+	txt txtScanner) discovery.UnitID {
+
+	id := key.commonUnitID(backend)
 
 	id.UUID = txt.uuid
 	id.SvcType = discovery.ServiceScanner

@@ -91,10 +91,10 @@ func (dev Device) MarshalLog() []byte {
 
 // device is the internal representation of the Device
 type device struct {
-	realm SearchRealm  // Device's Realm
-	uuid  uuid.UUID    // Device's UUID
-	units []unit       // Device's units
-	addrs []netip.Addr // Device's IP addresses
+	backend Backend      // Backend that found the device (nil if not known)
+	uuid    uuid.UUID    // Device's UUID
+	units   []unit       // Device's units
+	addrs   []netip.Addr // Device's IP addresses
 }
 
 // Export exports device as Device
