@@ -119,7 +119,7 @@ func (m Msg) Encode() []byte {
 	return buf.Bytes()
 }
 
-// Format formats [Msg] for logging/
+// Format formats [Msg] for logging.
 func (m Msg) Format() string {
 	ns := generic.CopySlice(NsMap)
 	m.MarkUsedNamespace(ns)
