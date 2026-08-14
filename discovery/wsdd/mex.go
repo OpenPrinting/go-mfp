@@ -111,7 +111,7 @@ func (mg *mexGetter) Get(ctx context.Context,
 
 // cacheLookup lookups the metadata cache.
 //
-// It returns new or existing cache entry and 'true' as a seconf
+// It returns new or existing cache entry and 'true' as a second
 // returned value, if existent cache entry was found for this if.
 func (mg *mexGetter) cacheLookup(id mexCacheID,
 	ver uint64) (*mexCacheEnt, bool) {
@@ -189,6 +189,9 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 			Action:    wsd.ActGet,
 			MessageID: msgid,
 			To:        optional.New(target),
+			ReplyTo: optional.New(
+				wsd.EndpointReference{wsd.ToAnonymous},
+			),
 		},
 		Body: wsd.Get{},
 	}
@@ -198,14 +201,20 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 	rq := &http.Request{
 		Method: "POST",
 		URL:    xaddr,
-		Body:   io.NopCloser(bytes.NewReader(data)),
-		Close:  true,
+		Header: http.Header{
+			"Content-Type": []string{
+				"application/soap+xml; charset=utf-8",
+			},
+		},
+		Body:          io.NopCloser(bytes.NewReader(data)),
+		ContentLength: int64(len(data)),
+		Close:         true,
 	}
 
 	rq = rq.WithContext(ctx)
 
 	// Perform HTTP query
-	mg.back.debug("POST %s", xaddr)
+	mg.back.debug("POST %s\n%s", xaddr, msg.Format())
 
 	rsp, err := mg.http.Do(rq)
 	if err != nil {
