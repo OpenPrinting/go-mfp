@@ -31,6 +31,10 @@ type Backend interface {
 	// Name returns backend name.
 	Name() string
 
+	// DeviceID returns a subset of UnitID, that uniquely
+	// identifies a physical device.
+	DeviceID(UnitID) UnitID
+
 	// Start starts Backend operations.
 	Start(*Eventqueue)
 

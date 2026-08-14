@@ -37,6 +37,15 @@ func (mb *MockBackend) Name() string {
 	return mb.name
 }
 
+// DeviceID returns a subset of UnitID, that uniquely
+// identifies a physical device.
+func (mb *MockBackend) DeviceID(id UnitID) UnitID {
+	return UnitID{
+		DNSSDName: id.DNSSDName,
+		Backend:   id.Backend,
+	}
+}
+
 // Start initializes the backend and starts a goroutine to push queued events
 // to the event queue.
 func (mb *MockBackend) Start(q *Eventqueue) {
@@ -87,6 +96,7 @@ func TestClient_Discovery(t *testing.T) {
 	uid := UnitID{
 		DNSSDName: "Test Printer",
 		UUID:      uuid.Random(),
+		Backend:   backend,
 		SvcType:   ServicePrinter,
 		SvcProto:  ServiceIPP,
 	}
@@ -136,6 +146,7 @@ func TestClient_InvalidEvents(t *testing.T) {
 	uid := UnitID{
 		DNSSDName: "Test Printer",
 		UUID:      uuid.Random(),
+		Backend:   backend,
 		SvcType:   ServicePrinter,
 		SvcProto:  ServiceIPP,
 	}
@@ -212,6 +223,7 @@ func TestClient_MissingFields(t *testing.T) {
 	uid := UnitID{
 		DNSSDName: "Test Printer",
 		UUID:      uuid.Random(),
+		Backend:   backend,
 		SvcType:   ServicePrinter,
 		SvcProto:  ServiceIPP,
 	}

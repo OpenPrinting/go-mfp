@@ -56,10 +56,6 @@ func decodeTxtPrinter(svcType, svcInstance string,
 
 	// Set defaults
 	p := txtPrinter{
-		// The default UUID, in a very unlikely case UUID is missed
-		// in the TXT record
-		uuid: uuid.MD5(uuid.NilUUID, svcInstance),
-
 		// Save service type
 		svcType: svcType,
 
@@ -186,10 +182,6 @@ func decodeTxtPrinter(svcType, svcInstance string,
 func decodeTxtScanner(svcType, svcInstance string,
 	txt []string) (txtScanner, error) {
 	s := txtScanner{
-		// The default UUID, in a very unlikely case UUID is missed
-		// in the TXT record
-		uuid: uuid.MD5(uuid.NilUUID, svcInstance),
-
 		// Save service type
 		svcType: svcType,
 

@@ -10,10 +10,10 @@ package discovery
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/log"
+	"github.com/OpenPrinting/go-mfp/util/generic"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
@@ -56,18 +56,19 @@ func (out *output) Generate(ttl time.Time, units []unit) []Device {
 	out.genExtractIPAddresses(units)
 
 	// Merge variants
-	units = out.genMergeUnitVariants(units)
+	units = out.genMergeUnitCrossVariandsAndZones(units)
 
-	// Classify units by DeviceName+UUID+Realm
-	devices := out.genMergeDevicesByNameUUID(units)
+	rec.Trace("units variants merged:")
+	unitsToLogRecord(rec, units)
 
-	// Merge devices by UUID
-	devices = out.genMergeDevicesByUUID(devices)
+	// Classify units by DeviceID
+	groups := out.groupUnitsByDeviceID(units)
+	groups = out.mergeUnitGrousByUUID(groups)
 
-	// Generate final output, save and returns
-	outdevs := make([]Device, len(devices))
-	for i := range devices {
-		outdevs[i] = devices[i].Export()
+	// Generate final output, save and return
+	outdevs := make([]Device, len(groups))
+	for i := range groups {
+		outdevs[i] = groups[i].Export()
 	}
 
 	out.devices = outdevs
@@ -91,49 +92,20 @@ func (out *output) genExtractIPAddresses(units []unit) {
 	}
 }
 
-// genMergeUnitVariants merges together units with distinct UnitID.Variant,
-// but otherwise similar.
+// genMergeUnitCrossVariandsAndZones merges together units with
+// distinct UnitID.Variant or UnitID.Zone, but otherwise equal.
 //
-// We need it because if some variant (say, ip6) will disappear
-// from the network, remaining variants still make the unit
-// visible.
+// The same device may be visible in different variants (say, IP4
+// vs IP6, or HTTP vs HTTPS). This is why variants are merged.
 //
-// Some units may come several times but in distinct variants
-// (say ip4/ip6). This function merges them together, effectively
-// remove duplicates.
-func (out *output) genMergeUnitVariants(units []unit) []unit {
+// Also, the same device may be visible from different network
+// interfaces (say, Ethernet vs WiFi), which will make them
+// identical but with different zones. This is why cross-zone
+// merge is also performed.
+func (out *output) genMergeUnitCrossVariandsAndZones(units []unit) []unit {
 	scratchpad := make(map[UnitID]unit)
 	for _, un := range units {
 		un.ID.Variant = ""
-		key := un.ID
-
-		if prev, found := scratchpad[key]; found {
-			// Keep the first found unit; merge endpoints
-			prev.Merge(un)
-			scratchpad[key] = prev
-		} else {
-			// Add new unit
-			scratchpad[key] = un
-		}
-	}
-
-	units = make([]unit, 0, len(scratchpad))
-	for _, un := range scratchpad {
-		units = append(units, un)
-	}
-
-	return units
-}
-
-// genMergeUnitSameFunction merges together units that differ
-// in UnitID.Zone, but otherwise similar.
-//
-// It may happen, for example, when units from different
-// network protocols appeared to belong to the same device.
-func (out *output) genMergeUnitCrossZones(units []unit) []unit {
-	scratchpad := make(map[UnitID]unit)
-
-	for _, un := range units {
 		un.ID.Zone = ""
 		key := un.ID
 
@@ -155,65 +127,71 @@ func (out *output) genMergeUnitCrossZones(units []unit) []unit {
 	return units
 }
 
-// genMergeDevicesByNameUUID merges units by DeviceName+UUID+Realm
-// and returns result as a slice of device-s.
-func (out *output) genMergeDevicesByNameUUID(units []unit) []device {
-	// Classify units by DeviceName+UUID+Realm
+// groupUnitsByDeviceID groups units by their DeviceID,
+// as reported by Backend.DeviceID()
+func (out *output) groupUnitsByDeviceID(units []unit) []unitgroup {
+	// Classify units by DeviceID
 	scratchpad := make(map[UnitID][]unit)
 	for _, un := range units {
-		key := UnitID{
-			DNSSDName: un.ID.DNSSDName,
-			UUID:      un.ID.UUID,
-			Backend:   un.ID.Backend,
-		}
+		key := un.ID.Backend.DeviceID(un.ID)
 		scratchpad[key] = append(scratchpad[key], un)
 	}
 
-	// TODO -- merge by addr
-
-	// Build slice of devices
-	devices := make([]device, 0, len(scratchpad))
-	for key, devunits := range scratchpad {
-		dev := device{backend: key.Backend, uuid: key.UUID, units: devunits}
-		for _, un := range devunits {
-			dev.addrs = addrsMerge(dev.addrs, un.Addrs)
-		}
-
-		devices = append(devices, dev)
+	// Build slice of unit groups
+	groups := make([]unitgroup, 0, len(scratchpad))
+	for _, grp := range scratchpad {
+		groups = append(groups, grp)
 	}
 
-	// Post-process devices
-	for i := range devices {
-		dev := &devices[i]
-		dev.units = out.genMergeUnitCrossZones(dev.units)
-	}
-
-	// Sort devices by backend name, just for reproducibility
-	sort.SliceStable(devices, func(i, j int) bool {
-		return devices[i].backend.Name() < devices[j].backend.Name()
-	})
-
-	return devices
+	return groups
 }
 
-// genMergeDevicesByUUID merges devices with the same UUID
-func (out *output) genMergeDevicesByUUID(devices []device) []device {
-	scratchpad := make(map[uuid.UUID]device)
-	for _, dev := range devices {
-		if prev, found := scratchpad[dev.uuid]; found {
-			prev.backend = nil
-			prev.units = append(prev.units, dev.units...)
-			prev.addrs = addrsMerge(prev.addrs, dev.addrs)
-			scratchpad[dev.uuid] = prev
-		} else {
-			scratchpad[dev.uuid] = dev
+// mergeUnitGrousByUUID merges unit groups by UUID.
+//
+// It allows to merge units of the same device, discovered
+// by different backends (say, dnssd vs wsdd).
+func (out *output) mergeUnitGrousByUUID(groups []unitgroup) []unitgroup {
+	// Classify groups by UUID
+	//
+	// We keep with indices of groups within the original groups slice,
+	// because indices are comparable.
+	byUUID := make(map[uuid.UUID][]int)
+	for idx, grp := range groups {
+		for _, uu := range grp.UUIDs() {
+			byUUID[uu] = append(byUUID[uu], idx)
 		}
 	}
 
-	devices = make([]device, 0, len(scratchpad))
-	for _, dev := range scratchpad {
-		devices = append(devices, dev)
+	// Now match groups for each UUID
+	consumed := generic.NewSet[int]()
+	for _, indices := range byUUID {
+		for i, idx1 := range indices {
+			grp1 := groups[idx1]
+			for _, idx2 := range indices[i+1:] {
+				if consumed.Contains(idx2) {
+					continue
+				}
+
+				grp2 := groups[idx2]
+				if grp1.CanMergeByUUID(grp2) {
+					grp1 = append(grp1, grp2...)
+					groups[idx1] = grp1
+					consumed.Add(idx2)
+				}
+			}
+		}
 	}
 
-	return devices
+	// And rebuild list of groups
+	result := []unitgroup{}
+	for _, indices := range byUUID {
+		for _, idx := range indices {
+			if consumed.TestAndAdd(idx) {
+				grp := groups[idx]
+				result = append(result, grp)
+			}
+		}
+	}
+
+	return result
 }

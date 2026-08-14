@@ -67,6 +67,16 @@ func (back *backend) Name() string {
 	return "dnssd"
 }
 
+// DeviceID returns a subset of UnitID, that uniquely
+// identifies a physical device.
+func (back *backend) DeviceID(id discovery.UnitID) discovery.UnitID {
+	return discovery.UnitID{
+		DNSSDName: id.DNSSDName,
+		Zone:      id.Zone,
+		Backend:   id.Backend,
+	}
+}
+
 // Start starts Backend operations.
 func (back *backend) Start(queue *discovery.Eventqueue) {
 	back.queue = queue
