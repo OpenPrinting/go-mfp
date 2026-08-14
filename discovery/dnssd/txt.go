@@ -23,6 +23,7 @@ import (
 
 // txtPrinter represents a decoded TXT record for printer
 type txtPrinter struct {
+	txt       []string                     // Raw TXT record
 	uuid      uuid.UUID                    // Device UUID
 	svcType   string                       // Service type
 	makeModel string                       // Manufacturer + Model
@@ -38,6 +39,7 @@ type txtPrinter struct {
 
 // txtScanner represents a decoded TXT record for scanner
 type txtScanner struct {
+	txt       []string                     // Raw TXT record
 	uuid      uuid.UUID                    // Device UUID
 	svcType   string                       // Service type
 	uriPath   string                       // Path part of URI
@@ -56,7 +58,7 @@ func decodeTxtPrinter(svcType, svcInstance string,
 
 	// Set defaults
 	p := txtPrinter{
-		// Save service type
+		txt:     txt,
 		svcType: svcType,
 
 		// Default parameters
@@ -182,7 +184,7 @@ func decodeTxtPrinter(svcType, svcInstance string,
 func decodeTxtScanner(svcType, svcInstance string,
 	txt []string) (txtScanner, error) {
 	s := txtScanner{
-		// Save service type
+		txt:     txt,
 		svcType: svcType,
 
 		// The default path to the eSCL endpoint

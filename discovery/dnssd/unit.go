@@ -42,16 +42,7 @@ func newPrinterUnit(queue *discovery.Eventqueue,
 	}
 
 	un.queue.Push(&discovery.EventAddUnit{ID: un.id})
-	un.queue.Push(&discovery.EventPrinterParameters{
-		ID:              un.id,
-		MakeModel:       txt.makeModel,
-		Location:        txt.location,
-		AdminURL:        txt.adminURL,
-		IconURL:         txt.iconURL,
-		PPDManufacturer: txt.usbMFG,
-		PPDModel:        txt.usbMDL,
-		Printer:         *txt.params,
-	})
+	un.SetTxtPrinter(txt)
 
 	return un
 }
@@ -68,14 +59,7 @@ func newScannerUnit(queue *discovery.Eventqueue,
 	}
 
 	un.queue.Push(&discovery.EventAddUnit{ID: un.id})
-	un.queue.Push(&discovery.EventScannerParameters{
-		ID:        un.id,
-		MakeModel: txt.makeModel,
-		Location:  txt.location,
-		AdminURL:  txt.adminURL,
-		IconURL:   txt.iconURL,
-		Scanner:   *txt.params,
-	})
+	un.SetTxtScanner(txt)
 
 	return un
 }
@@ -94,8 +78,15 @@ func (un *unit) IsPrinter() bool {
 func (un *unit) SetTxtPrinter(txt txtPrinter) {
 	un.txtPrn = txt
 	un.queue.Push(&discovery.EventPrinterParameters{
-		ID:      un.id,
-		Printer: *txt.params,
+		ID:              un.id,
+		TXT:             txt.txt,
+		MakeModel:       txt.makeModel,
+		Location:        txt.location,
+		AdminURL:        txt.adminURL,
+		IconURL:         txt.iconURL,
+		PPDManufacturer: txt.usbMFG,
+		PPDModel:        txt.usbMDL,
+		Printer:         *txt.params,
 	})
 }
 
@@ -103,8 +94,13 @@ func (un *unit) SetTxtPrinter(txt txtPrinter) {
 func (un *unit) SetTxtScanner(txt txtScanner) {
 	un.txtScn = txt
 	un.queue.Push(&discovery.EventScannerParameters{
-		ID:      un.id,
-		Scanner: *txt.params,
+		ID:        un.id,
+		TXT:       txt.txt,
+		MakeModel: txt.makeModel,
+		Location:  txt.location,
+		AdminURL:  txt.adminURL,
+		IconURL:   txt.iconURL,
+		Scanner:   *txt.params,
 	})
 }
 

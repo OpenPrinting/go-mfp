@@ -147,6 +147,7 @@ func (c *cache) SetPrinterParameters(evnt *EventPrinterParameters) error {
 	params := evnt.Printer
 	params.fixup()
 
+	ent.TXT = evnt.TXT
 	ent.MakeModel = evnt.MakeModel
 	ent.Location = evnt.Location
 	ent.AdminURL = evnt.AdminURL
@@ -170,6 +171,7 @@ func (c *cache) SetScannerParameters(evnt *EventScannerParameters) error {
 
 	params := evnt.Scanner
 
+	ent.TXT = evnt.TXT
 	ent.MakeModel = evnt.MakeModel
 	ent.Location = evnt.Location
 	ent.AdminURL = evnt.AdminURL

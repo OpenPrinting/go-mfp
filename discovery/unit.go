@@ -24,6 +24,7 @@ type PrintUnit struct {
 	Proto     ServiceProto      // Printing protocol
 	Params    PrinterParameters // Printer parameters
 	Endpoints []string          // URLs of printer endpoints
+	TXT       []string          // DND-SD TXT record, if available
 }
 
 // ScanUnit represents a scan unit.
@@ -31,6 +32,7 @@ type ScanUnit struct {
 	Proto     ServiceProto      // Scanning protocol
 	Params    ScannerParameters // Scanner parameters
 	Endpoints []string          // URLs of printer endpoints
+	TXT       []string          // DND-SD TXT record, if available
 }
 
 // FaxoutUnit represents a fax unit.
@@ -38,6 +40,7 @@ type FaxoutUnit struct {
 	Proto     ServiceProto      // Faxing protocol
 	Params    PrinterParameters // Printer parameters
 	Endpoints []string          // URLs of printer endpoints
+	TXT       []string          // DND-SD TXT record, if available
 }
 
 // unit is the internal representation of the PrintUnit, ScanUnit
@@ -51,6 +54,7 @@ type unit struct {
 	PPDManufacturer string       // I.e., "Hewlett Packard" or "Canon"
 	PPDModel        string       // Model name
 	Params          any          // PrinterParameters or ScannerParameters
+	TXT             []string     // DND-SD TXT record, if available
 	Endpoints       []string     // Unit endpoints
 	Addrs           []netip.Addr // Addresses that unit use
 }
@@ -59,6 +63,17 @@ type unit struct {
 func (un *unit) Merge(un2 unit) {
 	un.Endpoints = endpointsMerge(un.Endpoints, un2.Endpoints)
 	un.Addrs = addrsMerge(un.Addrs, un2.Addrs)
+
+	txtSeen := generic.NewSet[string]()
+	for _, t := range un.TXT {
+		txtSeen.Add(t)
+	}
+
+	for _, t := range un2.TXT {
+		if txtSeen.TestAndAdd(t) {
+			un.TXT = append(un.TXT, t)
+		}
+	}
 }
 
 // Export exports unit ad PrintUnit, ScanUnit or FaxoutUnit
@@ -73,12 +88,14 @@ func (un unit) Export() any {
 				Proto:     un.ID.SvcProto,
 				Params:    params,
 				Endpoints: un.Endpoints,
+				TXT:       un.TXT,
 			}
 		case ServiceFaxout:
 			return FaxoutUnit{
 				Proto:     un.ID.SvcProto,
 				Params:    params,
 				Endpoints: un.Endpoints,
+				TXT:       un.TXT,
 			}
 		}
 
@@ -87,6 +104,7 @@ func (un unit) Export() any {
 			Proto:     un.ID.SvcProto,
 			Params:    params,
 			Endpoints: un.Endpoints,
+			TXT:       un.TXT,
 		}
 	}
 

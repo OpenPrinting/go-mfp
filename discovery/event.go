@@ -70,6 +70,7 @@ func (evnt *EventDelUnit) GetID() UnitID {
 //     EventAddUnit event and not revoked with the EventDelUnit event)
 type EventPrinterParameters struct {
 	ID              UnitID            // Unit identity
+	TXT             []string          // DND-SD TXT record (if available)
 	MakeModel       string            // Manufacturer + Model
 	Location        string            // E.g., E.g., "2nd Floor Lab"
 	AdminURL        string            // Device administration URL
@@ -96,6 +97,7 @@ func (evnt *EventPrinterParameters) GetID() UnitID {
 //   - Unit MUST exist
 type EventScannerParameters struct {
 	ID        UnitID            // Unit identity
+	TXT       []string          // DND-SD TXT record (if available)
 	MakeModel string            // Manufacturer + Model
 	Location  string            // E.g., E.g., "2nd Floor Lab"
 	AdminURL  string            // Device administration URL

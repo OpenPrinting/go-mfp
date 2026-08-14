@@ -162,6 +162,7 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 					pager.Printf("      %s", ep)
 				}
 
+				pager.Printf("    TXT:        %q", un.TXT)
 			}
 			pager.Printf("")
 		}
@@ -210,6 +211,8 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 				for _, ep := range un.Endpoints {
 					pager.Printf("      %s", ep)
 				}
+
+				pager.Printf("    TXT:        %q", un.TXT)
 			}
 			pager.Printf("")
 		}
@@ -240,6 +243,8 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 				for _, ep := range un.Endpoints {
 					pager.Printf("      %s", ep)
 				}
+
+				pager.Printf("    TXT:        %q", un.TXT)
 			}
 			pager.Printf("")
 		}
