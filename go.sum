@@ -1,5 +1,5 @@
-github.com/OpenPrinting/go-avahi v0.0.0-20250813163007-dd9db1c4a6e9 h1:sYwgzNSkvqBnhfhS5THhHdSYt+8aleQBGMLObOOg5vM=
-github.com/OpenPrinting/go-avahi v0.0.0-20250813163007-dd9db1c4a6e9/go.mod h1:1vYkalHi1N1ZQ+Wt7KX7WK8fTS09iwrZnuQjwpsUMCU=
+github.com/OpenPrinting/go-avahi v0.0.0-20260812135728-151f3263d093 h1:goi7/ocNU/ZolYaPpBrN3vIkQf19FKam5UpBwktms3k=
+github.com/OpenPrinting/go-avahi v0.0.0-20260812135728-151f3263d093/go.mod h1:1vYkalHi1N1ZQ+Wt7KX7WK8fTS09iwrZnuQjwpsUMCU=
 github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf h1:ZP5tvUK5YTp/KxNSA2+IjP47R6aFFu7Tl7BE1hm273M=
 github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf/go.mod h1:ot2iw+QF7fVLaX+55JUNlF5YSDNiXVo2LRAv21iGcQI=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
