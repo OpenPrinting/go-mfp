@@ -233,6 +233,11 @@ func (uuid UUID) Less(uuid2 UUID) bool {
 	return uuid.Compare(uuid2) < 0
 }
 
+// IsZero reports whether the UUID is equal to NilUUID.
+func (uuid UUID) IsZero() bool {
+	return uuid == NilUUID
+}
+
 // String returns the string form of UUID:
 //
 //	xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
