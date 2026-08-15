@@ -120,6 +120,15 @@ func (grp *unitgroup) Add(un unit) {
 	*grp = append(*grp, un)
 }
 
+// Addrs returns IP addresses, found in the group.
+func (grp unitgroup) Addrs() []netip.Addr {
+	var addrs []netip.Addr
+	for _, un := range grp {
+		addrs = addrsMerge(addrs, un.Addrs)
+	}
+	return addrs
+}
+
 // UUIDs returns collection of UUIDs, owned by members
 // of the group. uuid.NilUUID not included.
 func (grp unitgroup) UUIDs() []uuid.UUID {
@@ -136,8 +145,14 @@ func (grp unitgroup) UUIDs() []uuid.UUID {
 // CanMergeByUUID decides if two unitgroups can be merged
 // by UUID.
 func (grp unitgroup) CanMergeByUUID(grp2 unitgroup) bool {
-	ok := false
+	// Don't merge groups, if they don't have common addresses.
+	// Otherwise, IPP over USB printer may steal WSD units from
+	// the same printer, reachable over network.
+	if !addrsOverlap(grp.Addrs(), grp2.Addrs()) {
+		return false
+	}
 
+	ok := false
 	for _, un1 := range grp {
 		// Ignore units without UUID
 		if un1.ID.UUID == uuid.NilUUID {
