@@ -87,3 +87,52 @@ func (dev Device) MarshalLog() []byte {
 
 	return buf.Bytes()
 }
+
+// less compares devices for sorting
+func (dev Device) less(dev2 Device) bool {
+	// Put devices with DNSSDName first.
+	// Compare by DNSSDName
+	switch {
+	case dev.DNSSDName != "" && dev2.DNSSDName == "":
+		return true
+	case dev.DNSSDName == "" && dev2.DNSSDName != "":
+		return false
+	case dev.DNSSDName != "" && dev2.DNSSDName != "":
+		return dev.DNSSDName < dev2.DNSSDName
+	}
+
+	// Now, if MakeModel is available, compare
+	// by MakeModel + DNSSDUUID
+	switch {
+	case dev.MakeModel != "" && dev2.MakeModel == "":
+		return true
+	case dev.MakeModel == "" && dev2.MakeModel != "":
+		return false
+	case dev.MakeModel != "" && dev2.MakeModel != "":
+		return dev.DNSSDName+dev.DNSSDUUID.String() <
+			dev2.DNSSDName+dev2.DNSSDUUID.String()
+	}
+
+	// Compare by DNSSDUUID, if available
+	switch {
+	case !dev.DNSSDUUID.IsZero() && dev2.DNSSDUUID.IsZero():
+		return true
+	case dev.DNSSDUUID.IsZero() && !dev2.DNSSDUUID.IsZero():
+		return false
+	case !dev.DNSSDUUID.IsZero() && !dev2.DNSSDUUID.IsZero():
+		return dev.DNSSDUUID.Less(dev2.DNSSDUUID)
+	}
+
+	// Compare by USBSerial, if available
+	switch {
+	case dev.USBSerial != "" && dev2.USBSerial == "":
+		return true
+	case dev.USBSerial == "" && dev2.USBSerial != "":
+		return false
+	case dev.USBSerial != "" && dev2.USBSerial != "":
+		return dev.USBSerial < dev2.USBSerial
+	}
+
+	// Give up
+	return false
+}

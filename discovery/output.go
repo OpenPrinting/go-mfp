@@ -10,6 +10,7 @@ package discovery
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/log"
@@ -70,6 +71,10 @@ func (out *output) Generate(ttl time.Time, units []unit) []Device {
 	for i := range groups {
 		outdevs[i] = groups[i].Export()
 	}
+
+	sort.Slice(outdevs, func(i, j int) bool {
+		return outdevs[i].less(outdevs[j])
+	})
 
 	out.devices = outdevs
 	out.ttl = ttl
