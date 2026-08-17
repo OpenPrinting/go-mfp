@@ -190,7 +190,7 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 			MessageID: msgid,
 			To:        optional.New(target),
 			ReplyTo: optional.New(
-				wsd.EndpointReference{wsd.ToAnonymous},
+				wsd.EndpointReference{Address: wsd.ToAnonymous},
 			),
 		},
 		Body: wsd.Get{},
