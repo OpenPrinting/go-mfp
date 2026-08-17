@@ -62,7 +62,7 @@ type Device struct {
 
 // MarshalLog formats [Device] for logging.
 // It implements the [log.Marshaler] interface.
-func (dev Device) MarshalLog() []byte {
+func (dev *Device) MarshalLog() []byte {
 	buf := bytes.Buffer{}
 
 	fmt.Fprintf(&buf, "%q (%s)\n", dev.DNSSDName, dev.DNSSDUUID)
@@ -89,7 +89,7 @@ func (dev Device) MarshalLog() []byte {
 }
 
 // less compares devices for sorting
-func (dev Device) less(dev2 Device) bool {
+func (dev *Device) less(dev2 *Device) bool {
 	// Put devices with DNSSDName first.
 	// Compare by DNSSDName
 	switch {

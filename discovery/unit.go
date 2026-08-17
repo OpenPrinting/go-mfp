@@ -184,9 +184,9 @@ func (grp unitgroup) CanMergeByUUID(grp2 unitgroup) bool {
 }
 
 // Export exports unitgroup as Device
-func (grp unitgroup) Export() Device {
+func (grp unitgroup) Export() *Device {
 	// Gather IP addresses
-	out := Device{}
+	out := &Device{}
 	for _, un := range grp {
 		out.Addrs = addrsMerge(out.Addrs, un.Addrs)
 	}

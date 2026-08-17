@@ -23,13 +23,13 @@ import (
 // gathered in the cache
 type output struct {
 	ctx     context.Context // Logging context
-	devices []Device        // Cached output data
+	devices []*Device       // Cached output data
 	ttl     time.Time       // Cache valid until this time
 }
 
 // Cached returns the cached output data (created by latest output.Generate)
 // It may return nil, if this information is not available.
-func (out *output) Cached() []Device {
+func (out *output) Cached() []*Device {
 	if out.devices != nil && !out.ttl.After(time.Now()) {
 		return out.devices
 	}
@@ -43,7 +43,7 @@ func (out *output) Invalidate() {
 
 // Generate generates the discovery output from the discovery
 // information, gathered in the cache.
-func (out *output) Generate(ttl time.Time, units []*unit) []Device {
+func (out *output) Generate(ttl time.Time, units []*unit) []*Device {
 	// Setup logging
 	rec := log.Begin(out.ctx)
 	defer rec.Commit()
@@ -67,7 +67,7 @@ func (out *output) Generate(ttl time.Time, units []*unit) []Device {
 	groups = out.mergeUnitGrousByUUID(groups)
 
 	// Generate final output, save and return
-	outdevs := make([]Device, len(groups))
+	outdevs := make([]*Device, len(groups))
 	for i := range groups {
 		outdevs[i] = groups[i].Export()
 	}

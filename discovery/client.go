@@ -116,7 +116,7 @@ func (clnt *Client) AddBackend(bk Backend) {
 // argument during the Client creation will cause this function to
 // return immediately with the appropriate error. And this is the
 // only case when error is returned.
-func (clnt *Client) GetDevices(ctx context.Context, m Mode) ([]Device, error) {
+func (clnt *Client) GetDevices(ctx context.Context, m Mode) ([]*Device, error) {
 	// Lock the client
 	clnt.lock.Lock()
 	defer clnt.lock.Unlock()
