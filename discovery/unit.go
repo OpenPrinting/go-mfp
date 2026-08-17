@@ -60,7 +60,7 @@ type unit struct {
 }
 
 // Merge merges two units
-func (un *unit) Merge(un2 unit) {
+func (un *unit) Merge(un2 *unit) {
 	un.Endpoints = endpointsMerge(un.Endpoints, un2.Endpoints)
 	un.Addrs = addrsMerge(un.Addrs, un2.Addrs)
 
@@ -77,7 +77,7 @@ func (un *unit) Merge(un2 unit) {
 }
 
 // Export exports unit ad PrintUnit, ScanUnit or FaxoutUnit
-func (un unit) Export() any {
+func (un *unit) Export() any {
 	switch params := un.Params.(type) {
 	case PrinterParameters:
 		// PrinterParameters can be used either with PrintUnit
@@ -113,10 +113,10 @@ func (un unit) Export() any {
 
 // unitgroup is the collection of units, most likely to belong
 // to the same device
-type unitgroup []unit
+type unitgroup []*unit
 
 // Add adds unit to the group
-func (grp *unitgroup) Add(un unit) {
+func (grp *unitgroup) Add(un *unit) {
 	*grp = append(*grp, un)
 }
 
@@ -187,8 +187,7 @@ func (grp unitgroup) CanMergeByUUID(grp2 unitgroup) bool {
 func (grp unitgroup) Export() Device {
 	// Gather IP addresses
 	out := Device{}
-	for i := range grp {
-		un := &grp[i]
+	for _, un := range grp {
 		out.Addrs = addrsMerge(out.Addrs, un.Addrs)
 	}
 
@@ -203,8 +202,7 @@ func (grp unitgroup) Export() Device {
 	var wsdScanners []*unit
 	var ippFaxes []*unit
 
-	for i := range grp {
-		un := &grp[i]
+	for _, un := range grp {
 		switch un.ID.SvcType {
 		case ServicePrinter:
 			switch un.ID.SvcProto {
@@ -458,7 +456,7 @@ func (id UnitID) MarshalLog() []byte {
 }
 
 // unitsToLogRecord writes a slice of units into the log.Record
-func unitsToLogRecord(rec *log.Record, units []unit) {
+func unitsToLogRecord(rec *log.Record, units []*unit) {
 	// Group units by DNSSDName and UUID
 	type id struct {
 		name string
@@ -466,8 +464,7 @@ func unitsToLogRecord(rec *log.Record, units []unit) {
 	}
 
 	grouped := make(map[id][]*unit)
-	for i := range units {
-		un := &units[i]
+	for _, un := range units {
 		id := id{un.ID.DNSSDName, un.ID.UUID}
 		grouped[id] = append(grouped[id], un)
 	}

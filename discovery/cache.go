@@ -27,7 +27,7 @@ type cache struct {
 
 // cacheEnt is the cache entry for print/scan/faxout units.
 type cacheEnt struct {
-	unit
+	*unit
 	hasParams        bool      // Parameters are received
 	stagingEndpoints []string  // Newly discovered endpoints, on quarantine
 	stagingDoneAt    time.Time // End of staging time. Zero if no staging.
@@ -81,7 +81,7 @@ func (c *cache) Export() []Device {
 	}
 
 	// Re-generate the output
-	units := make([]unit, 0, len(c.entries))
+	units := make([]*unit, 0, len(c.entries))
 	ttl := time.Now().Add(365 * 24 * time.Hour) // Far in a future
 
 	for _, ent := range c.entries {
@@ -98,7 +98,7 @@ func (c *cache) Export() []Device {
 
 // Snapshot exports the cached data in the ModeSnapshot mode.
 func (c *cache) Snapshot() []Device {
-	units := make([]unit, 0, len(c.entries))
+	units := make([]*unit, 0, len(c.entries))
 	ttl := time.Now().Add(365 * 24 * time.Hour) // Far in a future
 
 	for _, ent := range c.entries {
@@ -118,7 +118,7 @@ func (c *cache) AddUnit(evnt *EventAddUnit) error {
 		return errors.New("unit already added")
 	}
 
-	c.entries[evnt.ID] = &cacheEnt{unit: unit{ID: evnt.ID}}
+	c.entries[evnt.ID] = &cacheEnt{unit: &unit{ID: evnt.ID}}
 	c.out.Invalidate()
 
 	return nil
@@ -289,7 +289,7 @@ func (ent *cacheEnt) ready() bool {
 }
 
 // snapshot makes a snapshot from the cache entry.
-func (ent *cacheEnt) snapshot() (un unit, ok bool) {
+func (ent *cacheEnt) snapshot() (un *unit, ok bool) {
 	if ent.hasParams {
 		un = ent.unit
 		un.Endpoints = endpointsMerge(un.Endpoints,
@@ -299,7 +299,7 @@ func (ent *cacheEnt) snapshot() (un unit, ok bool) {
 		}
 	}
 
-	return unit{}, false
+	return nil, false
 }
 
 // stagingBegin starts staging interval for discovered endpoints.

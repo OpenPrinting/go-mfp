@@ -43,7 +43,7 @@ func (out *output) Invalidate() {
 
 // Generate generates the discovery output from the discovery
 // information, gathered in the cache.
-func (out *output) Generate(ttl time.Time, units []unit) []Device {
+func (out *output) Generate(ttl time.Time, units []*unit) []Device {
 	// Setup logging
 	rec := log.Begin(out.ctx)
 	defer rec.Commit()
@@ -90,9 +90,8 @@ func (out *output) Generate(ttl time.Time, units []unit) []Device {
 
 // genExtractIPAddresses extracts IP addresses from endpoints.
 // It modifies slice of units in place.
-func (out *output) genExtractIPAddresses(units []unit) {
-	for i := range units {
-		un := &units[i]
+func (out *output) genExtractIPAddresses(units []*unit) {
+	for _, un := range units {
 		un.Addrs = addrsFromEndpoints(un.Endpoints)
 	}
 }
@@ -107,8 +106,8 @@ func (out *output) genExtractIPAddresses(units []unit) {
 // interfaces (say, Ethernet vs WiFi), which will make them
 // identical but with different zones. This is why cross-zone
 // merge is also performed.
-func (out *output) genMergeUnitCrossVariandsAndZones(units []unit) []unit {
-	scratchpad := make(map[UnitID]unit)
+func (out *output) genMergeUnitCrossVariandsAndZones(units []*unit) []*unit {
+	scratchpad := make(map[UnitID]*unit)
 	for _, un := range units {
 		un.ID.Variant = ""
 		un.ID.Zone = ""
@@ -124,7 +123,7 @@ func (out *output) genMergeUnitCrossVariandsAndZones(units []unit) []unit {
 		}
 	}
 
-	units = make([]unit, 0, len(scratchpad))
+	units = make([]*unit, 0, len(scratchpad))
 	for _, un := range scratchpad {
 		units = append(units, un)
 	}
@@ -134,9 +133,9 @@ func (out *output) genMergeUnitCrossVariandsAndZones(units []unit) []unit {
 
 // groupUnitsByDeviceID groups units by their DeviceID,
 // as reported by Backend.DeviceID()
-func (out *output) groupUnitsByDeviceID(units []unit) []unitgroup {
+func (out *output) groupUnitsByDeviceID(units []*unit) []unitgroup {
 	// Classify units by DeviceID
-	scratchpad := make(map[UnitID][]unit)
+	scratchpad := make(map[UnitID][]*unit)
 	for _, un := range units {
 		key := un.ID.Backend.DeviceID(un.ID)
 		scratchpad[key] = append(scratchpad[key], un)
