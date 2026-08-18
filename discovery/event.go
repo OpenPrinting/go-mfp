@@ -122,6 +122,7 @@ func (evnt *EventScannerParameters) GetID() UnitID {
 //   - Unit MUST exist
 type EventFaxoutParameters struct {
 	ID              UnitID            // Unit identity
+	TXT             []string          // DND-SD TXT record (if available)
 	MakeModel       string            // Manufacturer + Model
 	Location        string            // E.g., E.g., "2nd Floor Lab"
 	AdminURL        string            // Device administration URL

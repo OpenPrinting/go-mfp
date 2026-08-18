@@ -47,6 +47,24 @@ func newPrinterUnit(queue *discovery.Eventqueue,
 	return un
 }
 
+// newFaxoutUnit creates a new faxout unit
+func newFaxoutUnit(queue *discovery.Eventqueue,
+	id discovery.UnitID, txt txtPrinter) *unit {
+
+	un := &unit{
+		queue:   queue,
+		id:      id,
+		svcType: txt.svcType,
+		addrs:   generic.NewSet[netip.Addr](),
+		txtPrn:  txt,
+	}
+
+	un.queue.Push(&discovery.EventAddUnit{ID: un.id})
+	un.SetTxtFaxout(txt)
+
+	return un
+}
+
 // newScannerUnit creates a new scanner unit
 func newScannerUnit(queue *discovery.Eventqueue,
 	id discovery.UnitID, txt txtScanner) *unit {
@@ -77,6 +95,8 @@ func (un *unit) IsPrinter() bool {
 // setTxtPrinter changes TXT record for printer unit
 func (un *unit) SetTxtPrinter(txt txtPrinter) {
 	un.txtPrn = txt
+	params := *txt.params
+	params.Queue = txt.rp
 	un.queue.Push(&discovery.EventPrinterParameters{
 		ID:              un.id,
 		TXT:             txt.txt,
@@ -86,7 +106,25 @@ func (un *unit) SetTxtPrinter(txt txtPrinter) {
 		IconURL:         txt.iconURL,
 		PPDManufacturer: txt.usbMFG,
 		PPDModel:        txt.usbMDL,
-		Printer:         *txt.params,
+		Printer:         params,
+	})
+}
+
+// setTxtFaxout changes TXT record for printer unit
+func (un *unit) SetTxtFaxout(txt txtPrinter) {
+	un.txtPrn = txt
+	params := *txt.params
+	params.Queue = txt.rp
+	un.queue.Push(&discovery.EventFaxoutParameters{
+		ID:              un.id,
+		TXT:             txt.txt,
+		MakeModel:       txt.makeModel,
+		Location:        txt.location,
+		AdminURL:        txt.adminURL,
+		IconURL:         txt.iconURL,
+		PPDManufacturer: txt.usbMFG,
+		PPDModel:        txt.usbMDL,
+		Faxout:          params,
 	})
 }
 
@@ -198,7 +236,7 @@ func (un *unit) endpoint(addr netip.Addr) string {
 			url.Host += ":" + strconv.Itoa(port)
 		}
 
-		url.Path = un.txtPrn.params.Queue
+		url.Path = un.id.Queue
 
 	case svcTypeLPD:
 		// lpd://host[:port]/queue

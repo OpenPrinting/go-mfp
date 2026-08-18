@@ -445,8 +445,23 @@ func (key avahiServiceKey) PrinterUnitID(backend discovery.Backend,
 	id := key.commonUnitID(backend)
 
 	id.UUID = txt.uuid
-	id.Queue = txt.params.Queue
+	id.Queue = txt.rp
 	id.SvcType = discovery.ServicePrinter
+	id.USBSerial = txt.usbSerial
+	id.USBHWID = txt.usbHWID
+
+	return id
+}
+
+// PrinterUnitID makes discovery.UnitID for fax
+func (key avahiServiceKey) FaxoutUnitID(backend discovery.Backend,
+	txt txtPrinter) discovery.UnitID {
+
+	id := key.commonUnitID(backend)
+
+	id.UUID = txt.uuid
+	id.Queue = txt.rfo
+	id.SvcType = discovery.ServiceFaxout
 	id.USBSerial = txt.usbSerial
 	id.USBHWID = txt.usbHWID
 

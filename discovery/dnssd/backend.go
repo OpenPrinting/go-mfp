@@ -276,13 +276,28 @@ func (back *backend) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 				return nil // Don't propagate the error
 			}
 
-			id := key.PrinterUnitID(back, txtPrinter)
-			un := service.GetUnit(id.Queue)
-			if un == nil {
-				un = newPrinterUnit(back.queue, id, txtPrinter)
-				service.AddUnit(id.Queue, un)
-			} else {
-				un.SetTxtPrinter(txtPrinter)
+			if txtPrinter.rp != "" {
+				id := key.PrinterUnitID(back, txtPrinter)
+				un := service.GetUnit(id.Queue)
+				if un == nil {
+					un = newPrinterUnit(back.queue, id,
+						txtPrinter)
+					service.AddUnit(id.Queue, un)
+				} else {
+					un.SetTxtPrinter(txtPrinter)
+				}
+			}
+
+			if txtPrinter.rfo != "" {
+				id := key.FaxoutUnitID(back, txtPrinter)
+				un := service.GetUnit(id.Queue)
+				if un == nil {
+					un = newFaxoutUnit(back.queue, id,
+						txtPrinter)
+					service.AddUnit(id.Queue, un)
+				} else {
+					un.SetTxtFaxout(txtPrinter)
+				}
 			}
 		} else {
 			txtScanner, err := decodeTxtScanner(svcType,

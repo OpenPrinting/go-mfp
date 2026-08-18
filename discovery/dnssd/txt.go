@@ -22,10 +22,19 @@ import (
 )
 
 // txtPrinter represents a decoded TXT record for printer
+//
+// Note, depending on a device, txtPrinter may represent
+// printer, fax or both:
+//
+//	txtPrinter.rp  != ""                  - printer
+//	txtPrinter.rfo != "" -                - faxout
+//	txtPrinter.rp && txtPrinter.rfo != "" - printer + faxout
 type txtPrinter struct {
 	txt       []string                     // Raw TXT record
 	uuid      uuid.UUID                    // Device UUID
 	svcType   string                       // Service type
+	rp        string                       // Printer: rp=path
+	rfo       string                       // Faxout: rfo=path
 	makeModel string                       // Manufacturer + Model
 	location  string                       // E.g., "2nd Floor Computer Lab"
 	adminURL  string                       // Device administration URL
@@ -66,14 +75,6 @@ func decodeTxtPrinter(svcType, svcInstance string,
 			// 50 is the reasonable default
 			Priority: 50,
 		},
-	}
-
-	// Some defaults depend on service type
-	switch svcType {
-	case svcTypeIPP, svcTypeIPPS:
-		p.params.Queue = "ipp/print"
-	case svcTypeLPD:
-		p.params.Queue = "auto"
 	}
 
 	// Parse key by key
@@ -135,7 +136,9 @@ func decodeTxtPrinter(svcType, svcInstance string,
 				p.params.Punch = optional.New(true)
 			}
 		case "rp":
-			p.params.Queue = value
+			p.rp = value
+		case "rfo":
+			p.rfo = value
 		case "sort":
 			p.params.Sort, err = txtOption(value)
 		case "staple":
@@ -174,6 +177,16 @@ func decodeTxtPrinter(svcType, svcInstance string,
 		if err != nil {
 			err = fmt.Errorf("%s: %w", key, err)
 			return txtPrinter{}, err
+		}
+	}
+
+	// Set default values for rp/rfo, if missed in the TXT record
+	if p.rp == "" && p.rfo == "" {
+		switch svcType {
+		case svcTypeIPP, svcTypeIPPS:
+			p.params.Queue = "ipp/print"
+		case svcTypeLPD:
+			p.params.Queue = "auto"
 		}
 	}
 

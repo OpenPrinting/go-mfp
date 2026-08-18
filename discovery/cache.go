@@ -196,6 +196,7 @@ func (c *cache) SetFaxoutParameters(evnt *EventFaxoutParameters) error {
 	params := evnt.Faxout
 	params.fixup()
 
+	ent.TXT = evnt.TXT
 	ent.MakeModel = evnt.MakeModel
 	ent.Location = evnt.Location
 	ent.AdminURL = evnt.AdminURL
