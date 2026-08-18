@@ -114,7 +114,7 @@ func (un *unit) SetTxtPrinter(txt txtPrinter) {
 func (un *unit) SetTxtFaxout(txt txtPrinter) {
 	un.txtPrn = txt
 	params := *txt.params
-	params.Queue = txt.rp
+	params.Queue = txt.rfo
 	un.queue.Push(&discovery.EventFaxoutParameters{
 		ID:              un.id,
 		TXT:             txt.txt,
