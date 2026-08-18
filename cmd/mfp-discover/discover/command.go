@@ -136,8 +136,7 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 
 				p := un.Params
 
-				pager.Printf("    Type:       %s printer",
-					un.Proto)
+				pager.Printf("    Type:       %s printer", un.Proto)
 				pager.Printf("    Auth:       %s", p.Auth)
 
 				if p.Paper != discovery.PaperUnknown {
@@ -155,6 +154,7 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 				pager.Printf("    PSProduct:  %q", p.PSProduct)
 				pager.Printf("    PDL:        %s",
 					strings.Join(p.PDL, ","))
+				pager.Printf("    Queue:      %s", p.Queue)
 				pager.Printf("    Priority:   %d", p.Priority)
 
 				pager.Printf("    Endpoints:")
@@ -237,6 +237,7 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 				pager.Printf("    PSProduct:  %q", p.PSProduct)
 				pager.Printf("    PDL:        %s",
 					strings.Join(p.PDL, ","))
+				pager.Printf("    Queue:      %s", p.Queue)
 				pager.Printf("    Priority:   %d", p.Priority)
 
 				pager.Printf("    Endpoints:")
