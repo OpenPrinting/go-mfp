@@ -129,7 +129,6 @@ func usbCompleter(s string) []argv.Completion {
 	for _, info := range list {
 		if info.IsPrinter() {
 			serial := info.Desc.ISerialNumber
-			//println(serial, s)
 			if strings.HasPrefix(serial, s) {
 				completions = append(completions,
 					argv.Completion{String: serial})
