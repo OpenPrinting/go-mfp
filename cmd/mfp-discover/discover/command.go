@@ -111,6 +111,7 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 		pager.Printf("  Location:         %q", dev.Location)
 		pager.Printf("  DNS-SD name:      %q", dev.DNSSDName)
 		pager.Printf("  DNS-SD UUID:      %q", dev.DNSSDUUID)
+		pager.Printf("  WSD UUID:         %q", dev.WSDUUID)
 		pager.Printf("  Print Admin URL:  %s", dev.PrintAdminURL)
 		pager.Printf("  Scan Admin URL:   %s", dev.ScanAdminURL)
 		pager.Printf("  Faxout Admin URL: %s", dev.FaxoutAdminURL)

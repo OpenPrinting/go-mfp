@@ -33,6 +33,7 @@ type Device struct {
 	Location       string    // E.g., "2nd Floor Computer Lab"
 	DNSSDName      string    // DNS-SD name, "" if none
 	DNSSDUUID      uuid.UUID // DNS-SD UUID, uuid.NilUUID if n/a
+	WSDUUID        uuid.UUID // WSD UUID
 	PrintAdminURL  string    // Admin URL for printer
 	ScanAdminURL   string    // Admin URL for scanner
 	FaxoutAdminURL string    // Admin URL for faxout

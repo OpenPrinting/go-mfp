@@ -314,6 +314,13 @@ func (grp unitgroup) Export() *Device {
 		}
 	}
 
+	for _, un := range append(wsdScanners, wsdPrinters...) {
+		if un.ID.UUID != uuid.NilUUID {
+			out.WSDUUID = un.ID.UUID
+			break
+		}
+	}
+
 	for _, un := range dnssdUnits {
 		switch un.ID.SvcType {
 		case ServicePrinter:
