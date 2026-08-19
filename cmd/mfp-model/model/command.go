@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/OpenPrinting/go-mfp/argv"
-	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
@@ -159,7 +158,7 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 	_ = ctx
 
 	// Check options
-	optDHSSD, haveDNSSD := inv.Get("--dnssd")
+	optDNSSD, haveDNSSD := inv.Get("--dnssd")
 	_, validate := inv.Get("--validate")
 	optESCL := inv.Values("--escl")
 	optIPP := inv.Values("--ipp")
@@ -202,35 +201,6 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 		return err
 	}
 
-	// Gather endpoints
-	if haveDNSSD {
-		dev, err := discoverByName(ctx, optDHSSD)
-		if err != nil {
-			return err
-		}
-
-		for _, unit := range dev.PrintUnits {
-			if unit.Proto == discovery.ServiceIPP {
-				optIPP = append(optIPP, unit.Endpoints...)
-			}
-		}
-
-		for _, unit := range dev.ScanUnits {
-			switch unit.Proto {
-			case discovery.ServiceESCL:
-				optESCL = append(optESCL, unit.Endpoints...)
-			case discovery.ServiceWSD:
-				optWSD = append(optWSD, unit.Endpoints...)
-			}
-		}
-
-		// Check that something was discovered.
-		if optIPP == nil && optESCL == nil && optWSD == nil {
-			err := errors.New("no eSCL/IPP/WSD endpoints discovered")
-			return err
-		}
-	}
-
 	// Create a model
 	model, err := modeling.NewModel()
 	if err != nil {
@@ -270,6 +240,13 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 		if err != nil {
 			err = fmt.Errorf(
 				"Can't get WSD ScannerCapabilities: %s", err)
+			return err
+		}
+	}
+
+	if haveDNSSD {
+		err = model.DownloadByDNSSDName(ctx, optDNSSD)
+		if err != nil {
 			return err
 		}
 	}
