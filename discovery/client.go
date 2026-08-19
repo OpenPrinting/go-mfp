@@ -156,6 +156,27 @@ func (clnt *Client) GetDevices(ctx context.Context, m Mode) ([]*Device, error) {
 	return clnt.cache.Export(), nil
 }
 
+// GetByDNSSD returns a single device, selected by its DNS-SD name.
+//
+// See [GetDevices] for the [Mode] parameter explanation.
+func (clnt *Client) GetByDNSSD(ctx context.Context,
+	name string, m Mode) (*Device, error) {
+
+	devices, err := clnt.GetDevices(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dev := range devices {
+		if dev.DNSSDName == name {
+			return dev, nil
+		}
+	}
+
+	err = fmt.Errorf("%q: device not found", name)
+	return nil, err
+}
+
 // Refresh causes [Client] to forcibly refresh its vision of
 // discovered devices.
 //

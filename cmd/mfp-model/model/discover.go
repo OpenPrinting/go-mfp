@@ -10,7 +10,6 @@ package model
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
@@ -39,19 +38,5 @@ func discoverByName(ctx context.Context, nm string) (*discovery.Device, error) {
 	defer backend.Close()
 	clnt.AddBackend(backend)
 
-	// Perform discovery
-	devices, err := clnt.GetDevices(ctx, discovery.ModeNormal)
-	if err != nil {
-		return nil, err
-	}
-
-	// Search for the requested device
-	for _, dev := range devices {
-		if dev.DNSSDName == nm {
-			return dev, nil
-		}
-	}
-
-	err = fmt.Errorf("%q: device not found", nm)
-	return nil, err
+	return clnt.GetByDNSSD(ctx, nm, discovery.ModeNormal)
 }
