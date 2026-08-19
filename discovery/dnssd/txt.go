@@ -233,7 +233,7 @@ func decodeTxtScanner(svcType, svcInstance string,
 		case "duplex":
 			s.params.Duplex, err = txtOption(value)
 		case "is":
-			s.params.Sources, err = txtSources(value)
+			s.params.Inputs, err = txtInputs(value)
 		case "note":
 			s.location = value
 		case "pdl":
@@ -391,23 +391,21 @@ func txtPaperMax(value string) (discovery.PaperSize, error) {
 	return discovery.PaperUnknown, nil
 }
 
-// txtSources decodes discovery.ScanSource bits
-func txtSources(value string) (discovery.ScanSource, error) {
+// txtSources decodes list of supported inputs
+func txtInputs(value string) (generic.Bitset[abstract.Input], error) {
 	keywords, _ := txtKeywords(value)
 
-	var sources discovery.ScanSource
+	var inputs generic.Bitset[abstract.Input]
 	for _, kw := range keywords {
 		switch txToLower(kw) {
 		case "adf":
-			sources |= discovery.ScanADF
+			inputs.Add(abstract.InputADF)
 		case "platen":
-			sources |= discovery.ScanPlaten
-		default:
-			sources |= discovery.ScanOther
+			inputs.Add(abstract.InputPlaten)
 		}
 	}
 
-	return sources, nil
+	return inputs, nil
 }
 
 // txtParse parses "key=value" string into key and value parts.

@@ -182,9 +182,9 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 					pager.Printf("    Duplex:     %v",
 						*p.Duplex)
 				}
-				if p.Sources != 0 {
-					pager.Printf("    Sources:    %s",
-						p.Sources)
+				if !p.Inputs.IsEmpty() {
+					pager.Printf("    Inputs:     %s",
+						p.Inputs)
 				}
 				if !p.Colors.IsEmpty() {
 					var modes []string
