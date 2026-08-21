@@ -10,26 +10,26 @@ package modeling
 
 import _ "embed" // For go:embed to work
 
-//go:embed model.py
-var embedPyModel string
-
-//go:embed init.py
-var embedPyInit string
+//go:embed escl.py
+var embedPyEscl string
 
 //go:embed helpers.py
 var embedPyHelpers string
 
-//go:embed query.py
-var embedPyQuery string
+//go:embed init.py
+var embedPyInit string
 
 //go:embed ipp.py
 var embedPyIPP string
 
-//go:embed escl.py
-var embedPyEscl string
+//go:embed model.py
+var embedPyModel string
 
-//go:embed wsd.py
-var embedPyWSD string
+//go:embed query.py
+var embedPyQuery string
 
 //go:embed usb.py
 var embedPyUSB string
+
+//go:embed wsd.py
+var embedPyWSD string
