@@ -15,9 +15,7 @@ import (
 	"image/png"
 	"net"
 	"os"
-	"os/exec"
 	"strconv"
-	"time"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
@@ -89,10 +87,14 @@ var Command = argv.Command{
 		},
 		{
 			Name:      "--single",
-			Help:      "run a single test configuration by name",
+			Help:      "run a single test configuration by name (sides/color-mode/format)",
 			HelpArg:   "name",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
+		},
+		{
+			Name: "--quick",
+			Help: "run reduced test matrix (all sides × all color modes, first format only)",
 		},
 		{
 			Name:    "-v",
@@ -182,33 +184,66 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
 
-	// Generate a test PNG image and send it through the full pipeline
-	imgPath, err := generateTestPNG()
+	// Query printer capabilities for test matrix generation.
+	caps, err := QueryPrinterCaps(ctx, ippURL)
 	if err != nil {
-		return fmt.Errorf("generate test image: %w", err)
-	}
-	defer os.Remove(imgPath)
-
-	log.Info(ctx, "sending test PNG via lp...")
-	lpCmd := exec.CommandContext(ctx, "lp", "-d", queueName, imgPath)
-	if out, err := lpCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("lp -d %s: %w: %s", queueName, err, out)
+		return fmt.Errorf("query printer capabilities: %w", err)
 	}
 
-	// Wait for the document to arrive at the capture backend
-	select {
-	case <-capture.OnDocument():
-	case <-time.After(30 * time.Second):
-		return fmt.Errorf("timeout: no document received after 30s")
-	case <-ctx.Done():
+	// --list: print all configurations and exit.
+	if inv.Flag("--list") {
+		configs := BatchMatrix(caps)
+		for _, cfg := range configs {
+			fmt.Println(cfg.Name)
+		}
 		return nil
 	}
 
-	// Report what was captured
-	docs := capture.Docs()
-	for i, d := range docs {
-		log.Info(ctx, "captured doc %d: %d bytes, format=%q, job=%q",
-			i+1, len(d.Data), d.Params.Format, d.Params.JobName)
+	// Determine which test configurations to run.
+	var configs []TestConfig
+	switch {
+	case inv.Flag("--batch"):
+		configs = BatchMatrix(caps)
+	case inv.Flag("--quick"):
+		configs = QuickMatrix(caps)
+	default:
+		if spec, ok := inv.Get("--single"); ok {
+			cfg, err := SingleConfig(spec)
+			if err != nil {
+				return err
+			}
+			configs = []TestConfig{*cfg}
+		} else {
+			// Default: single run with printer defaults.
+			configs = QuickMatrix(caps)
+		}
+	}
+
+	// Parse similarity threshold.
+	threshold := DefaultThreshold
+	if ts, ok := inv.Get("--threshold"); ok {
+		var t float64
+		if _, err := fmt.Sscanf(ts, "%f", &t); err != nil {
+			return fmt.Errorf("invalid threshold %q: %w", ts, err)
+		}
+		threshold = t
+	}
+
+	verbose := inv.Flag("-v")
+
+	// Run each test configuration.
+	for _, cfg := range configs {
+		log.Info(ctx, "running test: %s", cfg.Name)
+		result, err := RunTest(ctx, cfg, queueName, capture, threshold, verbose)
+		if err != nil {
+			log.Info(ctx, "FAIL %s: %v", cfg.Name, err)
+			continue
+		}
+		if result.Passed {
+			log.Info(ctx, "PASS %s (score=%.4f)", cfg.Name, result.Score)
+		} else {
+			log.Info(ctx, "FAIL %s (score=%.4f < threshold=%.4f)", cfg.Name, result.Score, threshold)
+		}
 	}
 
 	return nil
