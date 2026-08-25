@@ -59,11 +59,25 @@ func (tr *Transport) RoundTrip(rq *http.Request) (*http.Response, error) {
 	newURL := &url.URL{}
 	*newURL = *oldURL
 
-	// Here we hack the Request URL:
+	// Request may use target URL that looks as follows:
+	//   - http://example.com/path - normal HTTP over TCP
+	//   - ipp://example.com/path  - IPP over TCP
+	//   - unix:///path            - HTTP over UNIX socket
+	//
+	// Please notice, at that moment the schema part of URL
+	// is used to distinguish between protocols (HTTP vs IPP)
+	// or transport layer (TCP vs UNIX socket)
+	//
+	// However, server expects schemes like "http" or "https",
+	// while dialContext needs the information, represented
+	// by the scheme.
+	//
+	// So here we hack the Request URL as follows:
 	//   - scheme always set to "http" or "https"
 	//   - underlying socket-level protocol ("tcp" or "unix")
-	//     embedded into the Host
-	//   - for "unix", path also embedded into the Host
+	//     embedded into the Host (i.e., "tcp+example.com")
+	//   - for "unix", path also embedded into the Host, because
+	//     dialContext doesn't see the path part of the URL
 	//
 	// Then dialContext() can decode this information from the
 	// supplied address and use appropriately.
