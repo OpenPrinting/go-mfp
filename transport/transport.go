@@ -19,7 +19,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/util/missed"
 )
 
-var defaultDiaaler net.Dialer
+var defaultDialer net.Dialer
 
 // Transport wraps [http.Transport] and adds the following functionality:
 //
@@ -59,25 +59,28 @@ func (tr *Transport) RoundTrip(rq *http.Request) (*http.Response, error) {
 	newURL := &url.URL{}
 	*newURL = *oldURL
 
-	// Request may use target URL that looks as follows:
-	//   - http://example.com/path - normal HTTP over TCP
-	//   - ipp://example.com/path  - IPP over TCP
-	//   - unix:///path            - HTTP over UNIX socket
+	// The standard Transport.RoundTrip doesn't handle non-standard
+	// schemes, like "ipp:" or "unix:".
 	//
-	// Please notice, at that moment the schema part of URL
-	// is used to distinguish between protocols (HTTP vs IPP)
-	// or transport layer (TCP vs UNIX socket)
+	// To be able to handle these schemes, we need to replace
+	// request scheme with "http:" or "https:".
 	//
-	// However, server expects schemes like "http" or "https",
-	// while dialContext needs the information, represented
-	// by the scheme.
+	// But this is not enough to handle the "unix:" scheme,
+	// as the standard dialer assumes TCP.
 	//
-	// So here we hack the Request URL as follows:
-	//   - scheme always set to "http" or "https"
-	//   - underlying socket-level protocol ("tcp" or "unix")
-	//     embedded into the Host (i.e., "tcp+example.com")
-	//   - for "unix", path also embedded into the Host, because
-	//     dialContext doesn't see the path part of the URL
+	// For this reason we replace the standard dialer with
+	// our custom dialContext.
+	//
+	// The remaining problem, is how to tell dialContext
+	// the destination address and protocol.
+	//
+	// We encapsulate this information directly into the
+	// address string, passed to dialContext.
+	//
+	// We do so by patching the URL.Host in the target URL:
+	//    - for TCP-based schemes address becomes "tcp+addr"
+	//    - for the "unix:" scheme address starts with the
+	//      "unix-" prefix and encapsulates the UNIX socket path
 	//
 	// Then dialContext() can decode this information from the
 	// supplied address and use appropriately.
@@ -119,11 +122,21 @@ func (tr *Transport) RoundTrip(rq *http.Request) (*http.Response, error) {
 
 	newURL.Host = net.JoinHostPort(proto+"+"+host, port)
 
-	// Replace Request URL with the hacked URL. Restore after use
-	defer func() { rq.URL = oldURL }()
-	rq.URL = newURL
+	// Replace Request URL with the patched URL.
+	//
+	// We need to set Host too, otherwise Transport.RoundTrip
+	// will set it from the newURL, where hostname is patched.
+	//
+	// rq.WithContext(rq.Context()) returns a shallow copy
+	// of original request. We need that because we can't
+	// patch the original request.
+	newRQ := rq.WithContext(rq.Context())
+	newRQ.URL = newURL
+	if newRQ.Host == "" {
+		newRQ.Host = oldURL.Hostname()
+	}
 
-	return tr.Transport.RoundTrip(rq)
+	return tr.Transport.RoundTrip(newRQ)
 }
 
 // dialContext implements DialContext callback for underlying
@@ -143,7 +156,7 @@ func (tr *Transport) dialContext(ctx context.Context,
 
 	dial := tr.templateDialContext
 	if dial == nil {
-		dial = defaultDiaaler.DialContext
+		dial = defaultDialer.DialContext
 	}
 
 	return dial(ctx, network, addr)
