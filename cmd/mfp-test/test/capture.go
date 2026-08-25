@@ -85,3 +85,13 @@ func (dc *DocumentCapture) Docs() []CapturedDoc {
 	copy(out, dc.docs)
 	return out
 }
+
+// Reset clears all captured documents and resets the OnDocument
+// signal so the capture can be reused for the next test run.
+func (dc *DocumentCapture) Reset() {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	dc.docs = nil
+	dc.done = make(chan struct{})
+}
