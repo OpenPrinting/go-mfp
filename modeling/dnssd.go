@@ -12,7 +12,6 @@ import (
 	"slices"
 	"sort"
 	"strings"
-	"unsafe"
 
 	"github.com/OpenPrinting/go-mfp/cpython"
 	"github.com/OpenPrinting/go-mfp/discovery"
@@ -173,9 +172,9 @@ func dnssdFromDiscoveryDevice(discovered *discovery.Device) DNSSDDevice {
 
 	// Build slice of services. Avoid duplicates.
 	services := make([]DNSSDService, 0, len(svcmap))
-	seen := generic.NewSet[uintptr]()
+	seen := generic.NewSet[*DNSSDService]()
 	for _, svc := range svcmap {
-		if seen.TestAndAdd(uintptr(unsafe.Pointer(svc))) {
+		if seen.TestAndAdd(svc) {
 			services = append(services, *svc)
 		}
 	}
