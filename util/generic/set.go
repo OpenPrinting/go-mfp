@@ -78,9 +78,23 @@ func (s Set[T]) Add(member T) {
 	s.members[member] = struct{}{}
 }
 
+// AddMembers adds members to the set
+func (s Set[T]) AddMembers(members ...T) {
+	for _, member := range members {
+		s.Add(member)
+	}
+}
+
 // Del deletes member from the set
 func (s Set[T]) Del(member T) {
 	delete(s.members, member)
+}
+
+// DelMembers deletes members from the set
+func (s Set[T]) DelMembers(members ...T) {
+	for _, member := range members {
+		s.Del(member)
+	}
 }
 
 // TestAndAdd adds member to the set and returns true if it was actually added.
