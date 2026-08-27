@@ -276,7 +276,7 @@ func (back *backend) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 				return nil // Don't propagate the error
 			}
 
-			if txtPrinter.rp != "" {
+			if txtPrinter.IsPrinter() {
 				id := key.PrinterUnitID(back, txtPrinter)
 				un := service.GetUnit(id.Queue)
 				if un == nil {
@@ -288,7 +288,7 @@ func (back *backend) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 				}
 			}
 
-			if txtPrinter.rfo != "" {
+			if txtPrinter.IsFaxout() {
 				id := key.FaxoutUnitID(back, txtPrinter)
 				un := service.GetUnit(id.Queue)
 				if un == nil {

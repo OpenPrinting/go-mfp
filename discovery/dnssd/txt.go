@@ -61,6 +61,28 @@ type txtScanner struct {
 	params    *discovery.ScannerParameters // Scanner parameters
 }
 
+// IsPrinter tells if txtPrinter represents a printer.
+//
+// Note, txtPrinter may represent printer, fax or both.
+func (txt *txtPrinter) IsPrinter() bool {
+	switch txt.svcType {
+	case svcTypeIPP, svcTypeIPPS:
+		return txt.rp != ""
+	}
+	return true
+}
+
+// IsPrinter tells if txtPrinter represents a faxout service.
+//
+// Note, txtPrinter may represent printer, fax or both.
+func (txt *txtPrinter) IsFaxout() bool {
+	switch txt.svcType {
+	case svcTypeIPP, svcTypeIPPS:
+		return txt.rfo != ""
+	}
+	return false
+}
+
 // txtPrinter decodes record for printer
 func decodeTxtPrinter(svcType, svcInstance string,
 	txt []string) (txtPrinter, error) {
