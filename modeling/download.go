@@ -145,6 +145,7 @@ func (model *Model) DownloadByDNSSDName(ctx context.Context,
 	model.SetIPPPrinterAttrs(attrsIPP)
 	model.SetESCLScanCaps(capsESCL)
 	model.SetWSDScanCaps(capsWSD)
+	model.discovered = dev
 
 	return nil
 }

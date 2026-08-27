@@ -10,6 +10,9 @@ package modeling
 
 import _ "embed" // For go:embed to work
 
+//go:embed dnssd.py
+var embedPyDnssd string
+
 //go:embed escl.py
 var embedPyEscl string
 

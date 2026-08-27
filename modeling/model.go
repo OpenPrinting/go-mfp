@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/OpenPrinting/go-mfp/cpython"
+	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/internal/assert"
 	"github.com/OpenPrinting/go-mfp/proto/escl"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
@@ -34,16 +35,20 @@ type Model struct {
 	esclScanCaps    *escl.ScannerCapabilities
 	wsdScanCaps     *wsscan.GetScannerElementsResponse
 
+	// Integration with discovery
+	discovered *discovery.Device
+
 	// USB stuff
 	usbDevice *usb.DeviceDescriptor
 
 	// Modules
 	modHelpers *cpython.Object // helpers.py
-	modQuery   *cpython.Object // query.py
-	modIPP     *cpython.Object // ipp.py
+	modDNSSD   *cpython.Object // dnssd.py
 	modEscl    *cpython.Object // escl.py
-	modWSScan  *cpython.Object // wsd.py
+	modIPP     *cpython.Object // ipp.py
+	modQuery   *cpython.Object // query.py
 	modUSB     *cpython.Object // usb.py
+	modWSScan  *cpython.Object // wsd.py
 
 	// Important Python class constructors
 	clsHTTPMessage     *cpython.Object // query.HTTPMessage
@@ -82,19 +87,16 @@ func NewModel() (*Model, error) {
 		return nil, err
 	}
 
-	// Load modules
+	// Load modules. helpers.py first, as other modules depend on it.
 	model.modHelpers = py.Load(embedPyHelpers, "helpers", "helpers.py")
 	if err := model.modHelpers.Err(); err != nil {
 		return nil, err
 	}
 
-	model.modQuery = py.Load(embedPyQuery, "query", "query.py")
-	if err := model.modQuery.Err(); err != nil {
-		return nil, err
-	}
-
-	model.modIPP = py.Load(embedPyIPP, "ipp", "ipp.py")
-	if err := model.modIPP.Err(); err != nil {
+	// Load remaining modules.
+	// Modules are listed in alphabetical, to simplify navigation.
+	model.modDNSSD = py.Load(embedPyDnssd, "dnssd", "dnssd.py")
+	if err := model.modDNSSD.Err(); err != nil {
 		return nil, err
 	}
 
@@ -103,13 +105,23 @@ func NewModel() (*Model, error) {
 		return nil, err
 	}
 
-	model.modWSScan = py.Load(embedPyWSD, "wsd", "wsd.py")
-	if err := model.modWSScan.Err(); err != nil {
+	model.modIPP = py.Load(embedPyIPP, "ipp", "ipp.py")
+	if err := model.modIPP.Err(); err != nil {
+		return nil, err
+	}
+
+	model.modQuery = py.Load(embedPyQuery, "query", "query.py")
+	if err := model.modQuery.Err(); err != nil {
 		return nil, err
 	}
 
 	model.modUSB = py.Load(embedPyUSB, "usb", "usb.py")
 	if err := model.modUSB.Err(); err != nil {
+		return nil, err
+	}
+
+	model.modWSScan = py.Load(embedPyWSD, "wsd", "wsd.py")
+	if err := model.modWSScan.Err(); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +170,7 @@ func (model *Model) Reset() error {
 
 // Write writes model into the [io.Writer]
 func (model *Model) Write(w io.Writer) (err error) {
-	var ipp, escl, wsd, usb string
+	var ipp, escl, wsd, dnssd, usb string
 
 	// Format parts
 	if model.ippPrinterAttrs != nil {
@@ -185,6 +197,14 @@ func (model *Model) Write(w io.Writer) (err error) {
 		}
 	}
 
+	if model.discovered != nil {
+		obj := dnssdExport(model.py, model.discovered)
+		dnssd, err = formatPython(obj)
+		if err != nil {
+			return
+		}
+	}
+
 	if model.usbDevice != nil {
 		obj := structExport(model.py, keywordMapUSB, model.usbDevice)
 		usb, err = formatPython(obj)
@@ -202,6 +222,8 @@ func (model *Model) Write(w io.Writer) (err error) {
 			return escl
 		case "WSD":
 			return wsd
+		case "DNSSD":
+			return dnssd
 		case "USB":
 			return usb
 		}
@@ -225,6 +247,8 @@ func (model *Model) Write(w io.Writer) (err error) {
 			skip = model.esclScanCaps == nil
 		case strings.HasPrefix(t, "#-wsd"):
 			skip = model.wsdScanCaps == nil
+		case strings.HasPrefix(t, "#-dnssd"):
+			skip = model.discovered == nil
 		case strings.HasPrefix(t, "#-usb"):
 			skip = model.usbDevice == nil
 		case strings.HasPrefix(t, "#-"):
