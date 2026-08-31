@@ -3,6 +3,8 @@ github.com/OpenPrinting/go-avahi v0.0.0-20260907213706-26c00d557531/go.mod h1:1v
 github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf h1:ZP5tvUK5YTp/KxNSA2+IjP47R6aFFu7Tl7BE1hm273M=
 github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf/go.mod h1:ot2iw+QF7fVLaX+55JUNlF5YSDNiXVo2LRAv21iGcQI=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
+github.com/godbus/dbus/v5 v5.2.2 h1:TUR3TgtSVDmjiXOgAAyaZbYmIeP3DPkld3jgKGV8mXQ=
+github.com/godbus/dbus/v5 v5.2.2/go.mod h1:3AAv2+hPq5rdnr5txxxRwiGjPXamgoIHgz9FPBfOp3c=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/h2non/bimg v1.1.9 h1:WH20Nxko9l/HFm4kZCA3Phbgu2cbHvYzxwxn9YROEGg=
