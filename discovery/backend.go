@@ -8,7 +8,7 @@
 
 package discovery
 
-// Backend scans/monitors its search [Realm] and reports discovered
+// Backend scans/monitors its search realm and reports discovered
 // devices by sending series of [Event] into the provided [Eventqueue].
 //
 // The following model of operation is assumed:

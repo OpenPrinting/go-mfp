@@ -404,8 +404,8 @@ type UnitID struct {
 	UUID      uuid.UUID    // uuid.NilUUID if not available
 	Queue     string       // Logical unit within a device
 	Backend   Backend      // Backend that discovered the unit
-	Zone      string       // Namespace zone within the Realm
-	Variant   string       // Finding variant of the same unit
+	Zone      string       // Namespace zone (e.g., network interface)
+	Variant   string       // Variant of the same unit (e.g., http/https)
 	SvcType   ServiceType  // Service type
 	SvcProto  ServiceProto // Service protocol
 	USBSerial string       // "" if not available
