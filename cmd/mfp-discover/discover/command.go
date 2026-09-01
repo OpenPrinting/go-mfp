@@ -71,27 +71,14 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 	ctx = log.NewContext(ctx, logger)
 
 	// Prepare discovery.Client
-	clnt := discovery.NewClient(ctx)
-
-	backend, err := dnssd.NewBackend(ctx, "", 0)
+	clnt, err := discovery.NewClient(ctx, dnssd.Backend, wsdd.Backend)
 	if err != nil {
 		return err
 	}
-
-	defer backend.Close()
-	clnt.AddBackend(backend)
-
-	backend, err = wsdd.NewBackend(ctx)
-	if err != nil {
-		return err
-	}
-
-	clnt.AddBackend(backend)
+	defer clnt.Close()
 
 	// Perform device discovery
 	devices, err := clnt.GetDevices(ctx, discovery.ModeNormal)
-	backend.Close()
-
 	if err != nil {
 		return err
 	}

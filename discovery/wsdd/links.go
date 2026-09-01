@@ -22,7 +22,7 @@ import (
 
 // links dynamically manages per-local-address UDP links.
 type links struct {
-	back   *backend                           // Parent backend
+	src    *source                            // Parent source
 	netmon *netstate.Notifier                 // Network state monitor
 	mconn4 *mconn                             // For recv of IP4 multicasts
 	mconn6 *mconn                             // For recv of IP6 multicasts
@@ -40,7 +40,7 @@ type links struct {
 }
 
 // newLinks creates a new links structure
-func newLinks(back *backend) (*links, error) {
+func newLinks(src *source) (*links, error) {
 	// Create multicast sockets
 	mconn4, err := newMconn(wsddMulticastIP4)
 	if err != nil {
@@ -55,7 +55,7 @@ func newLinks(back *backend) (*links, error) {
 
 	// Create links structure
 	lt := &links{
-		back:   back,
+		src:    src,
 		netmon: netstate.NewNotifier(),
 		mconn4: mconn4,
 		mconn6: mconn6,
@@ -69,7 +69,7 @@ func newLinks(back *backend) (*links, error) {
 // Start starts links operations.
 func (lt *links) Start() {
 	// Start links.procNetmon
-	lt.ctxNetmon, lt.cancelNetmon = context.WithCancel(lt.back.ctx)
+	lt.ctxNetmon, lt.cancelNetmon = context.WithCancel(lt.src.ctx)
 	lt.doneNetmon.Add(1)
 	go lt.procNetmon()
 
@@ -151,7 +151,7 @@ func (lt *links) procNetmon() {
 			return
 		}
 
-		lt.back.debug("%s", evnt)
+		lt.src.debug("%s", evnt)
 
 		switch evnt := evnt.(type) {
 		case netstate.EventAddPrimaryAddress:
@@ -175,11 +175,11 @@ func (lt *links) procMconn(mc *mconn) {
 		}
 
 		if err != nil {
-			lt.back.error("UDP recv: %s", err)
+			lt.src.error("UDP recv: %s", err)
 			continue
 		}
 
-		lt.back.input(buf[:n], from, mc.LocalAddrPort(), cmsg.IfIndex)
+		lt.src.input(buf[:n], from, mc.LocalAddrPort(), cmsg.IfIndex)
 	}
 }
 
@@ -238,7 +238,7 @@ func (l *link) Close() {
 func (l *link) procProber() {
 	defer l.doneProber.Done()
 
-	back := l.parent.back
+	src := l.parent.src
 
 	for {
 		evnt := <-l.probeSched.Chan()
@@ -252,7 +252,7 @@ func (l *link) procProber() {
 				var err error
 				l.conn, err = newUconn(l.addr, 0)
 				if err != nil {
-					back.debug("%s", err)
+					src.debug("%s", err)
 				}
 
 				if l.conn != nil {
@@ -269,7 +269,7 @@ func (l *link) procProber() {
 		case schedSend:
 			if l.conn != nil {
 				l.conn.WriteToUDPAddrPort(l.probeMsg, l.dest)
-				back.debug("%s message sent to %s%%%s",
+				src.debug("%s message sent to %s%%%s",
 					wsd.ActProbe, l.dest,
 					l.addr.Interface().Name())
 			}
@@ -283,7 +283,7 @@ func (l *link) procReader() {
 
 	ifidx := l.addr.Interface().Index()
 	to := l.conn.LocalAddrPort()
-	back := l.parent.back
+	src := l.parent.src
 
 	for {
 		// Receive next packet
@@ -295,12 +295,12 @@ func (l *link) procReader() {
 		}
 
 		if err != nil {
-			l.parent.back.error("UDP recv: %s", err)
+			l.parent.src.error("UDP recv: %s", err)
 			continue
 		}
 
 		// Dispatch the packet
-		back.input(buf[:n], from, to, ifidx)
+		src.input(buf[:n], from, to, ifidx)
 	}
 }
 

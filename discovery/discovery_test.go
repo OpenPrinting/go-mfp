@@ -16,63 +16,70 @@ import (
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
-// MockBackend is a mock implementation of the Backend interface used for testing.
+// mockBackend is a mock implementation of the Backend interface used
+// for testing.
+//
 // It simulates a backend driver that emits events to the discovery queue.
-type MockBackend struct {
-	name   string
-	queue  *Eventqueue
-	events []Event
+type mockBackend struct{}
+
+// mockSource implements Source interface for mockBackend.
+type mockSource struct {
+	queue *Eventqueue
 }
 
-// NewMockBackend creates a new instance of MockBackend with the specified name.
-func NewMockBackend(name string) *MockBackend {
-	return &MockBackend{
-		name:   name,
-		events: make([]Event, 0),
-	}
-}
+// mockContextKey used as a key for context.WithValue to
+// pass events to the mockSource
+type mockContextKey struct{}
 
-// Name returns the name of the mock backend.
-func (mb *MockBackend) Name() string {
-	return mb.name
+// Name returns backend name.
+func (mockBackend) Name() string {
+	return "mock-backend"
 }
 
 // DeviceID returns a subset of UnitID, that uniquely
 // identifies a physical device.
-func (mb *MockBackend) DeviceID(id UnitID) UnitID {
+func (mockBackend) DeviceID(id UnitID) UnitID {
 	return UnitID{
 		DNSSDName: id.DNSSDName,
 		Backend:   id.Backend,
 	}
 }
 
-// Start initializes the backend and starts a goroutine to push queued events
-// to the event queue.
-func (mb *MockBackend) Start(q *Eventqueue) {
-	mb.queue = q
-	for _, e := range mb.events {
-		mb.queue.Push(e)
+// Open creates a new [discovery.Source] for DNS-SD discovery.
+func (mockBackend) Open(ctx context.Context,
+	queue *Eventqueue) (Source, error) {
+
+	src := &mockSource{queue: queue}
+	if events := ctx.Value(mockContextKey{}); events != nil {
+		for _, e := range events.([]Event) {
+			queue.Push(e)
+		}
 	}
+
+	return src, nil
 }
 
 // Close cleans up backend resources. For the mock, this is a no-op.
-func (mb *MockBackend) Close() {
+func (mb *mockSource) Close() {
 	// No-op for mock
 }
 
 // AddEvent appends an event to the list of events that the backend will emit upon starting.
-func (mb *MockBackend) AddEvent(e Event) {
-	mb.events = append(mb.events, e)
+func (mb *mockBackend) AddEvent(e Event) {
+	//mb.events = append(mb.events, e)
 }
 
-// TestClient_NoDevices verifies that GetDevices returns an empty list when no devices are discovered.
+// TestClient_NoDevices verifies that GetDevices returns an empty list
+// when no devices are discovered.
 func TestClient_NoDevices(t *testing.T) {
 	ctx := context.Background()
-	client := NewClientTm(ctx, 100*time.Millisecond, 100*time.Millisecond)
-	defer client.Close()
+	client, _ := NewClientTm(
+		ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		&mockBackend{})
 
-	backend := NewMockBackend("mock-backend")
-	client.AddBackend(backend)
+	defer client.Close()
 
 	devices, err := client.GetDevices(ctx, ModeNormal)
 	if err != nil {
@@ -87,34 +94,38 @@ func TestClient_NoDevices(t *testing.T) {
 // TestClient_Discovery verifies the successful discovery of a printer device
 // when a backend emits valid AddUnit, PrinterParameters, and AddEndpoint events.
 func TestClient_Discovery(t *testing.T) {
-	ctx := context.Background()
-	client := NewClientTm(ctx, 100*time.Millisecond, 100*time.Millisecond)
-	defer client.Close()
-
-	backend := NewMockBackend("mock-backend")
-
+	// Prepare events
 	uid := UnitID{
 		DNSSDName: "Test Printer",
 		UUID:      uuid.Random(),
-		Backend:   backend,
+		Backend:   mockBackend{},
 		SvcType:   ServicePrinter,
 		SvcProto:  ServiceIPP,
 	}
 
-	backend.AddEvent(&EventAddUnit{ID: uid})
-	backend.AddEvent(&EventPrinterParameters{
-		ID:        uid,
-		MakeModel: "Test Make Model",
-		Printer: PrinterParameters{
-			Queue: "test-queue",
+	events := []Event{
+		&EventAddUnit{ID: uid},
+		&EventPrinterParameters{
+			ID:        uid,
+			MakeModel: "Test Make Model",
+			Printer: PrinterParameters{
+				Queue: "test-queue",
+			},
 		},
-	})
-	backend.AddEvent(&EventAddEndpoint{
-		ID:       uid,
-		Endpoint: "ipp://192.168.1.100/ipp/print",
-	})
+		&EventAddEndpoint{
+			ID:       uid,
+			Endpoint: "ipp://192.168.1.100/ipp/print",
+		},
+	}
 
-	client.AddBackend(backend)
+	// Open the client
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, mockContextKey{}, events)
+	client, _ := NewClientTm(ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		mockBackend{})
+	defer client.Close()
 
 	// Wait for discovery to complete (WarmUpTime + processing)
 	client.flush()
@@ -137,37 +148,42 @@ func TestClient_Discovery(t *testing.T) {
 // TestClient_InvalidEvents verifies the client's robustness against duplicate or unknown events.
 // It checks that such events do not cause panics or incorrect device listings.
 func TestClient_InvalidEvents(t *testing.T) {
-	ctx := context.Background()
-	client := NewClientTm(ctx, 100*time.Millisecond, 100*time.Millisecond)
-	defer client.Close()
-
-	backend := NewMockBackend("mock-backend")
-
+	// Prepare events
 	uid := UnitID{
 		DNSSDName: "Test Printer",
 		UUID:      uuid.Random(),
-		Backend:   backend,
+		Backend:   mockBackend{},
 		SvcType:   ServicePrinter,
 		SvcProto:  ServiceIPP,
 	}
 
-	// 1. Duplicate EventAddUnit
-	backend.AddEvent(&EventAddUnit{ID: uid})
-	backend.AddEvent(&EventAddUnit{ID: uid}) // Should be handled gracefully (logged error)
-
-	// 2. EventPrinterParameters for unknown unit
 	unknownUID := UnitID{DNSSDName: "Unknown", UUID: uuid.Random()}
-	backend.AddEvent(&EventPrinterParameters{
-		ID:        unknownUID,
-		MakeModel: "Unknown",
-	})
 
-	// 3. EventDelUnit for unknown unit
-	backend.AddEvent(&EventDelUnit{ID: unknownUID})
+	events := []Event{
+		// 1. Duplicate EventAddUnit
+		&EventAddUnit{ID: uid},
+		&EventAddUnit{ID: uid}, // Should be handled gracefully (logged error)
 
-	client.AddBackend(backend)
+		// 2. EventPrinterParameters for unknown unit
+		&EventPrinterParameters{
+			ID:        unknownUID,
+			MakeModel: "Unknown",
+		},
+
+		// 3. EventDelUnit for unknown unit
+		&EventDelUnit{ID: unknownUID},
+	}
+
+	// Open the client
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, mockContextKey{}, events)
+	client, _ := NewClientTm(ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		mockBackend{})
+	defer client.Close()
+
 	client.flush()
-
 	devices, err := client.GetDevices(ctx, ModeNormal)
 	if err != nil {
 		t.Fatalf("GetDevices failed: %v", err)
@@ -181,7 +197,8 @@ func TestClient_InvalidEvents(t *testing.T) {
 // TestClient_ContextCancel verifies that the client handles context cancellation appropriately.
 func TestClient_ContextCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	client := NewClientTm(ctx, 5*time.Second, StabilizationTime)
+	client, _ := NewClientTm(ctx, 5*time.Second,
+		StabilizationTime, mockBackend{})
 	defer client.Close()
 
 	// Cancel context immediately
@@ -197,7 +214,8 @@ func TestClient_ContextCancel(t *testing.T) {
 // when the context times out before discovery completes.
 func TestClient_Timeout(t *testing.T) {
 	ctx := context.Background()
-	client := NewClientTm(ctx, 5*time.Second, StabilizationTime)
+	client, _ := NewClientTm(ctx, 5*time.Second,
+		StabilizationTime, mockBackend{})
 	defer client.Close()
 
 	// Create a context with a short timeout
@@ -214,35 +232,40 @@ func TestClient_Timeout(t *testing.T) {
 
 // TestClient_MissingFields verifies behavior when events are missing optional fields (like MakeModel).
 func TestClient_MissingFields(t *testing.T) {
-	ctx := context.Background()
-	client := NewClientTm(ctx, 100*time.Millisecond, 100*time.Millisecond)
-	defer client.Close()
-
-	backend := NewMockBackend("mock-backend")
-
+	// Prepare events
 	uid := UnitID{
 		DNSSDName: "Test Printer",
 		UUID:      uuid.Random(),
-		Backend:   backend,
+		Backend:   mockBackend{},
 		SvcType:   ServicePrinter,
 		SvcProto:  ServiceIPP,
 	}
 
-	backend.AddEvent(&EventAddUnit{ID: uid})
-	// Missing MakeModel: explicit check for empty MakeModel scenario
-	backend.AddEvent(&EventPrinterParameters{
-		ID:        uid,
-		MakeModel: "", // Empty
-		Printer: PrinterParameters{
-			Queue: "test-queue",
+	events := []Event{
+		&EventAddUnit{ID: uid},
+		// Missing MakeModel: explicit check for empty MakeModel scenario
+		&EventPrinterParameters{
+			ID:        uid,
+			MakeModel: "", // Empty
+			Printer: PrinterParameters{
+				Queue: "test-queue",
+			},
 		},
-	})
-	backend.AddEvent(&EventAddEndpoint{
-		ID:       uid,
-		Endpoint: "ipp://192.168.1.100/ipp/print",
-	})
+		&EventAddEndpoint{
+			ID:       uid,
+			Endpoint: "ipp://192.168.1.100/ipp/print",
+		},
+	}
 
-	client.AddBackend(backend)
+	// Open the client
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, mockContextKey{}, events)
+	client, _ := NewClientTm(ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		mockBackend{})
+	defer client.Close()
+
 	client.flush()
 
 	devices, err := client.GetDevices(ctx, ModeNormal)
@@ -256,28 +279,5 @@ func TestClient_MissingFields(t *testing.T) {
 		if devices[0].MakeModel != "" {
 			t.Errorf("Expected empty MakeModel, got '%s'", devices[0].MakeModel)
 		}
-	}
-}
-
-// TestClient_Unreachable verifies that no devices are returned if the backend
-// is unresponsive or provides no events, resulting in an empty discovery.
-func TestClient_Unreachable(t *testing.T) {
-	ctx := context.Background()
-	client := NewClientTm(ctx, 100*time.Millisecond, 100*time.Millisecond)
-	defer client.Close()
-
-	// Backend that sends nothing
-	backend := NewMockBackend("mock-backend")
-	client.AddBackend(backend)
-
-	client.flush()
-
-	devices, err := client.GetDevices(ctx, ModeNormal)
-	if err != nil {
-		t.Fatalf("GetDevices failed: %v", err)
-	}
-
-	if len(devices) != 0 {
-		t.Errorf("Expected 0 devices, got %d", len(devices))
 	}
 }

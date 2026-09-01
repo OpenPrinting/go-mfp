@@ -23,16 +23,11 @@ import (
 func ArgvCompleter(prefix string) []argv.Completion {
 	// Prepare the Client
 	ctx := context.Background()
-	clnt := discovery.NewClient(ctx)
-	defer clnt.Close()
-
-	backend, err := NewBackend(ctx, "", 0)
+	clnt, err := discovery.NewClient(ctx, Backend)
 	if err != nil {
 		return nil
 	}
-
-	defer backend.Close()
-	clnt.AddBackend(backend)
+	defer clnt.Close()
 
 	// Perform device discovery and gather results
 	time.Sleep(discovery.FastDiscoveryTime)

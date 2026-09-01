@@ -77,24 +77,11 @@ func (model *Model) DownloadWSDScannerCapabilities(ctx context.Context,
 func (model *Model) DownloadByDNSSDName(ctx context.Context,
 	name string) error {
 	// Prepare discovery.Client
-	clnt := discovery.NewClient(ctx)
+	clnt, err := discovery.NewClient(ctx, dnssd.Backend, wsdd.Backend)
+	if err != nil {
+		return err
+	}
 	defer clnt.Close()
-
-	backend, err := dnssd.NewBackend(ctx, "", 0)
-	if err != nil {
-		return err
-	}
-
-	defer backend.Close()
-	clnt.AddBackend(backend)
-
-	backend, err = wsdd.NewBackend(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer backend.Close()
-	clnt.AddBackend(backend)
 
 	// Search for device
 	dev, err := clnt.GetByDNSSD(ctx, name, discovery.ModeNormal)

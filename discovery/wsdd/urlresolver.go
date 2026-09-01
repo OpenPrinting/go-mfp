@@ -28,7 +28,7 @@ type urlResolver struct {
 }
 
 // newURLResolver creates new urlResolver.
-func newURLResolver(back *backend) *urlResolver {
+func newURLResolver(src *source) *urlResolver {
 	return &urlResolver{}
 }
 

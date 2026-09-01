@@ -15,17 +15,18 @@ import (
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/log"
+	"github.com/OpenPrinting/go-mfp/util/generic"
 )
 
 // Client implements a client side of devices discovery.
 type Client struct {
-	ctx      context.Context
-	cancel   context.CancelFunc
-	queue    *Eventqueue
-	backends map[Backend]struct{}
-	cache    *cache
-	lock     sync.Mutex
-	done     sync.WaitGroup
+	ctx     context.Context
+	cancel  context.CancelFunc
+	queue   *Eventqueue
+	sources []Source
+	cache   *cache
+	lock    sync.Mutex
+	done    sync.WaitGroup
 }
 
 // NewClient creates a new discovery [Client].
@@ -33,8 +34,9 @@ type Client struct {
 // The provided [context.Context] is used for two purposes:
 //   - For logging
 //   - Client will terminate its operations, if context is canceled.
-func NewClient(ctx context.Context) *Client {
-	return NewClientTm(ctx, WarmUpTime, StabilizationTime)
+func NewClient(ctx context.Context,
+	backend Backend, backends ...Backend) (*Client, error) {
+	return NewClientTm(ctx, WarmUpTime, StabilizationTime, backend, backends...)
 }
 
 // NewClientTm creates a new discovery [Client] with the
@@ -46,7 +48,8 @@ func NewClient(ctx context.Context) *Client {
 // Think carefully when choosing the time intervals, or use the
 // simplified [NewClient] if not sure.
 func NewClientTm(ctx context.Context,
-	warmUpTime, stabilizationTime time.Duration) *Client {
+	warmUpTime, stabilizationTime time.Duration,
+	backend Backend, backends ...Backend) (*Client, error) {
 
 	// Set log prefix
 	ctx = log.WithPrefix(ctx, "discovery")
@@ -56,54 +59,56 @@ func NewClientTm(ctx context.Context,
 
 	// Create client structure
 	clnt := &Client{
-		ctx:      ctx,
-		cancel:   cancel,
-		queue:    NewEventqueue(),
-		cache:    newCache(ctx, warmUpTime, stabilizationTime),
-		backends: make(map[Backend]struct{}),
+		ctx:    ctx,
+		cancel: cancel,
+		queue:  NewEventqueue(),
+		cache:  newCache(ctx, warmUpTime, stabilizationTime),
+	}
+
+	// Open backends
+	opened := generic.NewSet[Backend]()
+	backends = append([]Backend{backend}, backends...)
+	for _, bk := range backends {
+		// Skip duplicates
+		if !opened.TestAndAdd(bk) {
+			continue
+		}
+
+		// Open the source
+		src, err := bk.Open(ctx, clnt.queue)
+		if err != nil {
+			for _, src := range clnt.sources {
+				src.Close()
+				return nil, err
+			}
+
+			clnt.sources = append(clnt.sources, src)
+		}
 	}
 
 	// Start work thread
 	clnt.done.Add(1)
 	go clnt.proc()
 
-	return clnt
+	return clnt, nil
 }
 
-// Close closes all attached backends and then closes the Client
+// Close closes all attached sources and then closes the Client
 // and releases all resources it holds.
 func (clnt *Client) Close() {
-	// Close attached backends
+	// Close attached sources
 	clnt.lock.Lock()
-	backents := make([]Backend, 0, len(clnt.backends))
-	for bk := range clnt.backends {
-		backents = append(backents, bk)
-	}
-	clear(clnt.backends)
+	sources := clnt.sources
+	clnt.sources = nil
 	clnt.lock.Unlock()
 
-	for _, bk := range backents {
-		bk.Close()
+	for _, src := range sources {
+		src.Close()
 	}
 
 	// Close the client itself
 	clnt.cancel()
 	clnt.done.Wait()
-}
-
-// AddBackend adds a discovery [Backend] to the [Client].
-func (clnt *Client) AddBackend(bk Backend) {
-	clnt.lock.Lock()
-	defer clnt.lock.Unlock()
-
-	if _, found := clnt.backends[bk]; found {
-		err := fmt.Errorf("backend %s already added", bk.Name())
-		panic(err)
-	}
-
-	log.Debug(clnt.ctx, "%s: backend added", bk.Name())
-	clnt.backends[bk] = struct{}{}
-	bk.Start(clnt.queue)
 }
 
 // GetDevices returns a list of discovered devices.

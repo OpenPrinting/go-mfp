@@ -31,16 +31,16 @@ type mexData struct {
 
 // mexGetter retrieves WSD metadata by XAddr URL.
 type mexGetter struct {
-	back  *backend                    // Parent backend
+	src   *source                     // Parent backend
 	http  http.Client                 // HTTP client
 	cache map[mexCacheID]*mexCacheEnt // Cached metadata
 	lock  sync.Mutex                  // Access lock
 }
 
 // newMexgetter creates a new mexGetter
-func newMexGetter(back *backend) *mexGetter {
+func newMexGetter(src *source) *mexGetter {
 	mg := &mexGetter{
-		back: back,
+		src: src,
 		http: http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -94,7 +94,7 @@ func (mg *mexGetter) Get(ctx context.Context,
 	if literal {
 		xaddrs = []*url.URL{xaddr}
 	} else {
-		xaddrs = mg.back.res.Resolve(ctx, ifidx, xaddr)
+		xaddrs = mg.src.res.Resolve(ctx, ifidx, xaddr)
 	}
 
 	var metadata []mexData
@@ -214,11 +214,11 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 	rq = rq.WithContext(ctx)
 
 	// Perform HTTP query
-	mg.back.debug("POST %s\n%s", xaddr, msg.Format())
+	mg.src.debug("POST %s\n%s", xaddr, msg.Format())
 
 	rsp, err := mg.http.Do(rq)
 	if err != nil {
-		mg.back.warning("POST %s: %s", xaddr, err)
+		mg.src.warning("POST %s: %s", xaddr, err)
 		return
 	}
 
@@ -226,7 +226,7 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 
 	if rsp.StatusCode/100 != 2 {
 		err = fmt.Errorf("Unexpected HTTP status: %s", rsp.Status)
-		mg.back.warning("POST %s: %s", xaddr, err)
+		mg.src.warning("POST %s: %s", xaddr, err)
 		return
 	}
 
@@ -235,22 +235,22 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 		int64(wsddMetadataGetMaxResponse+1)))
 
 	if err != nil {
-		mg.back.warning("POST %s: %s", xaddr, err)
+		mg.src.warning("POST %s: %s", xaddr, err)
 		return
 	}
 
 	if len(data) > wsddMetadataGetMaxResponse {
 		err = fmt.Errorf("HTTP response too large")
-		mg.back.warning("POST %s: %s", xaddr, err)
+		mg.src.warning("POST %s: %s", xaddr, err)
 		return
 	}
 
-	mg.back.debug("POST %s: %s", xaddr, rsp.Status)
+	mg.src.debug("POST %s: %s", xaddr, rsp.Status)
 
 	// Decode response
 	msg, err = wsd.DecodeMsg(data)
 	if err != nil {
-		mg.back.warning("POST %s: %s", xaddr, err)
+		mg.src.warning("POST %s: %s", xaddr, err)
 		return
 	}
 
@@ -259,7 +259,7 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 		err = fmt.Errorf("Unexpected WSD response: %s",
 			msg.Header.Action)
 
-		mg.back.warning("POST %s: %s", xaddr, err)
+		mg.src.warning("POST %s: %s", xaddr, err)
 		return
 	}
 

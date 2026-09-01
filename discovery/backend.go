@@ -8,6 +8,8 @@
 
 package discovery
 
+import "context"
+
 // Backend scans/monitors its search realm and reports discovered
 // devices by sending series of [Event] into the provided [Eventqueue].
 //
@@ -35,9 +37,12 @@ type Backend interface {
 	// identifies a physical device.
 	DeviceID(UnitID) UnitID
 
-	// Start starts Backend operations.
-	Start(*Eventqueue)
+	// Open returns a new [Source]
+	Open(ctx context.Context, queue *Eventqueue) (Source, error)
+}
 
-	// Close closes the Backend and releases resources it holds.
+// Source generates a stream of discovery [Event]s.
+type Source interface {
+	// Close closes the Source and releases resources it holds
 	Close()
 }

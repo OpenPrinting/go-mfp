@@ -43,16 +43,16 @@ import (
 // If the same device is visible over multiple network interfaces,
 // the discovery system when merge them together.
 type units struct {
-	back  *backend                   // Parent backend
+	src   *source                    // Parent backend
 	table map[discovery.UnitID]*unit // Discovered units
 	lock  sync.Mutex                 // units.table lock
 }
 
 // newUnits creates a new table of units
-func newUnits(back *backend) *units {
+func newUnits(src *source) *units {
 	// Create units structure
 	ut := &units{
-		back:  back,
+		src:   src,
 		table: make(map[discovery.UnitID]*unit),
 	}
 
@@ -97,7 +97,7 @@ func (ut *units) handleAnnounces(msg wsd.Msg) {
 	ifidx := msg.IfIdx
 	zone := zone.Name(ifidx)
 
-	logmsg := log.Begin(ut.back.ctx)
+	logmsg := log.Begin(ut.src.ctx)
 	defer logmsg.Commit()
 
 	// Parse and dispatch XAddrs. Log the event.
@@ -157,7 +157,7 @@ func (ut *units) makeUnitID(ifidx int, svctype discovery.ServiceType,
 	addr wsd.AnyURI) discovery.UnitID {
 	return discovery.UnitID{
 		UUID:     addr.UUID(),
-		Backend:  ut.back,
+		Backend:  Backend,
 		Zone:     zone.Name(ifidx),
 		SvcType:  svctype,
 		SvcProto: discovery.ServiceWSD,
@@ -176,7 +176,7 @@ func (ut *units) getUnit(id discovery.UnitID,
 		un = newUnit(id, ut)
 		ut.table[id] = un
 
-		ut.back.queue.Push(&discovery.EventAddUnit{ID: id})
+		ut.src.queue.Push(&discovery.EventAddUnit{ID: id})
 	}
 	return un
 }
@@ -197,7 +197,7 @@ type unit struct {
 
 // newUnit creates a new unit
 func newUnit(id discovery.UnitID, parent *units) *unit {
-	ctx, cancel := context.WithCancel(parent.back.ctx)
+	ctx, cancel := context.WithCancel(parent.src.ctx)
 
 	un := &unit{
 		parent:        parent,
@@ -229,7 +229,7 @@ func (un *unit) close() {
 func (un *unit) handleXaddrs(ifidx int, target wsd.AnyURI,
 	xaddrs []*url.URL, ver uint64) {
 
-	back := un.parent.back
+	src := un.parent.src
 
 	for _, xaddr := range xaddrs {
 		if !un.xaddrsSeen.TestAndAdd(xaddr.String()) {
@@ -238,7 +238,7 @@ func (un *unit) handleXaddrs(ifidx int, target wsd.AnyURI,
 
 		un.closewait.Add(1)
 		go func(xaddr2 *url.URL) {
-			meta := back.mex.Get(un.ctx, ifidx, target, xaddr2, ver)
+			meta := src.mex.Get(un.ctx, ifidx, target, xaddr2, ver)
 			un.handleMetadata(meta)
 			un.closewait.Done()
 		}(xaddr)
@@ -366,7 +366,7 @@ func (un *unit) sendParameters(mfg, mdl string, adm optional.Val[string]) {
 		panic("internal error")
 	}
 
-	un.parent.back.queue.Push(evnt)
+	un.parent.src.queue.Push(evnt)
 }
 
 // sendEndpoint sends EventAddEndpoint to the discovery system.
@@ -381,5 +381,5 @@ func (un *unit) sendEndpoint(u *url.URL) {
 		Endpoint: s,
 	}
 
-	un.parent.back.queue.Push(evnt)
+	un.parent.src.queue.Push(evnt)
 }
