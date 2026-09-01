@@ -187,7 +187,6 @@ type unit struct {
 	ctx           context.Context            // Cancelable context
 	cancel        context.CancelFunc         // Its cancel function
 	id            discovery.UnitID           // Unit ID
-	types         wsd.Types                  // WSD service types
 	xaddrsSeen    *generic.LockedSet[string] // Known XAddrs
 	endpointsSeen *generic.LockedSet[string] // Known endpoints
 	paramsSent    atomic.Bool                // EventXXXParameters reported

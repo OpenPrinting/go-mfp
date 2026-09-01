@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"time"
 
 	"github.com/OpenPrinting/go-mfp/proto/wsd"
 	"github.com/OpenPrinting/go-mfp/util/optional"
@@ -42,7 +41,7 @@ func newMexGetter(src *source) *mexGetter {
 	mg := &mexGetter{
 		src: src,
 		http: http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: wsddMetadataGetTimeout,
 		},
 		cache: make(map[mexCacheID]*mexCacheEnt),
 	}
