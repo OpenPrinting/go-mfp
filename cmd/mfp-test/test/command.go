@@ -16,6 +16,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
@@ -73,6 +74,13 @@ var Command = argv.Command{
 			Name:      "--threshold",
 			Help:      fmt.Sprintf("minimum similarity score to pass (0.0-1.0, default %.2f)", DefaultThreshold),
 			HelpArg:   "score",
+			Singleton: true,
+			Validate:  argv.ValidateAny,
+		},
+		{
+			Name:      "--timeout",
+			Help:      fmt.Sprintf("document capture timeout (default %s)", DefaultTimeout),
+			HelpArg:   "duration",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
 		},
@@ -240,12 +248,22 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		threshold = t
 	}
 
+	// Parse capture timeout.
+	timeout := DefaultTimeout
+	if ts, ok := inv.Get("--timeout"); ok {
+		d, err := time.ParseDuration(ts)
+		if err != nil {
+			return fmt.Errorf("invalid timeout %q: %w", ts, err)
+		}
+		timeout = d
+	}
+
 	verbose := inv.Flag("-v")
 
 	// Run each test configuration.
 	for _, cfg := range configs {
 		log.Info(ctx, "running test: %s", cfg.Name)
-		result, err := RunTest(ctx, cfg, queueName, capture, threshold, verbose)
+		result, err := RunTest(ctx, cfg, queueName, capture, threshold, timeout, verbose)
 		if err != nil {
 			log.Info(ctx, "FAIL %s: %v", cfg.Name, err)
 			continue
