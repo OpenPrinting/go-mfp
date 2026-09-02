@@ -78,7 +78,11 @@ var Command = argv.Command{
 		},
 		{
 			Name: "--list",
-			Help: "list all test configurations and exit",
+			Help: "list all test configurations (full batch matrix) and exit",
+		},
+		{
+			Name: "--list-quick",
+			Help: "list quick test configurations and exit",
 		},
 		{
 			Name:      "--batch",
@@ -190,10 +194,17 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		return fmt.Errorf("query printer capabilities: %w", err)
 	}
 
-	// --list: print all configurations and exit.
+	// --list: print all configurations (full batch matrix) and exit.
 	if inv.Flag("--list") {
-		configs := BatchMatrix(caps)
-		for _, cfg := range configs {
+		for _, cfg := range BatchMatrix(caps) {
+			fmt.Println(cfg.Name)
+		}
+		return nil
+	}
+
+	// --list-quick: print quick test configurations and exit.
+	if inv.Flag("--list-quick") {
+		for _, cfg := range QuickMatrix(caps) {
 			fmt.Println(cfg.Name)
 		}
 		return nil
