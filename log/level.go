@@ -13,7 +13,8 @@ type Level int
 
 // Log levels:
 const (
-	LevelTrace   Level = iota // Protocol trace
+	LevelTrace   Level = iota // Protocol trace (very verbose)
+	LevelVerbose              // Verbose messages
 	LevelDebug                // Debug messages
 	LevelInfo                 // Informational messages
 	LevelWarning              // Warning messages

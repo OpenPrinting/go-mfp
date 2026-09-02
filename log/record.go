@@ -57,6 +57,11 @@ func (rec *Record) Trace(format string, v ...any) *Record {
 	return rec.format(LevelTrace, format, v...)
 }
 
+// Verbose writes a Verbose-level message to the Record.
+func (rec *Record) Verbose(format string, v ...any) *Record {
+	return rec.format(LevelVerbose, format, v...)
+}
+
 // Debug writes a Debug-level message to the Record.
 func (rec *Record) Debug(format string, v ...any) *Record {
 	return rec.format(LevelDebug, format, v...)

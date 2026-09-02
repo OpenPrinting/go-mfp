@@ -40,26 +40,27 @@ func (bk *backendConsole) Send(levels []Level, lines [][]byte) {
 		level := levels[i]
 		line := lines[i]
 
-		var beg, end string
-
+		var color string
 		if atomic.LoadInt32(&bk.color) > 0 {
 			switch level {
 			case LevelTrace:
-				beg, end = "\033[37m", "\033[0m" // Gray
+				color = "\033[2m" // Dark Gray
+			case LevelVerbose:
+				color = "\033[36m" // Cyan
 			case LevelDebug:
-				beg, end = "\033[37;1m", "\033[0m" // White
+				color = "\033[37m" // Gray
 			case LevelInfo:
-				beg, end = "\033[32;1m", "\033[0m" // Green
+				color = "\033[32m" // Green
 			case LevelWarning:
-				beg, end = "\033[33m", "\033[0m" // Brown
+				color = "\033[33m" // Yellow
 			case LevelError, LevelFatal:
-				beg, end = "\033[31;1m", "\033[0m" // Red
+				color = "\033[1;37;41m" // White on Red
 			}
 		}
 
-		buf.Write([]byte(beg))
+		buf.Write([]byte(color))
 		buf.Write(line)
-		buf.Write([]byte(end + "\n"))
+		buf.Write([]byte("\033[0m" + "\n"))
 	}
 
 	// Now send buffer to the os.Stdout
