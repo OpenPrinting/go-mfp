@@ -115,7 +115,7 @@ func (src *source) proc() {
 		// Attempt error recovery.
 		err = src.clnt.Restart(src.ctx)
 		if err == nil {
-			log.Debug(src.ctx, "avahi client: restarted")
+			log.Verbose(src.ctx, "avahi client: restarted")
 		}
 	}
 }
@@ -135,7 +135,7 @@ func (src *source) startServiceBrowsers() error {
 			return err
 		}
 
-		log.Debug(src.ctx, "%s: OK", title)
+		log.Verbose(src.ctx, "%s: OK", title)
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func (src *source) startServiceBrowsers() error {
 
 // onClientEvent handles avahi.ClientEvent.
 func (src *source) onClientEvent(evnt *avahi.ClientEvent) error {
-	log.Debug(src.ctx, "avahi client: %s", evnt.State)
+	log.Verbose(src.ctx, "avahi client: %s", evnt.State)
 	switch evnt.State {
 	case avahi.ClientStateFailure:
 		return evnt.Err
@@ -162,9 +162,9 @@ func (src *source) onServiceBrowserEvent(
 		title := fmt.Sprintf("svc-browse: found %s", key)
 
 		if !src.clnt.HasService(key) {
-			log.Debug(src.ctx, "%s", title)
+			log.Verbose(src.ctx, "%s", title)
 		} else {
-			log.Debug(src.ctx, "%s (duplicate)", title)
+			log.Verbose(src.ctx, "%s (duplicate)", title)
 			return nil
 		}
 
@@ -176,10 +176,10 @@ func (src *source) onServiceBrowserEvent(
 
 		service := src.clnt.GetService(key)
 		if service != nil {
-			log.Debug(src.ctx, "%s", title)
+			log.Verbose(src.ctx, "%s", title)
 			service.Delete()
 		} else {
-			log.Debug(src.ctx, "%s (not found)", title)
+			log.Verbose(src.ctx, "%s (not found)", title)
 		}
 
 	case avahi.BrowserFailure:
@@ -206,14 +206,14 @@ func (src *source) onServiceResolverEvent(
 			// It may be out of order avahi.ResolverFound
 			// event, received while service already removed,
 			// so just log and return.
-			log.Debug(src.ctx, "%s (unknown service)", title)
+			log.Verbose(src.ctx, "%s (unknown service)", title)
 			return nil
 		}
 
 		log.Begin(src.ctx).
-			Debug("%s:", title).
-			Debug("  host: %s", evnt.Hostname).
-			Debug("  port: %d", evnt.Port).
+			Verbose("%s:", title).
+			Verbose("  host: %s", evnt.Hostname).
+			Verbose("  port: %d", evnt.Port).
 			Commit()
 
 		service.SetPort(evnt.Port)
@@ -239,11 +239,11 @@ func (src *source) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 	case avahi.BrowserNew:
 		key := avahiServiceKeyFromRecordBrowserEvent(evnt)
 		title := fmt.Sprintf("txt-browse: found %s", key)
-		log.Debug(src.ctx, "%s", title)
+		log.Verbose(src.ctx, "%s", title)
 
 		service := src.clnt.GetService(key)
 		if service == nil {
-			log.Debug(src.ctx, "%s: service not found", title)
+			log.Verbose(src.ctx, "%s: service not found", title)
 			return nil
 		}
 
@@ -255,7 +255,7 @@ func (src *source) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 			txtPrinter, err := decodeTxtPrinter(svcType,
 				svcInstance, txt)
 			if err != nil {
-				log.Debug(src.ctx, "%s: %s", title, err)
+				log.Verbose(src.ctx, "%s: %s", title, err)
 				return nil // Don't propagate the error
 			}
 
@@ -286,7 +286,7 @@ func (src *source) onTxtBrowserEvent(evnt *avahi.RecordBrowserEvent) error {
 			txtScanner, err := decodeTxtScanner(svcType,
 				svcInstance, txt)
 			if err != nil {
-				log.Debug(src.ctx, "%s: %s", title, err)
+				log.Verbose(src.ctx, "%s: %s", title, err)
 				return nil // Don't propagate the error
 			}
 
@@ -331,7 +331,7 @@ func (src *source) onAddrBrowserEvent(
 		// Find hostname resolver
 		hostname := src.clnt.GetHostname(key)
 		if hostname == nil {
-			log.Debug(src.ctx, "%s: unknown hostname", title)
+			log.Verbose(src.ctx, "%s: unknown hostname", title)
 			return nil
 		}
 
@@ -345,7 +345,7 @@ func (src *source) onAddrBrowserEvent(
 		}
 
 		if addr == (netip.Addr{}) {
-			log.Debug(src.ctx, "%s: invalid addr", title)
+			log.Verbose(src.ctx, "%s: invalid addr", title)
 			return nil
 		}
 
@@ -353,10 +353,10 @@ func (src *source) onAddrBrowserEvent(
 		hasAddr := hostname.HasAddr(addr)
 		switch {
 		case evnt.Event == avahi.BrowserNew && hasAddr:
-			log.Debug(src.ctx, "%s: %s (duplicate)", title, addr)
+			log.Verbose(src.ctx, "%s: %s (duplicate)", title, addr)
 			return nil
 		case evnt.Event == avahi.BrowserRemove && !hasAddr:
-			log.Debug(src.ctx, "%s: %s (unknown addr)", title,
+			log.Verbose(src.ctx, "%s: %s (unknown addr)", title,
 				addr)
 			return nil
 
@@ -366,7 +366,7 @@ func (src *source) onAddrBrowserEvent(
 			hostname.DelAddr(addr)
 		}
 
-		log.Debug(src.ctx, "%s: %s", title, addr)
+		log.Verbose(src.ctx, "%s: %s", title, addr)
 
 	case avahi.BrowserFailure:
 		title := fmt.Sprintf("addr-browse: failed %s", evnt.Name)
@@ -391,7 +391,7 @@ func (src *source) addService(key avahiServiceKey) error {
 		return err
 	}
 
-	log.Debug(src.ctx, "%s: OK", title)
+	log.Verbose(src.ctx, "%s: OK", title)
 
 	// Create TXT record browser
 	txtBrowser, err := src.clnt.NewTxtBrowser(key)
@@ -404,7 +404,7 @@ func (src *source) addService(key avahiServiceKey) error {
 		return err
 	}
 
-	log.Debug(src.ctx, "%s: OK", title)
+	log.Verbose(src.ctx, "%s: OK", title)
 
 	// Add the service
 	src.clnt.AddService(key, svcResolver, txtBrowser)
@@ -423,7 +423,7 @@ func (src *source) addHostname(key avahiHostnameKey) (*avahiHostname, error) {
 		return nil, err
 	}
 
-	log.Debug(src.ctx, "%s: OK", title)
+	log.Verbose(src.ctx, "%s: OK", title)
 
 	// Add avahiHostname
 	return src.clnt.AddHostname(key, addrBrowser), nil

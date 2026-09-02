@@ -48,9 +48,9 @@ func (out *output) Generate(ttl time.Time, units []*unit) []*Device {
 	rec := log.Begin(out.ctx)
 	defer rec.Commit()
 
-	rec.Trace("preparing discovery output")
+	rec.Debug("preparing discovery output")
 
-	rec.Trace("units discovered:")
+	rec.Debug("units discovered:")
 	unitsToLogRecord(rec, units)
 
 	// Extract IP addresses
@@ -59,7 +59,7 @@ func (out *output) Generate(ttl time.Time, units []*unit) []*Device {
 	// Merge variants
 	units = out.genMergeUnitCrossVariandsAndZones(units)
 
-	rec.Trace("units variants merged:")
+	rec.Debug("units variants merged:")
 	unitsToLogRecord(rec, units)
 
 	// Classify units by DeviceID
@@ -80,9 +80,9 @@ func (out *output) Generate(ttl time.Time, units []*unit) []*Device {
 	out.ttl = ttl
 
 	// Log result
-	rec.Trace("devices reported:")
+	rec.Debug("devices reported:")
 	for _, dev := range outdevs {
-		rec.Object(log.LevelTrace, 2, dev)
+		rec.Object(log.LevelDebug, 2, dev)
 	}
 
 	return outdevs

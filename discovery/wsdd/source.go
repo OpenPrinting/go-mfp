@@ -54,7 +54,7 @@ func newSource(ctx context.Context,
 
 	// Start source operations
 	src.links.Start()
-	log.Debug(src.ctx, "started")
+	src.debug("started")
 
 	return src, nil
 }
@@ -74,7 +74,7 @@ func (src *source) input(data []byte, from, to netip.AddrPort, ifidx int) {
 	}
 
 	// Decode the message
-	src.debug("%d bytes received from %s%%%d", len(data), from, ifidx)
+	src.trace("%d bytes received from %s%%%d", len(data), from, ifidx)
 
 	msg, err := wsd.DecodeMsg(data)
 	if err != nil {
@@ -88,7 +88,7 @@ func (src *source) input(data []byte, from, to netip.AddrPort, ifidx int) {
 	msg.IfIdx = ifidx
 
 	// Dispatch the message
-	src.debug("%s message received", msg.Header.Action)
+	src.trace("%s message received", msg.Header.Action)
 
 	switch msg.Header.Action {
 	case wsd.ActHello, wsd.ActBye, wsd.ActProbeMatches,
@@ -97,7 +97,17 @@ func (src *source) input(data []byte, from, to netip.AddrPort, ifidx int) {
 	}
 }
 
-// Debug writes a LevelDebug message on behalf of the source.
+// trace writes a LevelTrace message on behalf of the source.
+func (src *source) trace(format string, args ...any) {
+	log.Trace(src.ctx, format, args...)
+}
+
+// verbose writes a LevelVerbose message on behalf of the source.
+func (src *source) verbose(format string, args ...any) {
+	log.Verbose(src.ctx, format, args...)
+}
+
+// debug writes a LevelDebug message on behalf of the source.
 func (src *source) debug(format string, args ...any) {
 	log.Debug(src.ctx, format, args...)
 }

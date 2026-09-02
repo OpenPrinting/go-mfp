@@ -105,13 +105,13 @@ func (ut *units) handleAnnounces(msg wsd.Msg) {
 		target := ann.EndpointReference.Address
 		ver := ann.MetadataVersion
 
-		logmsg.Debug("%s received:", action)
-		logmsg.Debug("  IP From:        %s", msg.From)
-		logmsg.Debug("  IP To:          %s", msg.To)
-		logmsg.Debug("  IP Zone:        %s", zone)
-		logmsg.Debug("  Address         %s", target)
-		logmsg.Debug("  Types           %s", ann.Types)
-		logmsg.Debug("  MetadataVersion %d", ver)
+		logmsg.Trace("%s received:", action)
+		logmsg.Trace("  IP From:        %s", msg.From)
+		logmsg.Trace("  IP To:          %s", msg.To)
+		logmsg.Trace("  IP Zone:        %s", zone)
+		logmsg.Trace("  Address         %s", target)
+		logmsg.Trace("  Types           %s", ann.Types)
+		logmsg.Trace("  MetadataVersion %d", ver)
 
 		printUnitID := ut.makeUnitID(msg.IfIdx,
 			discovery.ServicePrinter, target)
@@ -119,14 +119,14 @@ func (ut *units) handleAnnounces(msg wsd.Msg) {
 			discovery.ServiceScanner, target)
 
 		if len(ann.XAddrs) != 0 {
-			logmsg.Debug("  Xaddrs:")
+			logmsg.Trace("  Xaddrs:")
 
 			// Parse and collect XAddrs
 			var xaddrs []*url.URL
 			for _, s := range ann.XAddrs {
 				if u := urlParse(s); u != nil {
 					u = urlWithZone(u, zone)
-					logmsg.Debug("    %s", u)
+					logmsg.Trace("    %s", u)
 					xaddrs = append(xaddrs, u)
 				} else {
 					logmsg.Warning("    %s (invalid)", s)
@@ -256,16 +256,16 @@ func (un *unit) handleMetadata(metadata []mexData) {
 		endpoints := un.extractMetadataEndpoints(meta)
 
 		logmsg := log.Begin(un.ctx)
-		logmsg.Debug("Got %s metadata (from %s)",
+		logmsg.Trace("Got %s metadata (from %s)",
 			un.id.SvcType, meta.from)
-		logmsg.Debug("  Manufacturer: %q", mfg)
-		logmsg.Debug("  Model:        %q", mdl)
+		logmsg.Trace("  Manufacturer: %q", mfg)
+		logmsg.Trace("  Model:        %q", mdl)
 		if adm != nil {
-			logmsg.Debug("  Admin URL:    %q", *adm)
+			logmsg.Trace("  Admin URL:    %q", *adm)
 		}
 
 		if len(endpoints) > 0 {
-			logmsg.Debug("  Endpoints:")
+			logmsg.Trace("  Endpoints:")
 
 			checked := make([]string, 0, len(endpoints))
 			for _, endpoint := range endpoints {
@@ -279,11 +279,11 @@ func (un *unit) handleMetadata(metadata []mexData) {
 				s := u.String()
 
 				if !un.endpointsSeen.TestAndAdd(s) {
-					logmsg.Debug("    %s (dup)", s)
+					logmsg.Trace("    %s (dup)", s)
 					continue
 				}
 
-				logmsg.Debug("    %s", s)
+				logmsg.Trace("    %s", s)
 				checked = append(checked, u.String())
 			}
 

@@ -214,8 +214,8 @@ func (clnt *Client) nextEvent() error {
 	rec := log.Begin(clnt.ctx)
 	defer rec.Commit()
 
-	rec.Trace("%s:", evnt.Name())
-	rec.Object(log.LevelTrace, 2, evnt.GetID())
+	rec.Debug("%s:", evnt.Name())
+	rec.Object(log.LevelDebug, 2, evnt.GetID())
 
 	switch evnt := evnt.(type) {
 	case *EventAddUnit:
@@ -229,10 +229,10 @@ func (clnt *Client) nextEvent() error {
 	case *EventFaxoutParameters:
 		err = clnt.cache.SetFaxoutParameters(evnt)
 	case *EventAddEndpoint:
-		rec.Trace("  Endpoints: %s", evnt.Endpoints)
+		rec.Debug("  Endpoints: %s", evnt.Endpoints)
 		err = clnt.cache.AddEndpoint(evnt)
 	case *EventDelEndpoint:
-		rec.Trace("  Endpoints: %s", evnt.Endpoints)
+		rec.Debug("  Endpoints: %s", evnt.Endpoints)
 		err = clnt.cache.DelEndpoint(evnt)
 	}
 

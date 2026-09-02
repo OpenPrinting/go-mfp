@@ -151,7 +151,7 @@ func (lt *links) procNetmon() {
 			return
 		}
 
-		lt.src.debug("%s", evnt)
+		lt.src.verbose("network: %s", evnt)
 
 		switch evnt := evnt.(type) {
 		case netstate.EventAddPrimaryAddress:
@@ -252,7 +252,7 @@ func (l *link) procProber() {
 				var err error
 				l.conn, err = newUconn(l.addr, 0)
 				if err != nil {
-					src.debug("%s", err)
+					src.warning("%s", err)
 				}
 
 				if l.conn != nil {
@@ -269,7 +269,7 @@ func (l *link) procProber() {
 		case schedSend:
 			if l.conn != nil {
 				l.conn.WriteToUDPAddrPort(l.probeMsg, l.dest)
-				src.debug("%s message sent to %s%%%s",
+				src.trace("%s message sent to %s%%%s",
 					wsd.ActProbe, l.dest,
 					l.addr.Interface().Name())
 			}

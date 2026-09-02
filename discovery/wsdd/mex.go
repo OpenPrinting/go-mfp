@@ -213,7 +213,7 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 	rq = rq.WithContext(ctx)
 
 	// Perform HTTP query
-	mg.src.debug("POST %s\n%s", xaddr, msg.Format())
+	mg.src.trace("POST %s\n%s", xaddr, msg.Format())
 
 	rsp, err := mg.http.Do(rq)
 	if err != nil {
@@ -244,7 +244,7 @@ func (mg *mexGetter) fetchHTTP(ctx context.Context,
 		return
 	}
 
-	mg.src.debug("POST %s: %s", xaddr, rsp.Status)
+	mg.src.trace("POST %s: %s", xaddr, rsp.Status)
 
 	// Decode response
 	msg, err = wsd.DecodeMsg(data)
