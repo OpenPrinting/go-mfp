@@ -196,7 +196,7 @@ func (c *cache) SetScannerParameters(evnt *EventScannerParameters) error {
 		err = c.AddEndpoint(&evnt2)
 	}
 
-	return nil
+	return err
 }
 
 // SetFaxoutParameters saves faxout parameters.
@@ -231,7 +231,7 @@ func (c *cache) SetFaxoutParameters(evnt *EventFaxoutParameters) error {
 		err = c.AddEndpoint(&evnt2)
 	}
 
-	return nil
+	return err
 }
 
 // setParametersBegin begins operation of setting unit parameters.
