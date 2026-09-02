@@ -34,7 +34,7 @@ var Command = argv.Command{
 		argv.Option{
 			Name:    "-v",
 			Aliases: []string{"--verbose"},
-			Help:    "Enable verbose debug output",
+			Help:    "Verbose logging (-vv for very verbose)",
 		},
 		argv.Option{
 			Name:    "-p",
@@ -54,17 +54,14 @@ var Command = argv.Command{
 // cmdCupsHandler is the handler for the 'discover' command.
 func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Setup logging
-	_, dbg := inv.Get("-d")
-	_, vrb := inv.Get("-v")
-
-	dbg = true // FIXME
-
 	level := log.LevelInfo
-	if dbg {
-		level = log.LevelDebug
-	}
-	if vrb {
+	switch {
+	case len(inv.Values("-v")) > 1:
 		level = log.LevelTrace
+	case len(inv.Values("-v")) > 0:
+		level = log.LevelVerbose
+	case inv.Flag("-d"):
+		level = log.LevelDebug
 	}
 
 	logger := log.NewLogger(level, log.Console)
