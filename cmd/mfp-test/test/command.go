@@ -71,7 +71,7 @@ var Command = argv.Command{
 		},
 		{
 			Name:      "--threshold",
-			Help:      "minimum similarity score to pass (0.0-1.0, default 0.95)",
+			Help:      fmt.Sprintf("minimum similarity score to pass (0.0-1.0, default %.2f)", DefaultThreshold),
 			HelpArg:   "score",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
