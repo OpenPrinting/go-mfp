@@ -109,6 +109,10 @@ var Command = argv.Command{
 			Help: "run reduced test matrix (all sides × all color modes, first format only)",
 		},
 		{
+			Name: "--keep",
+			Help: "save captured document bytes to current directory",
+		},
+		{
 			Name:    "-v",
 			Aliases: []string{"--verbose"},
 			Help:    "enable verbose output",
@@ -258,12 +262,13 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		timeout = d
 	}
 
+	keep := inv.Flag("--keep")
 	verbose := inv.Flag("-v")
 
 	// Run each test configuration.
 	for _, cfg := range configs {
 		log.Info(ctx, "running test: %s", cfg.Name)
-		result, err := RunTest(ctx, cfg, queueName, capture, threshold, timeout, verbose)
+		result, err := RunTest(ctx, cfg, queueName, capture, threshold, timeout, keep, verbose)
 		if err != nil {
 			log.Info(ctx, "FAIL %s: %v", cfg.Name, err)
 			continue
