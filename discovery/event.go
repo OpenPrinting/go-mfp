@@ -148,8 +148,8 @@ func (evnt *EventFaxoutParameters) GetID() UnitID {
 //   - Unit MUST exist
 //   - The same endpoint MUST NOT be added multiple times.
 type EventAddEndpoint struct {
-	ID       UnitID // Unit identity
-	Endpoint string // URLs of added endpoints
+	ID        UnitID   // Unit identity
+	Endpoints []string // URLs of added endpoints
 }
 
 // Name returns the Event name.
@@ -169,8 +169,8 @@ func (evnt *EventAddEndpoint) GetID() UnitID {
 //   - Unit MUST exist
 //   - The removed endpoints MUST exist.
 type EventDelEndpoint struct {
-	ID       UnitID // Unit identity
-	Endpoint string // URLs of removed endpoints
+	ID        UnitID   // Unit identity
+	Endpoints []string // URLs of removed endpoints
 }
 
 // Name returns the Event name.

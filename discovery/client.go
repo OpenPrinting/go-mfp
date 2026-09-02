@@ -229,10 +229,10 @@ func (clnt *Client) nextEvent() error {
 	case *EventFaxoutParameters:
 		err = clnt.cache.SetFaxoutParameters(evnt)
 	case *EventAddEndpoint:
-		rec.Trace("  Endpoint:  %s", evnt.Endpoint)
+		rec.Trace("  Endpoints: %s", evnt.Endpoints)
 		err = clnt.cache.AddEndpoint(evnt)
 	case *EventDelEndpoint:
-		rec.Trace("  Endpoint:  %s", evnt.Endpoint)
+		rec.Trace("  Endpoints: %s", evnt.Endpoints)
 		err = clnt.cache.DelEndpoint(evnt)
 	}
 

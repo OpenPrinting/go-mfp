@@ -148,8 +148,8 @@ func (un *unit) SetPort(port uint16) {
 	if un.port != 0 {
 		un.addrs.ForEach(func(addr netip.Addr) {
 			evnt := &discovery.EventDelEndpoint{
-				ID:       un.id,
-				Endpoint: un.endpoint(addr),
+				ID:        un.id,
+				Endpoints: []string{un.endpoint(addr)},
 			}
 			un.queue.Push(evnt)
 		})
@@ -161,8 +161,8 @@ func (un *unit) SetPort(port uint16) {
 	if port != 0 {
 		un.addrs.ForEach(func(addr netip.Addr) {
 			evnt := &discovery.EventAddEndpoint{
-				ID:       un.id,
-				Endpoint: un.endpoint(addr),
+				ID:        un.id,
+				Endpoints: []string{un.endpoint(addr)},
 			}
 			un.queue.Push(evnt)
 		})
@@ -175,8 +175,8 @@ func (un *unit) AddAddr(addr netip.Addr) {
 		un.addrs.Add(addr)
 		if un.port != 0 {
 			evnt := &discovery.EventAddEndpoint{
-				ID:       un.id,
-				Endpoint: un.endpoint(addr),
+				ID:        un.id,
+				Endpoints: []string{un.endpoint(addr)},
 			}
 			un.queue.Push(evnt)
 		}
@@ -189,8 +189,8 @@ func (un *unit) DelAddr(addr netip.Addr) {
 		un.addrs.Del(addr)
 		if un.port != 0 {
 			evnt := &discovery.EventDelEndpoint{
-				ID:       un.id,
-				Endpoint: un.endpoint(addr),
+				ID:        un.id,
+				Endpoints: []string{un.endpoint(addr)},
 			}
 			un.queue.Push(evnt)
 		}

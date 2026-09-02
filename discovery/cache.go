@@ -241,14 +241,14 @@ func (c *cache) AddEndpoint(evnt *EventAddEndpoint) error {
 		return errors.New("unknown UnitID")
 	}
 
-	endpoint := evnt.Endpoint
-	if endpointsContain(ent.Endpoints, endpoint) ||
-		endpointsContain(ent.stagingEndpoints, endpoint) {
-		return errors.New("endpoint already added")
+	for _, endpoint := range evnt.Endpoints {
+		if endpointsContain(ent.Endpoints, endpoint) ||
+			endpointsContain(ent.stagingEndpoints, endpoint) {
+			return errors.New("endpoint already added")
+		}
+		ent.stagingBegin(c.stabilizationTime)
+		ent.stagingEndpoints, _ = endpointsAdd(ent.stagingEndpoints, endpoint)
 	}
-
-	ent.stagingBegin(c.stabilizationTime)
-	ent.stagingEndpoints, _ = endpointsAdd(ent.stagingEndpoints, endpoint)
 
 	c.out.Invalidate()
 
@@ -262,17 +262,17 @@ func (c *cache) DelEndpoint(evnt *EventDelEndpoint) error {
 		return errors.New("unknown UnitID")
 	}
 
-	endpoint := evnt.Endpoint
+	for _, endpoint := range evnt.Endpoints {
+		switch {
+		case endpointsContain(ent.Endpoints, endpoint):
+			ent.Endpoints, _ = endpointsDel(ent.Endpoints, endpoint)
 
-	switch {
-	case endpointsContain(ent.Endpoints, endpoint):
-		ent.Endpoints, _ = endpointsDel(ent.Endpoints, endpoint)
-
-	case endpointsContain(ent.stagingEndpoints, endpoint):
-		ent.stagingEndpoints, _ = endpointsDel(ent.stagingEndpoints,
-			endpoint)
-	default:
-		return errors.New("unknown endpoint")
+		case endpointsContain(ent.stagingEndpoints, endpoint):
+			ent.stagingEndpoints, _ = endpointsDel(ent.stagingEndpoints,
+				endpoint)
+		default:
+			return errors.New("unknown endpoint")
+		}
 	}
 
 	c.out.Invalidate()

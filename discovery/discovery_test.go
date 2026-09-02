@@ -113,8 +113,8 @@ func TestClient_Discovery(t *testing.T) {
 			},
 		},
 		&EventAddEndpoint{
-			ID:       uid,
-			Endpoint: "ipp://192.168.1.100/ipp/print",
+			ID:        uid,
+			Endpoints: []string{"ipp://192.168.1.100/ipp/print"},
 		},
 	}
 
@@ -252,8 +252,8 @@ func TestClient_MissingFields(t *testing.T) {
 			},
 		},
 		&EventAddEndpoint{
-			ID:       uid,
-			Endpoint: "ipp://192.168.1.100/ipp/print",
+			ID:        uid,
+			Endpoints: []string{"ipp://192.168.1.100/ipp/print"},
 		},
 	}
 

@@ -267,6 +267,7 @@ func (un *unit) handleMetadata(metadata []mexData) {
 		if len(endpoints) > 0 {
 			logmsg.Debug("  Endpoints:")
 
+			checked := make([]string, 0, len(endpoints))
 			for _, endpoint := range endpoints {
 				u := urlParse(endpoint)
 				if u == nil {
@@ -277,13 +278,17 @@ func (un *unit) handleMetadata(metadata []mexData) {
 				u = urlWithZone(u, zone)
 				s := u.String()
 
-				if !un.xaddrsSeen.TestAndAdd(s) {
+				if !un.endpointsSeen.TestAndAdd(s) {
 					logmsg.Debug("    %s (dup)", s)
 					continue
 				}
 
 				logmsg.Debug("    %s", s)
-				un.sendEndpoint(u)
+				checked = append(checked, u.String())
+			}
+
+			if len(checked) > 0 {
+				un.sendEndpoints(checked)
 			}
 		}
 
@@ -369,15 +374,10 @@ func (un *unit) sendParameters(mfg, mdl string, adm optional.Val[string]) {
 }
 
 // sendEndpoint sends EventAddEndpoint to the discovery system.
-func (un *unit) sendEndpoint(u *url.URL) {
-	s := u.String()
-	if !un.endpointsSeen.TestAndAdd(s) {
-		return
-	}
-
+func (un *unit) sendEndpoints(endpoints []string) {
 	evnt := &discovery.EventAddEndpoint{
-		ID:       un.id,
-		Endpoint: s,
+		ID:        un.id,
+		Endpoints: endpoints,
 	}
 
 	un.parent.src.queue.Push(evnt)
