@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/log"
@@ -38,7 +39,7 @@ type TestResult struct {
 // Image evaluation is not yet implemented; the function currently
 // reports success if the document was captured within the timeout.
 func RunTest(ctx context.Context, cfg TestConfig, queueName string,
-	capture *DocumentCapture, threshold float64, timeout time.Duration, verbose bool) (*TestResult, error) {
+	capture *DocumentCapture, threshold float64, timeout time.Duration, keep, verbose bool) (*TestResult, error) {
 
 	// Reset capture so we get only this job's document.
 	capture.Reset()
@@ -84,6 +85,17 @@ func RunTest(ctx context.Context, cfg TestConfig, queueName string,
 	if verbose {
 		log.Info(ctx, "captured %d bytes format=%q job=%q",
 			len(d.Data), d.Params.Format, d.Params.JobName)
+	}
+
+	if keep {
+		// Derive a safe filename from the config name (replace / with -).
+		safeName := strings.ReplaceAll(cfg.Name, "/", "-")
+		outPath := safeName + ".captured"
+		if err := os.WriteFile(outPath, d.Data, 0644); err != nil {
+			log.Info(ctx, "keep: failed to save %s: %v", outPath, err)
+		} else {
+			log.Info(ctx, "keep: saved captured image to %s", outPath)
+		}
 	}
 
 	// Image evaluation will be wired here in Phase 5 once raster
