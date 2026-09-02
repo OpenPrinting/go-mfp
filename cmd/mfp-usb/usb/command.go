@@ -28,7 +28,7 @@ var Command = argv.Command{
 		argv.Option{
 			Name:    "-v",
 			Aliases: []string{"--verbose"},
-			Help:    "Enable verbose debug output",
+			Help:    "Verbose logging (-vv for very verbose)",
 		},
 		argv.HelpOption,
 	},
@@ -42,15 +42,14 @@ var Command = argv.Command{
 // cmdUsbHandler is the top-level handler for the 'usb' command.
 func cmdUsbHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Setup logging
-	_, dbg := inv.Get("-d")
-	_, vrb := inv.Get("-v")
-
 	level := log.LevelInfo
-	if dbg {
-		level = log.LevelDebug
-	}
-	if vrb {
+	switch {
+	case len(inv.Values("-v")) > 1:
 		level = log.LevelTrace
+	case len(inv.Values("-v")) > 0:
+		level = log.LevelVerbose
+	case inv.Flag("-d"):
+		level = log.LevelDebug
 	}
 
 	logger := log.NewLogger(level, log.Console)
