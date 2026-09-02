@@ -65,6 +65,10 @@ func (evnt *EventDelUnit) GetID() UnitID {
 // EventPrinterParameters generated when printer parameters
 // becomes available or updated.
 //
+// Backend can send printer endpoints either within this event
+// or with additional EventAddEndpoint events. EventPrinterParameters
+// and EventAddEndpoint may come in any order.
+//
 // Backend responsibilities:
 //   - Unit MUST exist (i.e., previously announced with the
 //     EventAddUnit event and not revoked with the EventDelUnit event)
@@ -78,6 +82,7 @@ type EventPrinterParameters struct {
 	PPDManufacturer string            // I.e., "Hewlett Packard" or "Canon"
 	PPDModel        string            // Model name
 	Printer         PrinterParameters // Printer parameters
+	Endpoints       []string          // URLs of added endpoints
 }
 
 // Name returns the Event name.
@@ -93,6 +98,10 @@ func (evnt *EventPrinterParameters) GetID() UnitID {
 // EventScannerParameters generated when scanner parameters
 // become available or updated.
 //
+// Backend can send scanner endpoints either within this event
+// or with additional EventAddEndpoint events. EventScannerParameters
+// and EventAddEndpoint may come in any order.
+//
 // Backend responsibilities:
 //   - Unit MUST exist
 type EventScannerParameters struct {
@@ -103,6 +112,7 @@ type EventScannerParameters struct {
 	AdminURL  string            // Device administration URL
 	IconURL   string            // Device icon URL
 	Scanner   ScannerParameters // Scanner parameters
+	Endpoints []string          // URLs of added endpoints
 }
 
 // Name returns the Event name.
@@ -118,6 +128,10 @@ func (evnt *EventScannerParameters) GetID() UnitID {
 // EventFaxoutParameters generated when faxout parameters
 // become available or updated.
 //
+// Backend can send faxout endpoints either within this event
+// or with additional EventAddEndpoint events. EventFaxoutParameters
+// and EventAddEndpoint may come in any order.
+//
 // Backend responsibilities:
 //   - Unit MUST exist
 type EventFaxoutParameters struct {
@@ -129,7 +143,8 @@ type EventFaxoutParameters struct {
 	IconURL         string            // Device icon URL
 	PPDManufacturer string            // I.e., "Hewlett Packard" or "Canon"
 	PPDModel        string            // Model name
-	Faxout          PrinterParameters // Faxout parameters (the same as printer)
+	Faxout          PrinterParameters // Faxout parameters (same as printer)
+	Endpoints       []string          // URLs of added endpoints
 }
 
 // Name returns the Event name.

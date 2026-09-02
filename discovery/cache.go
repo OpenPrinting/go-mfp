@@ -158,7 +158,15 @@ func (c *cache) SetPrinterParameters(evnt *EventPrinterParameters) error {
 
 	c.setParametersCommit(ent)
 
-	return nil
+	if len(evnt.Endpoints) > 0 {
+		evnt2 := EventAddEndpoint{
+			ID:        evnt.ID,
+			Endpoints: evnt.Endpoints,
+		}
+		err = c.AddEndpoint(&evnt2)
+	}
+
+	return err
 }
 
 // SetScannerParameters saves scanner parameters.
@@ -179,6 +187,14 @@ func (c *cache) SetScannerParameters(evnt *EventScannerParameters) error {
 	ent.Params = params
 
 	c.setParametersCommit(ent)
+
+	if len(evnt.Endpoints) > 0 {
+		evnt2 := EventAddEndpoint{
+			ID:        evnt.ID,
+			Endpoints: evnt.Endpoints,
+		}
+		err = c.AddEndpoint(&evnt2)
+	}
 
 	return nil
 }
@@ -206,6 +222,14 @@ func (c *cache) SetFaxoutParameters(evnt *EventFaxoutParameters) error {
 	ent.Params = params
 
 	c.setParametersCommit(ent)
+
+	if len(evnt.Endpoints) > 0 {
+		evnt2 := EventAddEndpoint{
+			ID:        evnt.ID,
+			Endpoints: evnt.Endpoints,
+		}
+		err = c.AddEndpoint(&evnt2)
+	}
 
 	return nil
 }
