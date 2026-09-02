@@ -23,10 +23,10 @@ import (
 // Parameters:
 const (
 	// Avahi client may fail to start if avahi-daemon is not
-	// running or for for the similar reasons.
+	// running or for similar reasons.
 	//
 	// If failed, Avahi client will automatically restart
-	// with the following interval between attempts.
+	// with the following interval between attempts:
 	avahiClientRestartInterval = 1 * time.Second
 )
 
@@ -34,7 +34,8 @@ const (
 // functionality on a centralized manner.
 //
 // In particular, it manages tables of avahiService and avahiHostname
-// structures that belong to the client.
+// structures that belong to the client and survives over Avahi
+// client restart.
 type avahiClient struct {
 	avahiClnt   *avahi.Client                       // The avahi.Client
 	poller      *avahi.Poller                       // The avahi.Poller
