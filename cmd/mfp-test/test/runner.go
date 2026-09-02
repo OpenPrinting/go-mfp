@@ -20,6 +20,9 @@ import (
 // DefaultThreshold is the minimum similarity score required to pass a test.
 const DefaultThreshold = 0.95
 
+// DefaultTimeout is the default time to wait for a captured document.
+const DefaultTimeout = 30 * time.Second
+
 // TestResult holds the outcome of a single test run.
 type TestResult struct {
 	Config  TestConfig
@@ -35,7 +38,7 @@ type TestResult struct {
 // Image evaluation is not yet implemented; the function currently
 // reports success if the document was captured within the timeout.
 func RunTest(ctx context.Context, cfg TestConfig, queueName string,
-	capture *DocumentCapture, threshold float64, verbose bool) (*TestResult, error) {
+	capture *DocumentCapture, threshold float64, timeout time.Duration, verbose bool) (*TestResult, error) {
 
 	// Reset capture so we get only this job's document.
 	capture.Reset()
@@ -66,8 +69,8 @@ func RunTest(ctx context.Context, cfg TestConfig, queueName string,
 	// Wait for the document to arrive.
 	select {
 	case <-capture.OnDocument():
-	case <-time.After(30 * time.Second):
-		return nil, fmt.Errorf("timeout: no document received after 30s")
+	case <-time.After(timeout):
+		return nil, fmt.Errorf("timeout: no document received after %s", timeout)
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
