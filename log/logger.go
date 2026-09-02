@@ -93,6 +93,11 @@ func (lgr *Logger) Trace(prefix, format string, v ...any) *Logger {
 	return lgr.Begin(prefix).Trace(format, v...).Commit()
 }
 
+// Verbose writes a Verbose-level message to the Logger.
+func (lgr *Logger) Verbose(prefix, format string, v ...any) *Logger {
+	return lgr.Begin(prefix).Verbose(format, v...).Commit()
+}
+
 // Debug writes a Debug-level message to the Logger.
 func (lgr *Logger) Debug(prefix, format string, v ...any) *Logger {
 	return lgr.Begin(prefix).Debug(format, v...).Commit()

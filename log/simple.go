@@ -24,6 +24,15 @@ func Trace(ctx context.Context, format string, v ...any) {
 	CtxLogger(ctx).Trace(CtxPrefix(ctx), format, v...)
 }
 
+// Verbose writes a Verbose-level message to the [Logger] associated
+// with the Context.
+//
+// If Logger is not available, [DefaultLogger] will be used.
+// The [context.Context] parameter may be safely passed as nil.
+func Verbose(ctx context.Context, format string, v ...any) {
+	CtxLogger(ctx).Verbose(CtxPrefix(ctx), format, v...)
+}
+
 // Debug writes a Debug-level message to the [Logger] associated
 // with the Context.
 //
