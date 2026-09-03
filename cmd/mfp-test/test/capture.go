@@ -15,32 +15,32 @@ import (
 	"github.com/OpenPrinting/go-mfp/abstract"
 )
 
-// CapturedDoc holds a single captured print document
+// capturedDoc holds a single captured print document
 // with its negotiated job parameters and raw bytes.
-type CapturedDoc struct {
+type capturedDoc struct {
 	Params abstract.PrinterRequest
 	Data   []byte
 }
 
-// DocumentCapture implements abstract.Printer and collects
+// documentCapture implements abstract.Printer and collects
 // all incoming print documents for later inspection.
 // It is safe for concurrent use.
-type DocumentCapture struct {
-	mu   sync.Mutex
-	docs []CapturedDoc
-	done chan struct{}
+type documentCapture struct {
+	mu       sync.Mutex
+	captured []capturedDoc
+	done     chan struct{}
 }
 
-// NewDocumentCapture creates a new DocumentCapture.
-func NewDocumentCapture() *DocumentCapture {
-	return &DocumentCapture{
+// newDocumentCapture creates a new documentCapture.
+func newDocumentCapture() *documentCapture {
+	return &documentCapture{
 		done: make(chan struct{}),
 	}
 }
 
 // PrintDocument implements abstract.Printer.
 // It reads the full document body and stores it along with params.
-func (dc *DocumentCapture) PrintDocument(
+func (dc *documentCapture) PrintDocument(
 	params abstract.PrinterRequest, body io.Reader) error {
 
 	data, err := io.ReadAll(body)
@@ -49,7 +49,7 @@ func (dc *DocumentCapture) PrintDocument(
 	}
 
 	dc.mu.Lock()
-	dc.docs = append(dc.docs, CapturedDoc{
+	dc.captured = append(dc.captured, capturedDoc{
 		Params: params,
 		Data:   data,
 	})
@@ -65,33 +65,28 @@ func (dc *DocumentCapture) PrintDocument(
 	return nil
 }
 
-// OnDocument returns a channel that is closed when the first
+// onDocument returns a channel that is closed when the first
 // document is received. Useful for waiting without polling.
-func (dc *DocumentCapture) OnDocument() <-chan struct{} {
+func (dc *documentCapture) onDocument() <-chan struct{} {
 	return dc.done
 }
 
-// Wait blocks until at least one document has been captured.
-func (dc *DocumentCapture) Wait() {
-	<-dc.done
-}
-
-// Docs returns a snapshot of all captured documents so far.
-func (dc *DocumentCapture) Docs() []CapturedDoc {
+// docs returns a snapshot of all captured documents so far.
+func (dc *documentCapture) docs() []capturedDoc {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
-	out := make([]CapturedDoc, len(dc.docs))
-	copy(out, dc.docs)
+	out := make([]capturedDoc, len(dc.captured))
+	copy(out, dc.captured)
 	return out
 }
 
-// Reset clears all captured documents and resets the OnDocument
+// reset clears all captured documents and resets the onDocument
 // signal so the capture can be reused for the next test run.
-func (dc *DocumentCapture) Reset() {
+func (dc *documentCapture) reset() {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
-	dc.docs = nil
+	dc.captured = nil
 	dc.done = make(chan struct{})
 }
