@@ -12,7 +12,10 @@ import (
 	"bytes"
 	"fmt"
 	"net/netip"
+	"sort"
+	"strings"
 
+	"github.com/OpenPrinting/go-mfp/util/generic"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
 
@@ -136,4 +139,166 @@ func (dev *Device) less(dev2 *Device) bool {
 
 	// Give up
 	return false
+}
+
+// DNSSD returns DNS-SD portion of the discovery information
+// for the discovered [Device].
+func (dev *Device) DNSSD() *DNSSDDevice {
+	// Services by DNS-SD type
+	svcmap := make(map[string]*DNSSDService)
+
+	// Gather print units
+	for _, un := range dev.PrintUnits {
+		types := dev.dnssdServiceTypes(un.Proto, un.Endpoints)
+		if len(types) == 0 {
+			// Not a DNS-SD unit
+			continue
+		}
+
+		for _, t := range types {
+			svc := &DNSSDService{Types: types, TXT: un.TXT}
+			if found := svcmap[t]; found != nil {
+				found.merge(svc)
+				svc = found
+			}
+			for _, t := range svc.Types {
+				svcmap[t] = svc
+			}
+		}
+	}
+
+	// Gather scan units
+	for _, un := range dev.ScanUnits {
+		types := dev.dnssdServiceTypes(un.Proto, un.Endpoints)
+		if len(types) == 0 {
+			// Not a DNS-SD unit
+			continue
+		}
+
+		for _, t := range types {
+			svc := &DNSSDService{Types: types, TXT: un.TXT}
+			if found := svcmap[t]; found != nil {
+				found.merge(svc)
+				svc = found
+			}
+			for _, t := range svc.Types {
+				svcmap[t] = svc
+			}
+		}
+	}
+
+	// Gather faxout units
+	for _, un := range dev.FaxoutUnits {
+		types := dev.dnssdServiceTypes(un.Proto, un.Endpoints)
+		if len(types) == 0 {
+			// Not a DNS-SD unit
+			continue
+		}
+
+		for _, t := range types {
+			svc := &DNSSDService{Types: types, TXT: un.TXT}
+			if found := svcmap[t]; found != nil {
+				found.merge(svc)
+				svc = found
+			}
+			for _, t := range svc.Types {
+				svcmap[t] = svc
+			}
+		}
+	}
+
+	// Build slice of services. Avoid duplicates.
+	services := make([]DNSSDService, 0, len(svcmap))
+	seen := generic.NewSet[*DNSSDService]()
+	for _, svc := range svcmap {
+		if seen.TestAndAdd(svc) {
+			services = append(services, *svc)
+		}
+	}
+
+	// Sort services by the first type name, to be deterministic
+	sort.Slice(services, func(i, j int) bool {
+		return services[i].Types[0] < services[j].Types[0]
+	})
+
+	dnssddev := &DNSSDDevice{
+		Instance: dev.DNSSDName,
+		UUID:     dev.DNSSDUUID,
+		Services: services,
+	}
+
+	return dnssddev
+}
+
+// dnssdServiceTypes returns DNS-SD service types (e.g.,
+// ["_ipp.tcp", "_ipps._tcp"], based on discovery.ServiceProto
+// and endpoints.
+//
+// Endpoints are required here to distinguish IPP vs IPPS and similar.
+func (dev *Device) dnssdServiceTypes(
+	proto ServiceProto, endpoints []string) []string {
+
+	types := []string{}
+
+	switch proto {
+	case ServiceIPP:
+		hasIPP := false
+		hasIPPS := false
+
+		for _, ep := range endpoints {
+			if strings.HasPrefix(ep, "ipp:") {
+				hasIPP = true
+			}
+
+			if strings.HasPrefix(ep, "ipps:") {
+				hasIPPS = true
+			}
+
+			if hasIPP && hasIPPS {
+				break
+			}
+		}
+
+		if hasIPP {
+			types = append(types, "_ipp._tcp")
+		}
+
+		if hasIPPS {
+			types = append(types, "_ipps._tcp")
+		}
+
+	case ServiceESCL:
+		hasESCL := false
+		hasESCLS := false
+
+		for _, ep := range endpoints {
+			if strings.HasPrefix(ep, "http:") {
+				hasESCL = true
+			}
+
+			if strings.HasPrefix(ep, "https:") {
+				hasESCLS = true
+			}
+
+			if hasESCL && hasESCLS {
+				break
+			}
+		}
+
+		if hasESCL {
+			types = append(types, "_uscan._tcp")
+		}
+
+		if hasESCLS {
+			types = append(types, "_uscans._tcp")
+		}
+
+	case ServiceLPD:
+		types = []string{"_printer._tcp"}
+
+	case ServiceAppSocket:
+		types = []string{"_pdl-datastream._tcp"}
+	}
+
+	return types
 }
