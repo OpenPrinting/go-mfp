@@ -52,7 +52,7 @@ func RunTest(ctx context.Context, cfg TestConfig, queueName string,
 	defer os.Remove(imgPath)
 
 	// Build lp options for the test configuration.
-	lpArgs := []string{"-d", queueName}
+	lpArgs := []string{"-d", queueName, "-t", "mfp-test/" + cfg.Name}
 	if cfg.Sides != "" {
 		lpArgs = append(lpArgs, "-o", "sides="+string(cfg.Sides))
 	}
