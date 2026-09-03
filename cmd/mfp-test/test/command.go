@@ -223,6 +223,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Determine which test configurations to run.
+	// One of --batch, --quick, or --single must be explicitly set.
 	var configs []TestConfig
 	switch {
 	case inv.Flag("--batch"):
@@ -237,8 +238,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 			}
 			configs = []TestConfig{*cfg}
 		} else {
-			// Default: single run with printer defaults.
-			configs = QuickMatrix(caps)
+			return fmt.Errorf("no test mode specified: use --batch, --quick, or --single")
 		}
 	}
 
