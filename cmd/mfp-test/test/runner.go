@@ -88,13 +88,12 @@ func RunTest(ctx context.Context, cfg TestConfig, queueName string,
 	}
 
 	if keep {
-		// Derive a safe filename from the config name (replace / with -).
 		safeName := strings.ReplaceAll(cfg.Name, "/", "-")
-		outPath := safeName + ".captured"
+		outPath := safeName + mimeToExt(d.Params.Format)
 		if err := os.WriteFile(outPath, d.Data, 0644); err != nil {
 			log.Info(ctx, "keep: failed to save %s: %v", outPath, err)
 		} else {
-			log.Info(ctx, "keep: saved captured image to %s", outPath)
+			log.Info(ctx, "keep: saved captured document to %s", outPath)
 		}
 	}
 
@@ -107,4 +106,33 @@ func RunTest(ctx context.Context, cfg TestConfig, queueName string,
 		Score:  score,
 		Passed: score >= threshold,
 	}, nil
+}
+
+// mimeToExt returns a file extension for a MIME type.
+// Gzip-compressed variants get a double extension (e.g. .pdf.gz).
+func mimeToExt(mime string) string {
+	switch mime {
+	case "application/pdf":
+		return ".pdf"
+	case "application/postscript":
+		return ".ps"
+	case "image/jpeg":
+		return ".jpg"
+	case "image/jpeg+gzip":
+		return ".jpg.gz"
+	case "image/png":
+		return ".png"
+	case "image/pwg-raster":
+		return ".pwg"
+	case "image/urf":
+		return ".urf"
+	case "image/vnd.cups-raster":
+		return ".ras"
+	case "application/vnd.cups-pdf":
+		return ".cups.pdf"
+	case "application/vnd.cups-postscript":
+		return ".cups.ps"
+	default:
+		return ".bin"
+	}
 }
