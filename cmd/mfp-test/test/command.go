@@ -24,11 +24,11 @@ import (
 	"github.com/OpenPrinting/go-mfp/transport"
 )
 
-// DefaultTCPPort is the default IPP server TCP port.
-const DefaultTCPPort = 60000
+// defaultTCPPort is the default IPP server TCP port.
+const defaultTCPPort = 60000
 
-// DefaultQueueName is the default CUPS queue name.
-const DefaultQueueName = "mfp-test"
+// defaultQueueName is the default CUPS queue name.
+const defaultQueueName = "mfp-test"
 
 // Command is the mfp-test command description.
 var Command = argv.Command{
@@ -48,7 +48,7 @@ var Command = argv.Command{
 		{
 			Name:      "-P",
 			Aliases:   []string{"--port"},
-			Help:      fmt.Sprintf("IPP server TCP port (default %d)", DefaultTCPPort),
+			Help:      fmt.Sprintf("IPP server TCP port (default %d)", defaultTCPPort),
 			HelpArg:   "port",
 			Singleton: true,
 			Validate:  argv.ValidateUint16,
@@ -56,7 +56,7 @@ var Command = argv.Command{
 		{
 			Name:      "-n",
 			Aliases:   []string{"--name"},
-			Help:      fmt.Sprintf("CUPS queue name (default %q)", DefaultQueueName),
+			Help:      fmt.Sprintf("CUPS queue name (default %q)", defaultQueueName),
 			HelpArg:   "name",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
@@ -72,14 +72,14 @@ var Command = argv.Command{
 		},
 		{
 			Name:      "--threshold",
-			Help:      fmt.Sprintf("minimum similarity score to pass (0.0-1.0, default %.2f)", DefaultThreshold),
+			Help:      fmt.Sprintf("minimum similarity score to pass (0.0-1.0, default %.2f)", defaultThreshold),
 			HelpArg:   "score",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
 		},
 		{
 			Name:      "--timeout",
-			Help:      fmt.Sprintf("document capture timeout (default %s)", DefaultTimeout),
+			Help:      fmt.Sprintf("document capture timeout (default %s)", defaultTimeout),
 			HelpArg:   "duration",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
@@ -148,7 +148,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Parse port number
-	port := DefaultTCPPort
+	port := defaultTCPPort
 	if portStr, ok := inv.Get("-P"); ok {
 		p, err := strconv.Atoi(portStr)
 		if err != nil {
@@ -158,7 +158,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Create document capture backend
-	capture := NewDocumentCapture()
+	capture := newDocumentCapture()
 
 	// Create virtual IPP printer from model and hook capture into it
 	ippPrinter := model.NewIPPServer()
@@ -184,7 +184,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	defer srvr.Close()
 
 	// Get CUPS queue name
-	queueName := DefaultQueueName
+	queueName := defaultQueueName
 	if name, ok := inv.Get("-n"); ok {
 		queueName = name
 	}
@@ -201,14 +201,14 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
 
 	// Query printer capabilities for test matrix generation.
-	caps, err := QueryPrinterCaps(ctx, ippURL)
+	caps, err := queryPrinterCaps(ctx, ippURL)
 	if err != nil {
 		return fmt.Errorf("query printer capabilities: %w", err)
 	}
 
 	// --list: print all configurations (full batch matrix) and exit.
 	if inv.Flag("--list") {
-		for _, cfg := range BatchMatrix(caps) {
+		for _, cfg := range batchMatrix(caps) {
 			fmt.Println(cfg.Name)
 		}
 		return nil
@@ -216,7 +216,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	// --list-quick: print quick test configurations and exit.
 	if inv.Flag("--list-quick") {
-		for _, cfg := range QuickMatrix(caps) {
+		for _, cfg := range quickMatrix(caps) {
 			fmt.Println(cfg.Name)
 		}
 		return nil
@@ -224,26 +224,26 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	// Determine which test configurations to run.
 	// One of --batch, --quick, or --single must be explicitly set.
-	var configs []TestConfig
+	var configs []testConfig
 	switch {
 	case inv.Flag("--batch"):
-		configs = BatchMatrix(caps)
+		configs = batchMatrix(caps)
 	case inv.Flag("--quick"):
-		configs = QuickMatrix(caps)
+		configs = quickMatrix(caps)
 	default:
 		if spec, ok := inv.Get("--single"); ok {
-			cfg, err := SingleConfig(spec)
+			cfg, err := singleConfig(spec)
 			if err != nil {
 				return err
 			}
-			configs = []TestConfig{*cfg}
+			configs = []testConfig{*cfg}
 		} else {
 			return fmt.Errorf("no test mode specified: use --batch, --quick, or --single")
 		}
 	}
 
 	// Parse similarity threshold.
-	threshold := DefaultThreshold
+	threshold := defaultThreshold
 	if ts, ok := inv.Get("--threshold"); ok {
 		var t float64
 		if _, err := fmt.Sscanf(ts, "%f", &t); err != nil {
@@ -253,7 +253,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Parse capture timeout.
-	timeout := DefaultTimeout
+	timeout := defaultTimeout
 	if ts, ok := inv.Get("--timeout"); ok {
 		d, err := time.ParseDuration(ts)
 		if err != nil {
@@ -268,7 +268,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Run each test configuration.
 	for _, cfg := range configs {
 		log.Info(ctx, "running test: %s", cfg.Name)
-		result, err := RunTest(ctx, cfg, queueName, capture, threshold, timeout, keep, verbose)
+		result, err := runTest(ctx, cfg, queueName, capture, threshold, timeout, keep, verbose)
 		if err != nil {
 			log.Info(ctx, "FAIL %s: %v", cfg.Name, err)
 			continue

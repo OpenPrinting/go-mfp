@@ -16,26 +16,26 @@ import (
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
 )
 
-// PrinterCaps holds the queried printer capabilities used to generate
+// printerCaps holds the queried printer capabilities used to generate
 // the test matrix.
-type PrinterCaps struct {
+type printerCaps struct {
 	Sides      []ipp.KwSides
 	ColorModes []string
 	Formats    []string
 }
 
-// TestConfig represents one specific combination of print parameters
+// testConfig represents one specific combination of print parameters
 // to exercise in a test run.
-type TestConfig struct {
+type testConfig struct {
 	Name      string
 	Sides     ipp.KwSides
 	ColorMode string
 	Format    string
 }
 
-// QueryPrinterCaps queries the virtual IPP printer for its supported
-// attribute values and returns them as a PrinterCaps.
-func QueryPrinterCaps(ctx context.Context, printerURL string) (*PrinterCaps, error) {
+// queryPrinterCaps queries the virtual IPP printer for its supported
+// attribute values and returns them as a printerCaps.
+func queryPrinterCaps(ctx context.Context, printerURL string) (*printerCaps, error) {
 	u, err := url.Parse(printerURL)
 	if err != nil {
 		return nil, fmt.Errorf("matrix: parse printer URL: %w", err)
@@ -48,7 +48,7 @@ func QueryPrinterCaps(ctx context.Context, printerURL string) (*PrinterCaps, err
 		return nil, fmt.Errorf("matrix: query printer attributes: %w", err)
 	}
 
-	caps := &PrinterCaps{
+	caps := &printerCaps{
 		Sides:      attrs.SidesSupported,
 		ColorModes: attrs.PrintColorModeSupported,
 		Formats:    attrs.DocumentFormatSupported,
@@ -73,14 +73,14 @@ func configName(sides ipp.KwSides, color, format string) string {
 	return fmt.Sprintf("%s/%s/%s", sides, color, format)
 }
 
-// BatchMatrix returns every combination of sides × color mode × format.
+// batchMatrix returns every combination of sides × color mode × format.
 // This is the exhaustive test matrix.
-func BatchMatrix(caps *PrinterCaps) []TestConfig {
-	var configs []TestConfig
+func batchMatrix(caps *printerCaps) []testConfig {
+	var configs []testConfig
 	for _, sides := range caps.Sides {
 		for _, color := range caps.ColorModes {
 			for _, format := range caps.Formats {
-				configs = append(configs, TestConfig{
+				configs = append(configs, testConfig{
 					Name:      configName(sides, color, format),
 					Sides:     sides,
 					ColorMode: color,
@@ -92,16 +92,16 @@ func BatchMatrix(caps *PrinterCaps) []TestConfig {
 	return configs
 }
 
-// QuickMatrix returns a reduced matrix: all sides × all color modes,
+// quickMatrix returns a reduced matrix: all sides × all color modes,
 // but only the first document format. Duplex/simplex and color/mono
 // are tested independently; format variation is omitted to keep the
 // run short.
-func QuickMatrix(caps *PrinterCaps) []TestConfig {
+func quickMatrix(caps *printerCaps) []testConfig {
 	format := caps.Formats[0]
-	var configs []TestConfig
+	var configs []testConfig
 	for _, sides := range caps.Sides {
 		for _, color := range caps.ColorModes {
-			configs = append(configs, TestConfig{
+			configs = append(configs, testConfig{
 				Name:      configName(sides, color, format),
 				Sides:     sides,
 				ColorMode: color,
@@ -112,10 +112,10 @@ func QuickMatrix(caps *PrinterCaps) []TestConfig {
 	return configs
 }
 
-// SingleConfig parses a configuration name of the form
-// "sides/color-mode/format" and returns the corresponding TestConfig.
+// singleConfig parses a configuration name of the form
+// "sides/color-mode/format" and returns the corresponding testConfig.
 // This is used with --single to reproduce a specific known bug.
-func SingleConfig(spec string) (*TestConfig, error) {
+func singleConfig(spec string) (*testConfig, error) {
 	parts := strings.SplitN(spec, "/", 3)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("matrix: --single requires sides/color-mode/format, got %q", spec)
@@ -128,7 +128,7 @@ func SingleConfig(spec string) (*TestConfig, error) {
 	default:
 		return nil, fmt.Errorf("matrix: unknown sides value %q", sides)
 	}
-	return &TestConfig{
+	return &testConfig{
 		Name:      spec,
 		Sides:     sides,
 		ColorMode: parts[1],
