@@ -31,19 +31,19 @@ var Command = argv.Command{
 			Help:    "Verbose logging (-vv for very verbose)",
 		},
 		argv.Option{
-			Name:    "-ip",
+			Name:    "-i",
 			Aliases: []string{"--ip"},
-			HelpArg: "IP adress with a port",
+			Help:    "IP adress with a port",
 		},
 		argv.Option{
 			Name:    "-b",
 			Aliases: []string{"--busid"},
-			HelpArg: "Busid for usbip",
+			Help:    "Busid for usbip",
 		},
 		argv.HelpOption,
 	},
 	SubCommands: []argv.Command{
-		cmdAuto,
+		cmdAttach,
 		cmdList,
 		argv.HelpCommand,
 	},
