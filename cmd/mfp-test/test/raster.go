@@ -32,6 +32,7 @@ func convertToPNG(data []byte, format string) ([]byte, error) {
 	case "image/pwg-raster", "image/urf":
 		return convertRasterToPNG(data)
 	case "application/pdf",
+		"application/vnd.cups-pdf",
 		"image/jpeg",
 		"image/tiff",
 		"image/webp",
@@ -67,7 +68,9 @@ func convertPSToPNG(data []byte) ([]byte, error) {
 	if err := mw.ReadImageBlob(data); err != nil {
 		return nil, fmt.Errorf("raster: imagick read PS: %w", err)
 	}
-	mw.SetIteratorIndex(0)
+	if !mw.SetIteratorIndex(0) {
+		return nil, fmt.Errorf("raster: imagick: no pages in document")
+	}
 	if err := mw.SetImageFormat("PNG"); err != nil {
 		return nil, fmt.Errorf("raster: imagick set format: %w", err)
 	}
