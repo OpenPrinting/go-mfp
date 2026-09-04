@@ -36,7 +36,7 @@ type Model struct {
 	wsdScanCaps     *wsscan.GetScannerElementsResponse
 
 	// Integration with discovery
-	discovered *discovery.Device
+	dnssd *discovery.DNSSDDevice
 
 	// USB stuff
 	usbDevice *usb.DeviceDescriptor
@@ -197,8 +197,8 @@ func (model *Model) Write(w io.Writer) (err error) {
 		}
 	}
 
-	if model.discovered != nil {
-		obj := dnssdExport(model.py, model.discovered)
+	if model.dnssd != nil {
+		obj := dnssdExport(model.py, model.dnssd)
 		dnssd, err = formatPython(obj)
 		if err != nil {
 			return
@@ -248,7 +248,7 @@ func (model *Model) Write(w io.Writer) (err error) {
 		case strings.HasPrefix(t, "#-wsd"):
 			skip = model.wsdScanCaps == nil
 		case strings.HasPrefix(t, "#-dnssd"):
-			skip = model.discovered == nil
+			skip = model.dnssd == nil
 		case strings.HasPrefix(t, "#-usb"):
 			skip = model.usbDevice == nil
 		case strings.HasPrefix(t, "#-"):

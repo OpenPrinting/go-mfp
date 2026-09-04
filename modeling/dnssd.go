@@ -15,8 +15,9 @@ import (
 
 // dnssdExport converts DNS-SD information from discovery.Device
 // into the Python object.
-func dnssdExport(py *cpython.Python, dev *discovery.Device) *cpython.Object {
-	dnssddev := dev.DNSSD()
+func dnssdExport(py *cpython.Python,
+	dnssddev *discovery.DNSSDDevice) *cpython.Object {
+
 	obj := py.Eval("dnssd.Device()")
 
 	err := obj.Set("instance", dnssddev.Instance)
