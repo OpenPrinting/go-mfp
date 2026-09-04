@@ -43,6 +43,8 @@ func convertToPNG(data []byte, format string) ([]byte, error) {
 		"application/vnd.cups-postscript":
 		return convertPSToPNG(data)
 	default:
+		// image/vnd.cups-raster and image/jpeg+gzip are not yet supported
+		// for image evaluation; captured bytes are still saved with --keep.
 		return nil, fmt.Errorf("raster: unsupported format %q", format)
 	}
 }
@@ -59,6 +61,10 @@ func convertVipsToPNG(data []byte) ([]byte, error) {
 
 // convertPSToPNG uses ImageMagick (via Ghostscript delegate) to convert
 // PostScript to PNG. Only the first page is returned.
+//
+// Note: on Ubuntu, /etc/ImageMagick-6/policy.xml blocks the PS and delegate
+// coders by default. PostScript conversion requires that the system policy
+// allows "read|write" on the PS coder and the Ghostscript delegate.
 func convertPSToPNG(data []byte) ([]byte, error) {
 	initImagick()
 
