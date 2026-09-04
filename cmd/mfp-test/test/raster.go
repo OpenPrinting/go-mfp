@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"image/png"
 
+	"github.com/h2non/bimg"
 	"github.com/rusq/thermoprint/cupsraster"
 )
 
@@ -22,9 +23,26 @@ func convertToPNG(data []byte, format string) ([]byte, error) {
 	switch format {
 	case "image/pwg-raster", "image/urf":
 		return convertRasterToPNG(data)
+	case "application/pdf",
+		"image/jpeg",
+		"image/tiff",
+		"image/webp",
+		"image/gif",
+		"image/png":
+		return convertVipsToPNG(data)
 	default:
 		return nil, fmt.Errorf("raster: unsupported format %q", format)
 	}
+}
+
+// convertVipsToPNG uses bimg (libvips) to convert PDF, JPEG, TIFF and other
+// common formats to PNG. For multi-page documents, the first page is used.
+func convertVipsToPNG(data []byte) ([]byte, error) {
+	out, err := bimg.NewImage(data).Convert(bimg.PNG)
+	if err != nil {
+		return nil, fmt.Errorf("raster: bimg convert: %w", err)
+	}
+	return out, nil
 }
 
 // convertRasterToPNG decodes a PWG Raster or Apple URF stream and encodes
