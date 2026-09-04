@@ -3,6 +3,8 @@ github.com/OpenPrinting/go-avahi v0.0.0-20260812135728-151f3263d093/go.mod h1:1v
 github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf h1:ZP5tvUK5YTp/KxNSA2+IjP47R6aFFu7Tl7BE1hm273M=
 github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf/go.mod h1:ot2iw+QF7fVLaX+55JUNlF5YSDNiXVo2LRAv21iGcQI=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
+github.com/gographics/imagick v3.2.0+incompatible h1:KeoHcmV7bVRKnj6tXTIcEGnyDg8kO0vPNUTC/5HzwOI=
+github.com/gographics/imagick v3.2.0+incompatible/go.mod h1:gk55mrttmUSR+Vt6dxnxuD7EKU/3e5Ehe8HRGVCI8mw=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/h2non/bimg v1.1.9 h1:WH20Nxko9l/HFm4kZCA3Phbgu2cbHvYzxwxn9YROEGg=
@@ -44,3 +46,7 @@ golang.org/x/text v0.38.0 h1:sXmwo9DwP3OK9EZ7PqAdaooSGozfl/3a6/xJcbzPRhE=
 golang.org/x/text v0.38.0/go.mod h1:YXZt3QhHUKYT53r2lLKFIVi6Ao1jdzrTR/KQ09qyxF4=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
+gopkg.in/gographics/imagick.v2 v2.7.1 h1:7k8qhqYwF093KJ/vmWJHoOkI9zzLOhL/h2qt5LFc7iw=
+gopkg.in/gographics/imagick.v2 v2.7.1/go.mod h1:i87+p+KdGE2FerYMoj6JWEqsmpTWyYM8LQqMDtu5Hws=
+gopkg.in/gographics/imagick.v3 v3.7.3 h1:Hy2MbJKLJ/9T3ZuV1zwBOy09O9prf2MCCVpM7bcZdpY=
+gopkg.in/gographics/imagick.v3 v3.7.3/go.mod h1:7I4S9VWdwr88yzYi7g+ZL4H8oZuH9cmSQI7GsZCcYFM=

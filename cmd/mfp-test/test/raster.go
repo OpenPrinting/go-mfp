@@ -14,6 +14,7 @@ import (
 
 	"github.com/h2non/bimg"
 	"github.com/rusq/thermoprint/cupsraster"
+	"gopkg.in/gographics/imagick.v2/imagick"
 )
 
 // convertToPNG converts captured document bytes to a PNG image.
@@ -30,6 +31,9 @@ func convertToPNG(data []byte, format string) ([]byte, error) {
 		"image/gif",
 		"image/png":
 		return convertVipsToPNG(data)
+	case "application/postscript",
+		"application/vnd.cups-postscript":
+		return convertPSToPNG(data)
 	default:
 		return nil, fmt.Errorf("raster: unsupported format %q", format)
 	}
@@ -41,6 +45,29 @@ func convertVipsToPNG(data []byte) ([]byte, error) {
 	out, err := bimg.NewImage(data).Convert(bimg.PNG)
 	if err != nil {
 		return nil, fmt.Errorf("raster: bimg convert: %w", err)
+	}
+	return out, nil
+}
+
+// convertPSToPNG uses ImageMagick (via Ghostscript delegate) to convert
+// PostScript to PNG. Only the first page is returned.
+func convertPSToPNG(data []byte) ([]byte, error) {
+	imagick.Initialize()
+	defer imagick.Terminate()
+
+	mw := imagick.NewMagickWand()
+	defer mw.Destroy()
+
+	if err := mw.ReadImageBlob(data); err != nil {
+		return nil, fmt.Errorf("raster: imagick read PS: %w", err)
+	}
+	mw.SetIteratorIndex(0)
+	if err := mw.SetImageFormat("PNG"); err != nil {
+		return nil, fmt.Errorf("raster: imagick set format: %w", err)
+	}
+	out, err := mw.GetImageBlob()
+	if err != nil {
+		return nil, fmt.Errorf("raster: imagick get blob: %w", err)
 	}
 	return out, nil
 }
