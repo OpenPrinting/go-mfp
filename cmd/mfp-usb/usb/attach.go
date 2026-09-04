@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -34,12 +35,6 @@ var cmdAttach = argv.Command{
 	Handler: cmdAttachHandler,
 	Options: []argv.Option{
 		{
-			Name:      "-d",
-			Aliases:   []string{"--debug"},
-			Help:      "Enable debug output",
-			Singleton: true,
-		},
-		{
 			Name:      "-i",
 			Aliases:   []string{"--ip"},
 			HelpArg:   "address",
@@ -59,6 +54,11 @@ var cmdAttach = argv.Command{
 
 // cmdAttachHandler parses command-line arguments and starts the monitoring process.
 func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
+	// Check for root privileges before doing anything
+	if os.Geteuid() != 0 {
+		return fmt.Errorf("This command requires root privileges, please run with sudo")
+	}
+
 	ip := defaultIP
 	if inputIP, ok := inv.Get("-i"); ok {
 		ip = inputIP
@@ -99,11 +99,11 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 	for {
 		select {
 		case <-ctx.Done():
+			log.Info(ctx, "Shutting down...")
 			if isAvailable {
-				log.Info(ctx, "Shutting down...")
 				_ = detach(ctx)
 			}
-			return ctx.Err()
+			return nil
 
 		case errMsg := <-errCh:
 			if isAvailable {
@@ -205,11 +205,11 @@ func monitorSleepEvents(ctx context.Context, sleepCh chan<- bool) error {
 // attach loads the vhci_hcd kernel module and attaches the virtual USB device
 // using the specified bus ID.
 func attach(busID string) error {
-	if out, err := exec.Command("sudo", "modprobe", "vhci_hcd").CombinedOutput(); err != nil {
+	if out, err := exec.Command("modprobe", "vhci_hcd").CombinedOutput(); err != nil {
 		return fmt.Errorf("modprobe error: %w, output: %s", err, string(out))
 	}
 
-	cmd := exec.Command("sudo", "usbip", "attach", "-r", "localhost", "-b", busID)
+	cmd := exec.Command("usbip", "attach", "-r", "localhost", "-b", busID)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("usbip attach error: %w, output: %s", err, string(out))
 	}
@@ -219,7 +219,7 @@ func attach(busID string) error {
 
 // detach disconnects the virtual USB device from port 0.
 func detach(ctx context.Context) error {
-	cmd := exec.Command("sudo", "usbip", "detach", "-p", "0")
+	cmd := exec.Command("usbip", "detach", "-p", "0")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("usbip detach error: %w, output: %s", err, string(out))
 	}
