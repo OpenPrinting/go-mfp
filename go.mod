@@ -16,9 +16,12 @@ require (
 )
 
 require (
+	github.com/gographics/imagick v3.2.0+incompatible // indirect
 	github.com/h2non/bimg v1.1.9 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/rusq/thermoprint v0.4.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
+	gopkg.in/gographics/imagick.v2 v2.7.1 // indirect
+	gopkg.in/gographics/imagick.v3 v3.7.3 // indirect
 )
