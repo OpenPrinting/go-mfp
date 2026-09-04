@@ -116,16 +116,19 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 	if err != nil {
 		return nil, fmt.Errorf("create temp PNG: %w", err)
 	}
-	defer os.Remove(capturedPNG.Name())
-	defer capturedPNG.Close()
+	capturedPNGName := capturedPNG.Name()
+	defer os.Remove(capturedPNGName)
 
 	if _, err := capturedPNG.Write(pngData); err != nil {
+		capturedPNG.Close()
 		return nil, fmt.Errorf("write captured PNG: %w", err)
 	}
-	capturedPNG.Close()
+	if err := capturedPNG.Close(); err != nil {
+		return nil, fmt.Errorf("close captured PNG: %w", err)
+	}
 
 	// Evaluate image similarity.
-	res, err := eval.Compare(imgPath, capturedPNG.Name(), threshold, verbose)
+	res, err := eval.Compare(imgPath, capturedPNGName, threshold, verbose)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate: %w", err)
 	}

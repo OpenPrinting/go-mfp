@@ -11,11 +11,18 @@ import (
 	"bytes"
 	"fmt"
 	"image/png"
+	"sync"
 
 	"github.com/h2non/bimg"
 	"github.com/rusq/thermoprint/cupsraster"
 	"gopkg.in/gographics/imagick.v2/imagick"
 )
+
+var imagickOnce sync.Once
+
+func initImagick() {
+	imagickOnce.Do(imagick.Initialize)
+}
 
 // convertToPNG converts captured document bytes to a PNG image.
 // The format argument is the MIME type of the document (e.g. "image/pwg-raster").
@@ -52,8 +59,7 @@ func convertVipsToPNG(data []byte) ([]byte, error) {
 // convertPSToPNG uses ImageMagick (via Ghostscript delegate) to convert
 // PostScript to PNG. Only the first page is returned.
 func convertPSToPNG(data []byte) ([]byte, error) {
-	imagick.Initialize()
-	defer imagick.Terminate()
+	initImagick()
 
 	mw := imagick.NewMagickWand()
 	defer mw.Destroy()
