@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/argv"
+	"github.com/OpenPrinting/go-mfp/internal/evaluate"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
 	"github.com/OpenPrinting/go-mfp/transport"
@@ -65,6 +66,14 @@ var Command = argv.Command{
 			Name:      "-o",
 			Aliases:   []string{"--output"},
 			Help:      "write JSON report to file",
+			HelpArg:   "file",
+			Singleton: true,
+			Validate:  argv.ValidateAny,
+			Complete:  argv.CompleteOSPath,
+		},
+		{
+			Name:      "--comparator",
+			Help:      "path to enhanced_comparison.py for image evaluation",
 			HelpArg:   "file",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
@@ -262,13 +271,24 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		timeout = d
 	}
 
+	// Set up image evaluator if --comparator is specified.
+	var eval *evaluate.Evaluator
+	if comparatorPath, ok := inv.Get("--comparator"); ok {
+		e, err := evaluate.NewEvaluator(comparatorPath)
+		if err != nil {
+			return fmt.Errorf("evaluator: %w", err)
+		}
+		defer e.Close()
+		eval = e
+	}
+
 	keep := inv.Flag("--keep")
 	verbose := inv.Flag("-v")
 
 	// Run each test configuration.
 	for _, cfg := range configs {
 		log.Info(ctx, "running test: %s", cfg.Name)
-		result, err := runTest(ctx, cfg, queueName, capture, threshold, timeout, keep, verbose)
+		result, err := runTest(ctx, cfg, queueName, capture, eval, threshold, timeout, keep, verbose)
 		if err != nil {
 			log.Info(ctx, "FAIL %s: %v", cfg.Name, err)
 			continue
