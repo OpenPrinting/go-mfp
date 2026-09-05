@@ -4400,6 +4400,85 @@ escl.scanner = escl.ScannerCapabilities(
 #
 # def escl_onNextDocumentResponse (q: query.Query, flt: escl.ImageFilter):
 
+# DNS-SD parameters
+dnssd.device = dnssd.Device(
+    instance = 'Xerox(R) B235 MFP',
+    UUID = UUID('67bbb526-3a17-474f-a567-2ca5f6156613'),
+    services = [
+        dnssd.Service(
+            types = [
+                '_ipp._tcp',
+                '_ipps._tcp',
+            ],
+            TXT = [
+                'rp=ipp/print',
+                'txtvers=1',
+                'priority=20',
+                'qtotal=1',
+                'note=',
+                'air=none',
+                'TLS=1.2',
+                'adminurl=http://ETE84DEC1C0C90.local./#/Settings/Network/AirPrint',
+                'UUID=67bbb526-3a17-474f-a567-2ca5f6156613',
+                'DUUID=67bbb526-3a17-474f-a567-2ca5f6156613',
+                'ty=Xerox Xerox(R) B235 MFP',
+                'Color=F',
+                'Duplex=T',
+                'PaperMax=<legal-A4',
+                'Staple=F',
+                'usb_MFG=Xerox',
+                'usb_MDL=Xerox(R) B235 MFP',
+                'pdl=application/PCLm,application/octet-stream,image/urf,image/pwg-raster,image/jpeg,application/postscript,text/plain',
+                'Fax=T',
+                'Scan=T',
+                'URF=V1.5,CP1,PQ4,W8,MT1-2-3-4-5-6-8-10-11-12-13,RS300-600,DM1,OB10,IS5-4-20,IFU5-4,FN3',
+                'kind=document,envelope,label',
+                'mopria-certified=2.1',
+                'print_wfds=T',
+                'product=(Xerox(R) B235 MFP)',
+                'rfo=ipp/faxout',
+                'priority=0',
+            ],
+        ),
+        dnssd.Service(
+            types = [
+                '_printer._tcp',
+            ],
+            TXT = [
+                'adminurl=http://ETE84DEC1C0C90.local./',
+                'note=',
+                'pdl=application/postscript',
+                'product=(Xerox(R) B235 MFP)',
+                'qtotal=1',
+            ],
+        ),
+        dnssd.Service(
+            types = [
+                '_uscan._tcp',
+                '_uscans._tcp',
+            ],
+            TXT = [
+                'txtvers=1',
+                'UUID=67bbb526-3a17-474f-a567-2ca5f6156613',
+                'adminurl=http://ETE84DEC1C0C90.local./#/Settings/Network/AirPrint',
+                'cs=color,grayscale',
+                'duplex=F',
+                'is=platen,adf',
+                'mopria-certified-scan=1.4',
+                'note=',
+                'pdl=application/pdf,image/jpeg,image/tiff',
+                'representation=http://ETE84DEC1C0C90.local./images/model/mfp/dap_icon.128x128.png',
+                'rs=eSCL',
+                'ty=Xerox Xerox(R) B235 MFP',
+                'usb_MDL=Xerox(R) B235 MFP',
+                'usb_MFG=Xerox',
+                'vers=2.9',
+            ],
+        ),
+    ],
+)
+
+
 # USB device descriptor
 usb.device = usb.DeviceDescriptor(
     bcdUSB = '2.0',
