@@ -25,6 +25,11 @@ func dnssdExport(py *cpython.Python,
 		return py.NewError(err)
 	}
 
+	err = obj.Set("UUID", py.Get("UUID").Call(dnssddev.UUID.String()))
+	if err != nil {
+		return py.NewError(err)
+	}
+
 	services := []*cpython.Object{}
 	for _, svc := range dnssddev.Services {
 		svcobj := dnssdExportService(py, svc)
