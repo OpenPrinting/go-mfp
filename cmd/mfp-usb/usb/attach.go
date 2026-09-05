@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,10 +22,14 @@ import (
 )
 
 const (
-	defaultIP    = "localhost:3240"
+	// defaultIP is the default server address and port.
+	defaultIP = "localhost:3240"
+	// defaultBUSID is the default USB bus ID for the virtual device.
 	defaultBUSID = "1-1"
-	timeout      = 500 * time.Millisecond
-	interval     = 500 * time.Millisecond
+	// timeout is the maximum duration allowed for a single TCP connection attempt.
+	timeout = 500 * time.Millisecond
+	// frequency is the duration between consecutive server availability checks.
+	frequency = 500 * time.Millisecond
 )
 
 // cmdAttach defines the "attach" command that automatically attaches
@@ -40,6 +45,7 @@ var cmdAttach = argv.Command{
 			HelpArg:   "address",
 			Help:      fmt.Sprintf("Server address. Default: %s", defaultIP),
 			Singleton: true,
+			Validate:  validateAddress,
 		},
 		{
 			Name:      "-b",
@@ -47,6 +53,7 @@ var cmdAttach = argv.Command{
 			HelpArg:   "busid",
 			Help:      fmt.Sprintf("USB Bus ID. Default: %s", defaultBUSID),
 			Singleton: true,
+			Validate:  argv.ValidateAny,
 		},
 		argv.HelpOption,
 	},
@@ -56,7 +63,7 @@ var cmdAttach = argv.Command{
 func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Check for root privileges before doing anything
 	if os.Geteuid() != 0 {
-		return fmt.Errorf("This command requires root privileges, please run with sudo")
+		return fmt.Errorf("this command requires root privileges, please run with sudo")
 	}
 
 	ip := defaultIP
@@ -74,7 +81,7 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	cmd := exec.Command("usbip", "port")
 	if output, err := cmd.CombinedOutput(); err == nil {
 		if strings.Contains(string(output), "Port 00:") {
-			log.Info(ctx, "Device already attached")
+			log.Debug(ctx, "Device already attached")
 			isAvailable = true
 		}
 	}
@@ -91,7 +98,7 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 // runMonitor executes the main monitoring cycle for server availability
 // and sleep events, automatically attaching or detaching the device as needed.
 func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip, busid string, isAvailable bool) error {
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
 	isSleeping := false
@@ -107,7 +114,7 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 
 		case errMsg := <-errCh:
 			if isAvailable {
-				log.Info(ctx, "monitorSleepEvents Error")
+				log.Debug(ctx, "monitorSleepEvents Error")
 				_ = detach(ctx)
 			}
 			return errMsg
@@ -115,14 +122,14 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 		// Sleep event from D-Bus
 		case isSleep := <-sleepCh:
 			if isSleep {
-				log.Info(ctx, "System is going to sleep. Detaching...")
+				log.Debug(ctx, "System is going to sleep. Detaching...")
 				if err := detach(ctx); err != nil {
-					log.Info(ctx, "Warning: failed to detach: %v", err)
+					log.Debug(ctx, "Warning: failed to detach: %v", err)
 				}
 				isAvailable = false
 				isSleeping = true
 			} else {
-				log.Info(ctx, "System woke up.")
+				log.Debug(ctx, "System woke up.")
 				isSleeping = false
 			}
 
@@ -140,17 +147,17 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 			}
 
 			if serverUp && !isAvailable {
-				log.Info(ctx, "Server is up. Attempting to attach device...")
+				log.Debug(ctx, "Server is up. Attempting to attach device...")
 				if err := attach(busid); err != nil {
-					log.Info(ctx, "Attach failed: %v", err)
+					log.Debug(ctx, "Attach failed: %v", err)
 				} else {
 					isAvailable = true
-					log.Info(ctx, "attached")
+					log.Debug(ctx, "attached")
 				}
 			} else if !serverUp && isAvailable {
-				log.Info(ctx, "Server is down. Detaching...")
+				log.Debug(ctx, "Server is down. Detaching...")
 				if err := detach(ctx); err != nil {
-					log.Info(ctx, "Warning: failed to detach: %v", err)
+					log.Debug(ctx, "Warning: failed to detach: %v", err)
 				}
 				isAvailable = false
 			}
@@ -224,6 +231,21 @@ func detach(ctx context.Context) error {
 		return fmt.Errorf("usbip detach error: %w, output: %s", err, string(out))
 	}
 
-	log.Info(ctx, "detached")
+	log.Debug(ctx, "detached")
+	return nil
+}
+
+// validateAddress checks whether the given string represents a valid network address
+func validateAddress(value string) error {
+	host, port, err := net.SplitHostPort(value)
+	if err != nil {
+		return fmt.Errorf("invalid address format (expected host:port): %w", err)
+	}
+	if host == "" {
+		return fmt.Errorf("host cannot be empty")
+	}
+	if _, err := strconv.Atoi(port); err != nil {
+		return fmt.Errorf("invalid port number: %w", err)
+	}
 	return nil
 }
