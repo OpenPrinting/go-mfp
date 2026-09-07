@@ -12,7 +12,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -239,13 +238,17 @@ func detach(ctx context.Context) error {
 func validateAddress(value string) error {
 	host, port, err := net.SplitHostPort(value)
 	if err != nil {
-		return fmt.Errorf("invalid address format (expected host:port): %w", err)
+		return fmt.Errorf("invalid address: %w", err)
 	}
 	if host == "" {
 		return fmt.Errorf("host cannot be empty")
 	}
-	if _, err := strconv.Atoi(port); err != nil {
-		return fmt.Errorf("invalid port number: %w", err)
+	if port == "" {
+		return fmt.Errorf("port cannot be empty")
+	}
+	_, err = net.ResolveTCPAddr("tcp", value)
+	if err != nil {
+		return fmt.Errorf("invalid address: %w", err)
 	}
 	return nil
 }
