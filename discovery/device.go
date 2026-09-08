@@ -156,7 +156,12 @@ func (dev *Device) DNSSD() *DNSSDDevice {
 		}
 
 		for _, t := range types {
-			svc := &DNSSDService{Types: types, TXT: un.TXT}
+			svc := &DNSSDService{
+				Types:     types,
+				TXT:       un.TXT,
+				Endpoints: un.Endpoints,
+			}
+
 			if found := svcmap[t]; found != nil {
 				found.merge(svc)
 				svc = found
@@ -176,7 +181,12 @@ func (dev *Device) DNSSD() *DNSSDDevice {
 		}
 
 		for _, t := range types {
-			svc := &DNSSDService{Types: types, TXT: un.TXT}
+			svc := &DNSSDService{
+				Types:     types,
+				TXT:       un.TXT,
+				Endpoints: un.Endpoints,
+			}
+
 			if found := svcmap[t]; found != nil {
 				found.merge(svc)
 				svc = found
@@ -196,7 +206,12 @@ func (dev *Device) DNSSD() *DNSSDDevice {
 		}
 
 		for _, t := range types {
-			svc := &DNSSDService{Types: types, TXT: un.TXT}
+			svc := &DNSSDService{
+				Types:     types,
+				TXT:       un.TXT,
+				Endpoints: un.Endpoints,
+			}
+
 			if found := svcmap[t]; found != nil {
 				found.merge(svc)
 				svc = found

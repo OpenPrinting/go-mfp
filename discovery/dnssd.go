@@ -26,9 +26,10 @@ type DNSSDDevice struct {
 // DNSSDService represents a single DNS-SD service (e.g.,
 // IPP print or eSCL scan part of device).
 type DNSSDService struct {
-	Types    []string // Service types (e.g. ["_ipp._tcp", "_ipps._tcp"])
-	SubTypes []string // Service subtypes ("_universal._sub._ipp._tcp")
-	TXT      []string // TXT record ("key=value"...)
+	Types     []string // Service types (e.g. ["_ipp._tcp", "_ipps._tcp"])
+	SubTypes  []string // Service subtypes ("_universal._sub._ipp._tcp")
+	TXT       []string // TXT record ("key=value"...)
+	Endpoints []string // Endpoint URLs
 }
 
 // merge merges two services, assuming they are duplicated
