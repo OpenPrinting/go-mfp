@@ -11,4 +11,7 @@ from helpers import collection
 class Device(collection): pass
 class Service(collection): pass
 
+# device is the model-settable variable that defines the
+# printer's DNS-SD parameters.
+device = None
 
