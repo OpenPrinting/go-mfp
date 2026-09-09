@@ -4439,6 +4439,10 @@ dnssd.device = dnssd.Device(
                 'rfo=ipp/faxout',
                 'priority=0',
             ],
+            endpoints = [
+                'ipp://192.168.1.100',
+                'ipps://[fe80::ce64:1aff:fe71:e2d0]',
+            ],
         ),
         dnssd.Service(
             types = [
@@ -4450,6 +4454,10 @@ dnssd.device = dnssd.Device(
                 'pdl=application/postscript',
                 'product=(Xerox(R) B235 MFP)',
                 'qtotal=1',
+            ],
+            endpoints = [
+                'lpd://192.168.1.100',
+                'lpd://[fe80::ce64:1aff:fe71:e2d0]',
             ],
         ),
         dnssd.Service(
@@ -4473,6 +4481,12 @@ dnssd.device = dnssd.Device(
                 'usb_MDL=Xerox(R) B235 MFP',
                 'usb_MFG=Xerox',
                 'vers=2.9',
+            ],
+            endpoints = [
+                'http://192.168.1.100/eSCL',
+                'https://192.168.1.100/eSCL',
+                'http://[fe80::ce64:1aff:fe71:e2d0]/eSCL/',
+                'https://[fe80::ce64:1aff:fe71:e2d0]/eSCL/',
             ],
         ),
     ],

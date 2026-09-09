@@ -9,6 +9,7 @@
 package modeling
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/OpenPrinting/go-mfp/cpython"
@@ -199,7 +200,7 @@ func dnssdImportService(obj *cpython.Object) (discovery.DNSSDService, error) {
 
 	// Decode endpoints
 	sliceobjects, err = obj.Get("endpoints").Slice()
-	if err != nil {
+	if err != nil && !errors.Is(err, cpython.ErrNotFound{}) {
 		err = errImportWrap("endpoints", err)
 		return svc, err
 	}
