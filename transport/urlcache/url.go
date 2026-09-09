@@ -197,3 +197,55 @@ func (u URL) Canonical() URL {
 
 	return New(parsed.String())
 }
+
+// IPAddress returns URL's IP address.
+// It doesn't do any name resolution, URL must contain literal IP address.
+//
+// If URL is invalid, or not network URL or its hostname is not literal,
+// it returns a zero netip.AddrPort
+func (u URL) IPAddress() netip.AddrPort {
+	cached := lookup(u)
+	if cached.err != nil {
+		return netip.AddrPort{}
+	}
+
+	if addrport, err := netip.ParseAddrPort(cached.parsed.Host); err == nil {
+		return addrport
+	}
+
+	addr, err := netip.ParseAddr(cached.parsed.Hostname())
+	port := u.PortNum()
+
+	if err != nil || port == 0 {
+		return netip.AddrPort{}
+	}
+
+	return netip.AddrPortFrom(addr, uint16(port))
+}
+
+// IsTCP reports if URL uses TCP-based transport.
+func (u URL) IsTCP() bool {
+	switch strings.ToLower(u.Scheme()) {
+	case "http", "https", "ipp", "ipps", "lpd", "socket":
+		return true
+	}
+	return false
+}
+
+// IsHTTP reports if URL uses HTTP or HTTPS - based transport.
+func (u URL) IsHTTP() bool {
+	switch strings.ToLower(u.Scheme()) {
+	case "http", "https", "ipp", "ipps":
+		return true
+	}
+	return false
+}
+
+// IsTLS reports if URL uses TLS encryption.
+func (u URL) IsTLS() bool {
+	switch strings.ToLower(u.Scheme()) {
+	case "https", "ipps":
+		return true
+	}
+	return false
+}

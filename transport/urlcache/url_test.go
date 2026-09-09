@@ -9,6 +9,7 @@
 package urlcache
 
 import (
+	"net/netip"
 	"testing"
 )
 
@@ -141,6 +142,31 @@ func TestURLHostPortName(t *testing.T) {
 			t.Errorf("%q: URL.Portname failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.port, port)
+		}
+	}
+}
+
+// TestURLIPAddress tests URL.IPAddress
+func TestURLIPAddress(t *testing.T) {
+	type testData struct {
+		u    URL
+		addr netip.AddrPort
+	}
+
+	tests := []testData{
+		{"http://127.0.0.1", netip.MustParseAddrPort("127.0.0.1:80")},
+		{"http://127.0.0.1:80", netip.MustParseAddrPort("127.0.0.1:80")},
+		{"http://[::1]", netip.MustParseAddrPort("[::1]:80")},
+		{"http://[::1]:80", netip.MustParseAddrPort("[::1]:80")},
+		{"http://example.com", netip.AddrPort{}},
+	}
+
+	for _, test := range tests {
+		addr := test.u.IPAddress()
+		if addr != test.addr {
+			t.Errorf("%q: URL.IPAddress failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.addr, addr)
 		}
 	}
 }
