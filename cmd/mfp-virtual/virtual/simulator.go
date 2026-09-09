@@ -15,6 +15,7 @@ import (
 	"net"
 
 	"github.com/OpenPrinting/go-mfp/abstract"
+	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
 	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/log"
@@ -106,6 +107,11 @@ func simulate(ctx context.Context, model *modeling.Model,
 		go srvr.Serve(ln)
 
 		defer srvr.Close()
+
+		if dnssddev := model.GetDNSSDDevice(); dnssddev != nil {
+			pub := dnssd.NewPublisher(ctx, dnssddev)
+			defer pub.Close()
+		}
 	} else {
 		desc := model.GetUSBDeviceDescriptor()
 		if desc == nil {
