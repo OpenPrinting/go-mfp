@@ -83,7 +83,7 @@ func (srvr *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 // ServeAutoTLS is similar to the [http.Server.Serve] and
 // [http.Server.ServeTLS].
 //
-// It accepts incoming connections on the [http.Listener] l,
+// It accepts incoming connections on the [http.Listener],
 // automatically detect encrypted (TLS) and non-encrypted
 // connections and serves them respectively to their type.
 //
