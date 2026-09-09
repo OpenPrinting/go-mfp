@@ -170,3 +170,111 @@ func TestURLIPAddress(t *testing.T) {
 		}
 	}
 }
+
+// TestURLIs tests URL.IsTCP, URL.IsHTTP, URL.IsTLS, ... methods
+func TestURLIs(t *testing.T) {
+	type testData struct {
+		u      URL
+		valid  bool
+		isTCP  bool
+		isHTTP bool
+		isTLS  bool
+	}
+
+	tests := []testData{
+		{
+			u:      "http://example.com",
+			valid:  true,
+			isTCP:  true,
+			isHTTP: true,
+			isTLS:  false,
+		},
+
+		{
+			u:      "https://example.com",
+			valid:  true,
+			isTCP:  true,
+			isHTTP: true,
+			isTLS:  true,
+		},
+
+		{
+			u:      "ipp://example.com",
+			valid:  true,
+			isTCP:  true,
+			isHTTP: true,
+			isTLS:  false,
+		},
+
+		{
+			u:      "ipps://example.com",
+			valid:  true,
+			isTCP:  true,
+			isHTTP: true,
+			isTLS:  true,
+		},
+
+		{
+			u:      "lpd://example.com",
+			valid:  true,
+			isTCP:  true,
+			isHTTP: false,
+			isTLS:  false,
+		},
+
+		{
+			u:      "socket://example.com",
+			valid:  true,
+			isTCP:  true,
+			isHTTP: false,
+			isTLS:  false,
+		},
+
+		{
+			u:      "unix:/path",
+			valid:  true,
+			isTCP:  false,
+			isHTTP: false,
+			isTLS:  false,
+		},
+
+		{
+			u:      "invalid URL",
+			valid:  false,
+			isTCP:  false,
+			isHTTP: false,
+			isTLS:  false,
+		},
+	}
+
+	for _, test := range tests {
+		valid := test.u.Valid()
+		isTCP := test.u.IsTCP()
+		isHTTP := test.u.IsHTTP()
+		isTLS := test.u.IsTLS()
+
+		if valid != test.valid {
+			t.Errorf("%q: URL.Valid failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.valid, valid)
+		}
+
+		if isTCP != test.isTCP {
+			t.Errorf("%q: URL.IsTCP failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.isTCP, isTCP)
+		}
+
+		if isHTTP != test.isHTTP {
+			t.Errorf("%q: URL.IsHTTP failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.isHTTP, isHTTP)
+		}
+
+		if isTLS != test.isTLS {
+			t.Errorf("%q: URL.IsTLS failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.isTLS, isTLS)
+		}
+	}
+}
