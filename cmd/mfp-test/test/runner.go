@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenPrinting/go-mfp/internal/evaluate"
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
@@ -34,12 +35,14 @@ type testResult struct {
 
 // runTest runs a single print test using the given configuration:
 // generates a test PNG, sends it to the CUPS queue with the specified
-// job attributes, waits for capture, and returns the test result.
+// job attributes, waits for capture, converts the captured document to
+// PNG, and evaluates image similarity.
 //
-// Image evaluation is not yet implemented; the function currently
-// reports success if the document was captured within the timeout.
+// If eval is nil, image evaluation is skipped and capture success is
+// reported as a pass with score 1.0.
 func runTest(ctx context.Context, cfg testConfig, queueName string,
-	capture *documentCapture, threshold float64, timeout time.Duration, keep, verbose bool) (*testResult, error) {
+	capture *documentCapture, eval *evaluate.Evaluator,
+	threshold float64, timeout time.Duration, keep, verbose bool) (*testResult, error) {
 
 	// Reset capture so we get only this job's document.
 	capture.reset()
@@ -97,14 +100,44 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 		}
 	}
 
-	// Image evaluation will be wired here in Phase 5 once raster
-	// conversion (captured bytes → PNG) is implemented. For now,
-	// a successful capture counts as a pass with a placeholder score.
-	score := 1.0
+	// Skip image evaluation if no evaluator is configured.
+	if eval == nil {
+		return &testResult{Config: cfg, Score: 1.0, Passed: true}, nil
+	}
+
+	// Convert captured document to PNG for evaluation.
+	pngData, err := convertToPNG(d.Data, d.Params.Format)
+	if err != nil {
+		return nil, fmt.Errorf("convert to PNG: %w", err)
+	}
+
+	// Write PNG to a temp file for the evaluator.
+	capturedPNG, err := os.CreateTemp("", "mfp-captured-*.png")
+	if err != nil {
+		return nil, fmt.Errorf("create temp PNG: %w", err)
+	}
+	capturedPNGName := capturedPNG.Name()
+	defer os.Remove(capturedPNGName)
+
+	if _, err := capturedPNG.Write(pngData); err != nil {
+		capturedPNG.Close()
+		return nil, fmt.Errorf("write captured PNG: %w", err)
+	}
+	if err := capturedPNG.Close(); err != nil {
+		return nil, fmt.Errorf("close captured PNG: %w", err)
+	}
+
+	// Evaluate image similarity.
+	res, err := eval.Compare(imgPath, capturedPNGName, threshold, verbose)
+	if err != nil {
+		return nil, fmt.Errorf("evaluate: %w", err)
+	}
+
 	return &testResult{
-		Config: cfg,
-		Score:  score,
-		Passed: score >= threshold,
+		Config:  cfg,
+		Score:   res.Score,
+		Passed:  res.Passed,
+		Details: res.Details,
 	}, nil
 }
 
