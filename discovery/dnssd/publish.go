@@ -10,6 +10,8 @@ package dnssd
 
 import (
 	"context"
+	"net/netip"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +19,8 @@ import (
 	"github.com/OpenPrinting/go-avahi"
 	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/log"
+	"github.com/OpenPrinting/go-mfp/transport/urlcache"
+	"github.com/OpenPrinting/go-mfp/util/generic"
 )
 
 // Publisher publishes (advertises) a [discovery.DNSSDDevice]
@@ -35,6 +39,9 @@ func NewPublisher(ctx context.Context, dev *discovery.DNSSDDevice) *Publisher {
 	services := make([]*avahi.Service, 0, len(dev.Services))
 	for _, dnssdsvc := range dev.Services {
 		for _, svctype := range dnssdsvc.Types {
+			endpoints := serviceEndpoints(svctype,
+				dnssdsvc.Endpoints)
+
 			svc := &avahi.Service{
 				IfIdx:        avahi.IfIndexUnspec,
 				Flags:        0,
@@ -43,7 +50,7 @@ func NewPublisher(ctx context.Context, dev *discovery.DNSSDDevice) *Publisher {
 				InstanceName: dev.Instance,
 				Domain:       "",
 				Hostnames:    nil,
-				Endpoints:    nil,
+				Endpoints:    endpoints,
 				Txt:          dnssdsvc.TXT,
 			}
 			services = append(services, svc)
@@ -118,4 +125,53 @@ func (pub *Publisher) proc() {
 		case <-time.After(avahiClientRestartInterval):
 		}
 	}
+}
+
+// serviceEndpoints returns avahi.Service.Endpoints based on
+// service type and discovery.DNSService.Endpoints
+func serviceEndpoints(svctype string, endpoints []string) []netip.AddrPort {
+	// Setup filtering criteria
+	wantHTTP := false
+	switch svctype {
+	case "_ipp._tcp", "_ipps._tcp", "_uscan._tcp", "_uscans._tcp":
+		wantHTTP = true
+	}
+
+	wantTLS := false
+	switch svctype {
+	case "_ipps._tcp", "_uscans._tcp":
+		wantTLS = true
+	}
+
+	// Extract addresses of matched URLs
+	addresses := generic.NewSet[netip.AddrPort]()
+	for _, ep := range endpoints {
+		u := urlcache.New(ep)
+
+		if u.IsHTTP() == wantHTTP && u.IsTLS() == wantTLS {
+			addr := u.IPAddress()
+			if addr.IsValid() {
+				addresses.Add(addr)
+			}
+		}
+	}
+
+	// Sort addresses
+	addressesSorted := make([]netip.AddrPort, 0, addresses.Count())
+
+	addresses.ForEach(func(addr netip.AddrPort) {
+		addressesSorted = append(addressesSorted, addr)
+	})
+
+	sort.Slice(addressesSorted, func(i, j int) bool {
+		a1 := addressesSorted[i]
+		a2 := addressesSorted[j]
+
+		if a1.Addr() == a2.Addr() {
+			return a1.Port() < a2.Port()
+		}
+		return a1.Addr().Less(a2.Addr())
+	})
+
+	return addressesSorted
 }
