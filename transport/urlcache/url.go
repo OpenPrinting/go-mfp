@@ -218,6 +218,34 @@ func (u URL) WithHostname(newHostname string) URL {
 	return New(parsed.String())
 }
 
+// WithPortNum replaces Port part of the URL.
+//
+// If newPortNum <= 0, port will be removed. Otherwise,
+// it will be set, as specified.
+//
+// Invalid or non-TCP URLs returned unchanged.
+func (u URL) WithPortNum(newPortNum int) URL {
+	cached := lookup(u)
+	if !cached.IsTCP() {
+		return u
+	}
+
+	parsed := *cached.parsed
+	host := u.Hostname()
+	if newPortNum <= 0 {
+		if strings.IndexByte(host, ':') >= 0 {
+			parsed.Host = "[" + host + "]"
+		} else {
+			parsed.Host = host
+		}
+	} else {
+		port := strconv.Itoa(newPortNum)
+		parsed.Host = net.JoinHostPort(host, port)
+	}
+
+	return New(parsed.String())
+}
+
 // IPAddress returns URL's IP address.
 // It doesn't do any name resolution, URL must contain literal IP address.
 //

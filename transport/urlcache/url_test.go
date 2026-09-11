@@ -162,6 +162,48 @@ func TestURLWithHostname(t *testing.T) {
 	}
 }
 
+// TestURLWithPortNum tests URL.WithPortNum
+func TestURLWithPortNum(t *testing.T) {
+	type testData struct {
+		u    URL
+		port int
+		out  URL
+	}
+
+	tests := []testData{
+		// Symbolic URLs
+		{"http://example.com", 1234, "http://example.com:1234"},
+		{"http://example.com", 80, "http://example.com:80"},
+		{"http://example.com:8888", 1234, "http://example.com:1234"},
+		{"http://example.com:8888", 80, "http://example.com:80"},
+		{"http://example.com:8888", 0, "http://example.com"},
+
+		// IP4 literal
+		{"http://192.168.0.1", 1234, "http://192.168.0.1:1234"},
+		{"http://192.168.0.1:80", 1234, "http://192.168.0.1:1234"},
+		{"http://192.168.0.1:80", 0, "http://192.168.0.1"},
+
+		// IP6 literal
+		{"http://[::1]", 1234, "http://[::1]:1234"},
+		{"http://[::1]:80", 1234, "http://[::1]:1234"},
+		{"http://[::1]:80", 0, "http://[::1]"},
+
+		// Invalid or non-TCP URL
+		{"invalid URL", 80, "invalid URL"},
+		{"unix:/path", 80, "unix:/path"},
+	}
+
+	for _, test := range tests {
+		out := test.u.WithPortNum(test.port)
+		if out != test.out {
+			t.Errorf("%q: URL.WithPortNum(%v) failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n",
+				test.u, test.port, test.out, out)
+		}
+	}
+}
+
 // TestURLHostPortName tests URL.Hostname and URL.Portname
 func TestURLHostPortName(t *testing.T) {
 	type testData struct {
