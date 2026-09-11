@@ -25,6 +25,11 @@ type cachedURL struct {
 	err    error
 }
 
+// Valid reports if cachedURL is valid
+func (cached *cachedURL) Valid() bool {
+	return cached.err == nil
+}
+
 // IsTCP reports if cachedURL uses TCP-based transport.
 func (cached *cachedURL) IsTCP() bool {
 	if cached.err == nil {

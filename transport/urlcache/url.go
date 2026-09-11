@@ -26,7 +26,7 @@ func New(s string) URL {
 
 // Valid reports if URL is valid.
 func (u URL) Valid() bool {
-	return u.Err() == nil
+	return lookup(u).Valid()
 }
 
 // Err returns parse error for invalid URL or nil if URL is valid.
@@ -38,7 +38,7 @@ func (u URL) Err() error {
 // For invalid URLs it returns "".
 func (u URL) Scheme() string {
 	cached := lookup(u)
-	if cached.err != nil {
+	if !cached.Valid() {
 		return ""
 	}
 	return cached.parsed.Scheme
@@ -52,7 +52,7 @@ func (u URL) Scheme() string {
 // For invalid URLs it returns "".
 func (u URL) Hostname() string {
 	cached := lookup(u)
-	if cached.err != nil {
+	if !cached.Valid() {
 		return ""
 	}
 
@@ -62,7 +62,7 @@ func (u URL) Hostname() string {
 // Portname returns Portname of the URL.
 func (u URL) Portname() string {
 	cached := lookup(u)
-	if cached.err != nil {
+	if !cached.Valid() {
 		return ""
 	}
 
@@ -127,7 +127,7 @@ func (u URL) DefaultPort() int {
 // Invalid URLs returned unmodified
 func (u URL) Canonical() URL {
 	cached := lookup(u)
-	if cached.err != nil {
+	if !cached.Valid() {
 		return u
 	}
 
