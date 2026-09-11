@@ -191,6 +191,33 @@ func (u URL) Canonical() URL {
 	return New(parsed.String())
 }
 
+// WithHostname replaces Hostname part of the URL.
+//
+// Host MUST be valid hostname. IPv6 literals MUST NOT
+// be enclosed into square braces.
+//
+// Invalid or non-TCP URLs returned unchanged.
+func (u URL) WithHostname(newHostname string) URL {
+	cached := lookup(u)
+	if !cached.IsTCP() {
+		return u
+	}
+
+	parsed := *cached.parsed
+	_, port, err := net.SplitHostPort(parsed.Host)
+	if err != nil {
+		if strings.IndexByte(newHostname, ':') >= 0 {
+			parsed.Host = "[" + newHostname + "]"
+		} else {
+			parsed.Host = newHostname
+		}
+	} else {
+		parsed.Host = net.JoinHostPort(newHostname, port)
+	}
+
+	return New(parsed.String())
+}
+
 // IPAddress returns URL's IP address.
 // It doesn't do any name resolution, URL must contain literal IP address.
 //
@@ -198,7 +225,7 @@ func (u URL) Canonical() URL {
 // it returns a zero netip.AddrPort
 func (u URL) IPAddress() netip.AddrPort {
 	cached := lookup(u)
-	if cached.err != nil {
+	if !cached.IsTCP() {
 		return netip.AddrPort{}
 	}
 
@@ -218,27 +245,15 @@ func (u URL) IPAddress() netip.AddrPort {
 
 // IsTCP reports if URL uses TCP-based transport.
 func (u URL) IsTCP() bool {
-	switch strings.ToLower(u.Scheme()) {
-	case "http", "https", "ipp", "ipps", "lpd", "socket":
-		return true
-	}
-	return false
+	return lookup(u).IsTCP()
 }
 
 // IsHTTP reports if URL uses HTTP or HTTPS - based transport.
 func (u URL) IsHTTP() bool {
-	switch strings.ToLower(u.Scheme()) {
-	case "http", "https", "ipp", "ipps":
-		return true
-	}
-	return false
+	return lookup(u).IsHTTP()
 }
 
 // IsTLS reports if URL uses TLS encryption.
 func (u URL) IsTLS() bool {
-	switch strings.ToLower(u.Scheme()) {
-	case "https", "ipps":
-		return true
-	}
-	return false
+	return lookup(u).IsTLS()
 }

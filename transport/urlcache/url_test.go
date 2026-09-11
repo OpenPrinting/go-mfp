@@ -112,6 +112,56 @@ func TestURLCanonical(t *testing.T) {
 	}
 }
 
+// TestURLWithHostname tests URL.WithHostname
+func TestURLWithHostname(t *testing.T) {
+	type testData struct {
+		u    URL
+		host string
+		out  URL
+	}
+
+	tests := []testData{
+		// Replace name with name. Path is preserved.
+		{"http://example.com", "localhost", "http://localhost"},
+		{"http://example.com/", "localhost", "http://localhost/"},
+
+		// Replace name with name. Port is preserved.
+		{"http://example.com:80", "localhost", "http://localhost:80"},
+
+		// Name vs IP4 literal
+		{"http://example.com", "127.0.0.1", "http://127.0.0.1"},
+		{"http://example.com:8080", "127.0.0.1", "http://127.0.0.1:8080"},
+		{"http://127.0.0.1", "example.com", "http://example.com"},
+		{"http://127.0.0.1:8080", "example.com", "http://example.com:8080"},
+
+		// Name vs IP6 literal
+		{"http://example.com", "::1", "http://[::1]"},
+		{"http://example.com:80", "::1", "http://[::1]:80"},
+		{"http://[::1]", "example.com", "http://example.com"},
+		{"http://[::1]:80", "example.com", "http://example.com:80"},
+
+		// IP4 vs IP6 literal
+		{"http://127.0.0.1", "::1", "http://[::1]"},
+		{"http://127.0.0.1:80", "::1", "http://[::1]:80"},
+		{"http://[::1]", "127.0.0.1", "http://127.0.0.1"},
+		{"http://[::1]:80", "127.0.0.1", "http://127.0.0.1:80"},
+
+		// Invalid or non-TCP URL
+		{"invalid URL", "localhost", "invalid URL"},
+		{"unix:/path", "localhost", "unix:/path"},
+	}
+
+	for _, test := range tests {
+		out := test.u.WithHostname(test.host)
+		if out != test.out {
+			t.Errorf("%q: URL.WithHostname(%q) failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n",
+				test.u, test.host, test.out, out)
+		}
+	}
+}
+
 // TestURLHostPortName tests URL.Hostname and URL.Portname
 func TestURLHostPortName(t *testing.T) {
 	type testData struct {

@@ -10,6 +10,7 @@ package urlcache
 
 import (
 	"net/url"
+	"strings"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
@@ -22,6 +23,39 @@ const CacheSize = 16384
 type cachedURL struct {
 	parsed *url.URL
 	err    error
+}
+
+// IsTCP reports if cachedURL uses TCP-based transport.
+func (cached *cachedURL) IsTCP() bool {
+	if cached.err == nil {
+		switch strings.ToLower(cached.parsed.Scheme) {
+		case "http", "https", "ipp", "ipps", "lpd", "socket":
+			return true
+		}
+	}
+	return false
+}
+
+// IsHTTP reports if cachedURL uses HTTP or HTTPS - based transport.
+func (cached *cachedURL) IsHTTP() bool {
+	if cached.err == nil {
+		switch strings.ToLower(cached.parsed.Scheme) {
+		case "http", "https", "ipp", "ipps":
+			return true
+		}
+	}
+	return false
+}
+
+// IsTLS reports if cachedURL uses TLS encryption.
+func (cached *cachedURL) IsTLS() bool {
+	if cached.err == nil {
+		switch strings.ToLower(cached.parsed.Scheme) {
+		case "https", "ipps":
+			return true
+		}
+	}
+	return false
 }
 
 // cache is a process-global cache of parsed URLs
