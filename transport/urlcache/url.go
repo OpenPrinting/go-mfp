@@ -11,7 +11,6 @@ package urlcache
 import (
 	"net"
 	"net/netip"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -99,19 +98,7 @@ func (u URL) PortNum() int {
 //   - lpd       - 515
 //   - socket    - 9100
 func (u URL) DefaultPort() int {
-	switch strings.ToLower(u.Scheme()) {
-	case "http":
-		return 80
-	case "https":
-		return 443
-	case "ipp", "ipps":
-		return 631
-	case "lpd":
-		return 515
-	case "socket":
-		return 9100
-	}
-	return 0
+	return lookup(u).DefaultPort()
 }
 
 // Canonical returns the canonical form of the URL:
@@ -126,69 +113,7 @@ func (u URL) DefaultPort() int {
 //
 // Invalid URLs returned unmodified
 func (u URL) Canonical() URL {
-	cached := lookup(u)
-	if !cached.Valid() {
-		return u
-	}
-
-	parsed := *cached.parsed
-
-	// Lowercase Scheme and Host
-	parsed.Scheme = strings.ToLower(parsed.Scheme)
-	parsed.Host = strings.ToLower(parsed.Host)
-
-	// Canonicalize literal IP addresses
-	if addr, err := netip.ParseAddr(parsed.Hostname()); err == nil {
-		addr = addr.Unmap()
-		host := addr.String()
-		if addr.Is6() {
-			host = "[" + host + "]"
-		}
-
-		port := u.Portname()
-		parsed.Host = host
-		if port != "" {
-			parsed.Host += ":" + port
-		}
-	}
-
-	// Strip leading 0s from the port
-	if port := u.Portname(); port != "" && port != "0" {
-		if port2 := strings.TrimLeft(port, "0"); port2 != port {
-			parsed.Host, _ = strings.CutSuffix(parsed.Host, port)
-			parsed.Host += port2
-		}
-	}
-
-	// Remove unneeded port
-	if host, port, err := net.SplitHostPort(parsed.Host); err == nil {
-		portnum, err := strconv.ParseUint(port, 10, 16)
-		if err == nil && portnum == uint64(u.DefaultPort()) {
-			parsed.Host = host
-		}
-	}
-
-	// Drop Host for unix scheme
-	if parsed.Scheme == "unix" {
-		parsed.Host = ""
-		parsed.OmitHost = true
-	}
-
-	// Normalize path
-	preserveSlash := strings.HasSuffix(parsed.Path, "/")
-
-	switch parsed.Path {
-	case "", ".":
-		parsed.Path = "/"
-
-	default:
-		parsed.Path = path.Clean(parsed.Path)
-		if preserveSlash && !strings.HasSuffix(parsed.Path, "/") {
-			parsed.Path += "/"
-		}
-	}
-
-	return New(parsed.String())
+	return lookup(u).canonical
 }
 
 // WithHostname replaces Hostname part of the URL.
