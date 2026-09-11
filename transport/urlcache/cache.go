@@ -9,11 +9,20 @@
 package urlcache
 
 import (
+	"net/url"
+
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 // CacheSize is the size of cache of parsed URLs
 const CacheSize = 16384
+
+// cachedURL represents an URL cache entry.
+// It contains the parsed URL.
+type cachedURL struct {
+	parsed *url.URL
+	err    error
+}
 
 // cache is a process-global cache of parsed URLs
 var cache *lru.Cache[URL, *cachedURL]

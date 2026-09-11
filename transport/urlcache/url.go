@@ -11,7 +11,6 @@ package urlcache
 import (
 	"net"
 	"net/netip"
-	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -19,12 +18,6 @@ import (
 
 // URL represents an URL string.
 type URL string
-
-// cachedURL represents a parsed URL.
-type cachedURL struct {
-	parsed *url.URL
-	err    error
-}
 
 // New returns a new URL, based on a given string.
 func New(s string) URL {
