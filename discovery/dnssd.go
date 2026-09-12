@@ -23,6 +23,25 @@ type DNSSDDevice struct {
 	Services []DNSSDService // Services behind the device
 }
 
+// Clone returns a deep copy of the [DNSSDDevice].
+func (dev *DNSSDDevice) Clone() *DNSSDDevice {
+	dev2 := &DNSSDDevice{
+		Instance: dev.Instance,
+		UUID:     dev.UUID,
+		Services: slices.Clone(dev.Services),
+	}
+
+	for i := range dev2.Services {
+		svc := &dev2.Services[i]
+		svc.Types = slices.Clone(svc.Types)
+		svc.SubTypes = slices.Clone(svc.SubTypes)
+		svc.TXT = slices.Clone(svc.TXT)
+		svc.Endpoints = slices.Clone(svc.Endpoints)
+	}
+
+	return dev2
+}
+
 // DNSSDService represents a single DNS-SD service (e.g.,
 // IPP print or eSCL scan part of device).
 type DNSSDService struct {
