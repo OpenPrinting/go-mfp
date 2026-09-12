@@ -15,12 +15,14 @@ import (
 	"net"
 
 	"github.com/OpenPrinting/go-mfp/abstract"
+	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
 	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
 	"github.com/OpenPrinting/go-mfp/transport"
+	"github.com/OpenPrinting/go-mfp/transport/urlcache"
 )
 
 // simulate runs scanner simulator.
@@ -109,6 +111,7 @@ func simulate(ctx context.Context, model *modeling.Model,
 		defer srvr.Close()
 
 		if dnssddev := model.GetDNSSDDevice(); dnssddev != nil {
+			dnssddev = dnssdDeviceRewrite(dnssddev, portnum)
 			pub := dnssd.NewPublisher(ctx, dnssddev)
 			defer pub.Close()
 		}
@@ -144,4 +147,34 @@ func simulate(ctx context.Context, model *modeling.Model,
 	log.Info(ctx, "Exiting...")
 
 	return nil
+}
+
+// dnssdDeviceRewrite rewrites DNSSDDevice to point to the simulator's
+// host and port.
+func dnssdDeviceRewrite(dnssddev *discovery.DNSSDDevice,
+	portnum int) *discovery.DNSSDDevice {
+
+	dnssddev = dnssddev.Clone()
+	for i := range dnssddev.Services {
+		svc := &dnssddev.Services[i]
+
+		out := 0
+		for _, ep := range svc.Endpoints {
+			u := urlcache.New(ep)
+			if u.IsHTTP() {
+				u = u.WithPortNum(uint16(portnum))
+				if u.IsIP4() {
+					u = u.WithHostname("127.0.0.1")
+				} else {
+					u = u.WithHostname("::1")
+				}
+
+				svc.Endpoints[out] = string(u)
+				out++
+			}
+		}
+		svc.Endpoints = svc.Endpoints[:out]
+	}
+
+	return dnssddev
 }
