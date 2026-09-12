@@ -73,7 +73,7 @@ func (u URL) Portname() string {
 //   - URL scheme doesn't support port
 //   - Port is present, but it is not numeric
 //   - URL is invalid
-func (u URL) PortNum() int {
+func (u URL) PortNum() uint16 {
 	p := u.Portname()
 	if p == "" {
 		return u.DefaultPort()
@@ -84,7 +84,7 @@ func (u URL) PortNum() int {
 		return 0
 	}
 
-	return int(n)
+	return uint16(n)
 }
 
 // DefaultPort returns the default port, based on the URL scheme.
@@ -97,7 +97,7 @@ func (u URL) PortNum() int {
 //   - ipp, ipps - 631
 //   - lpd       - 515
 //   - socket    - 9100
-func (u URL) DefaultPort() int {
+func (u URL) DefaultPort() uint16 {
 	return lookup(u).DefaultPort()
 }
 
@@ -149,7 +149,7 @@ func (u URL) WithHostname(newHostname string) URL {
 // it will be set, as specified.
 //
 // Invalid or non-TCP URLs returned unchanged.
-func (u URL) WithPortNum(newPortNum int) URL {
+func (u URL) WithPortNum(newPortNum uint16) URL {
 	cached := lookup(u)
 	if !cached.IsTCP() {
 		return u
@@ -157,16 +157,9 @@ func (u URL) WithPortNum(newPortNum int) URL {
 
 	parsed := *cached.parsed
 	host := u.Hostname()
-	if newPortNum <= 0 {
-		if strings.IndexByte(host, ':') >= 0 {
-			parsed.Host = "[" + host + "]"
-		} else {
-			parsed.Host = host
-		}
-	} else {
-		port := strconv.Itoa(newPortNum)
-		parsed.Host = net.JoinHostPort(host, port)
-	}
+
+	port := strconv.Itoa(int(newPortNum))
+	parsed.Host = net.JoinHostPort(host, port)
 
 	return New(parsed.String())
 }

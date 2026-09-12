@@ -132,7 +132,7 @@ func (cached *cachedURL) IsTLS() bool {
 // DefaultPort returns the default port, based on the URL scheme.
 // If URL is not valid or scheme doesn't imply the port, it
 // returns 0.
-func (cached *cachedURL) DefaultPort() int {
+func (cached *cachedURL) DefaultPort() uint16 {
 	if cached.IsTCP() {
 		switch strings.ToLower(cached.parsed.Scheme) {
 		case "http":

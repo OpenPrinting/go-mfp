@@ -166,7 +166,7 @@ func TestURLWithHostname(t *testing.T) {
 func TestURLWithPortNum(t *testing.T) {
 	type testData struct {
 		u    URL
-		port int
+		port uint16
 		out  URL
 	}
 
@@ -176,17 +176,17 @@ func TestURLWithPortNum(t *testing.T) {
 		{"http://example.com", 80, "http://example.com:80"},
 		{"http://example.com:8888", 1234, "http://example.com:1234"},
 		{"http://example.com:8888", 80, "http://example.com:80"},
-		{"http://example.com:8888", 0, "http://example.com"},
+		{"http://example.com:8888", 0, "http://example.com:0"},
 
 		// IP4 literal
 		{"http://192.168.0.1", 1234, "http://192.168.0.1:1234"},
 		{"http://192.168.0.1:80", 1234, "http://192.168.0.1:1234"},
-		{"http://192.168.0.1:80", 0, "http://192.168.0.1"},
+		{"http://192.168.0.1:80", 0, "http://192.168.0.1:0"},
 
 		// IP6 literal
 		{"http://[::1]", 1234, "http://[::1]:1234"},
 		{"http://[::1]:80", 1234, "http://[::1]:1234"},
-		{"http://[::1]:80", 0, "http://[::1]"},
+		{"http://[::1]:80", 0, "http://[::1]:0"},
 
 		// Invalid or non-TCP URL
 		{"invalid URL", 80, "invalid URL"},
