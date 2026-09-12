@@ -171,6 +171,27 @@ func (u URL) WithPortNum(newPortNum int) URL {
 	return New(parsed.String())
 }
 
+// WithoutPort removes Port part of the URL.
+//
+// Invalid or non-TCP URLs returned unchanged.
+func (u URL) WithoutPort() URL {
+	cached := lookup(u)
+	if !cached.IsTCP() {
+		return u
+	}
+
+	parsed := *cached.parsed
+	host := u.Hostname()
+
+	if strings.IndexByte(host, ':') >= 0 {
+		parsed.Host = "[" + host + "]"
+	} else {
+		parsed.Host = host
+	}
+
+	return New(parsed.String())
+}
+
 // IPAddress returns URL's IP address.
 // It doesn't do any name resolution, URL must contain literal IP address.
 //

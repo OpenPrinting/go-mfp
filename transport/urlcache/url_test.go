@@ -204,6 +204,32 @@ func TestURLWithPortNum(t *testing.T) {
 	}
 }
 
+// TestURLWithoutPort tests URL.WithoutPort
+func TestURLWithoutPort(t *testing.T) {
+	type testData struct {
+		u   URL
+		out URL
+	}
+
+	tests := []testData{
+		{"http://example.com:8888", "http://example.com"},
+		{"http://192.168.0.1:80", "http://192.168.0.1"},
+		{"http://[::1]:80", "http://[::1]"},
+		{"invalid URL", "invalid URL"},
+		{"unix:/path", "unix:/path"},
+	}
+
+	for _, test := range tests {
+		out := test.u.WithoutPort()
+		if out != test.out {
+			t.Errorf("%q: URL.WithoutPort() failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n",
+				test.u, test.out, out)
+		}
+	}
+}
+
 // TestURLHostPortName tests URL.Hostname and URL.Portname
 func TestURLHostPortName(t *testing.T) {
 	type testData struct {
