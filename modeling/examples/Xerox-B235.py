@@ -4441,6 +4441,8 @@ dnssd.device = dnssd.Device(
             ],
             endpoints = [
                 'ipp://192.168.1.100',
+                'ipps://192.168.1.100',
+                'ipp://[fe80::ce64:1aff:fe71:e2d0]',
                 'ipps://[fe80::ce64:1aff:fe71:e2d0]',
             ],
         ),
