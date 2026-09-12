@@ -215,6 +215,16 @@ func (u URL) IsTCP() bool {
 	return lookup(u).IsTCP()
 }
 
+// IsIP4 returns true, if URL has literal IP address and this address is IPv4.
+func (u URL) IsIP4() bool {
+	return u.IPAddress().Addr().Is4()
+}
+
+// IsIP6 returns true, if URL has literal IP address and this address is IPv6.
+func (u URL) IsIP6() bool {
+	return u.IPAddress().Addr().Is6()
+}
+
 // IsHTTP reports if URL uses HTTP or HTTPS - based transport.
 func (u URL) IsHTTP() bool {
 	return lookup(u).IsHTTP()

@@ -289,6 +289,42 @@ func TestURLIPAddress(t *testing.T) {
 	}
 }
 
+// TestURLIsIP46 tests URL.IsIP4 and URL.IsIP6 functions
+func TestURLIsIP46(t *testing.T) {
+	type testData struct {
+		u   URL
+		is4 bool
+		is6 bool
+	}
+
+	tests := []testData{
+		{"http://127.0.0.1", true, false},
+		{"http://127.0.0.1:80", true, false},
+		{"http://[::1]", false, true},
+		{"http://[::1]:80", false, true},
+		{"http://example.com", false, false},
+		{"invalid URL", false, false},
+		{"unix:/path", false, false},
+	}
+
+	for _, test := range tests {
+		is4 := test.u.IsIP4()
+		is6 := test.u.IsIP6()
+
+		if is4 != test.is4 {
+			t.Errorf("%q: URL.IsIP4 failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.is4, is4)
+		}
+
+		if is6 != test.is6 {
+			t.Errorf("%q: URL.IsIP6 failed:\n"+
+				"expected: %v\n"+
+				"present:  %v\n", test.u, test.is6, is6)
+		}
+	}
+}
+
 // TestURLIs tests URL.IsTCP, URL.IsHTTP, URL.IsTLS, ... methods
 func TestURLIs(t *testing.T) {
 	type testData struct {
