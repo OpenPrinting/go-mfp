@@ -9,6 +9,7 @@
 package log
 
 import (
+	"io"
 	"sync"
 )
 
@@ -134,6 +135,12 @@ func (lgr *Logger) Dump(prefix string, level Level, data []byte) {
 // interface to the Logger.
 func (lgr *Logger) Object(prefix string, level Level, indent int, obj Marshaler) *Logger {
 	return lgr.Begin(prefix).Object(level, indent, obj).Commit()
+}
+
+// Writer returns [io.Writer] that writes messages to the Logger.
+// It is suitable for using together with stdlib log.New function.
+func (lgr *Logger) Writer(prefix string, level Level) io.Writer {
+	return writer{lgr: lgr, level: level, prefix: prefix}
 }
 
 // send writes some lines to the Logger.
