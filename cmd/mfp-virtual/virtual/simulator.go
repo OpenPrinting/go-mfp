@@ -10,9 +10,11 @@ package virtual
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 
 	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/discovery"
@@ -104,9 +106,35 @@ func simulate(ctx context.Context, model *modeling.Model,
 			return err
 		}
 
-		srvr := transport.NewServer(ctx, nil, mux)
+		cert := model.GetTLSCertificate()
+		template := http.Server{
+			TLSConfig: &tls.Config{
+				// Allow TLS 1.2 and 1.3
+				MinVersion: tls.VersionTLS12,
+				MaxVersion: tls.VersionTLS13,
+
+				// Let clients use their proffered
+				// cipher suites
+				PreferServerCipherSuites: false,
+
+				// Don't require TLS authentication
+				ClientAuth: tls.NoClientCert,
+
+				// Allow common curves
+				CurvePreferences: []tls.CurveID{
+					tls.X25519,
+					tls.CurveP256,
+					tls.CurveP384,
+				},
+
+				// Specify the TLS certificate
+				Certificates: []tls.Certificate{cert},
+			},
+		}
+
+		srvr := transport.NewServer(ctx, &template, mux)
 		log.Info(ctx, "starting virtual MFP at http://%s", addr)
-		go srvr.Serve(ln)
+		go srvr.ServeAutoTLS(ln)
 
 		defer srvr.Close()
 
