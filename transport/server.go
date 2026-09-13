@@ -10,6 +10,7 @@ package transport
 
 import (
 	"context"
+	syslog "log"
 	"net"
 	"net/http"
 	"sync"
@@ -37,6 +38,7 @@ func NewServer(ctx context.Context,
 		template = &http.Server{}
 	}
 
+	errorLog := syslog.New(log.Writer(ctx, log.LevelWarning), "", 0)
 	srvr := &Server{
 		Server: http.Server{
 			Addr:                         template.Addr,
@@ -49,9 +51,9 @@ func NewServer(ctx context.Context,
 			MaxHeaderBytes:               template.MaxHeaderBytes,
 			TLSNextProto:                 template.TLSNextProto,
 			ConnState:                    template.ConnState,
-			ErrorLog:                     template.ErrorLog,
 			BaseContext:                  template.BaseContext,
 			ConnContext:                  template.ConnContext,
+			ErrorLog:                     errorLog,
 		},
 		ctx:     ctx,
 		handler: handler,
