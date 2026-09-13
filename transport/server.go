@@ -96,6 +96,27 @@ func (srvr *Server) ServeAutoTLS(l net.Listener) error {
 	errchan := make(chan error, 2)
 	var done sync.WaitGroup
 
+	// Go's http.Server lazily initializes its TLS and HTTP/2
+	// internals at the start of Server.Serve and Server.ServeTLS.
+	//
+	// If these functions are started concurrently, the server
+	// may end up with inconsistently initialized state.
+	//
+	// I ran into this on Go 1.24.2 and could not reproduce it
+	// on other versions, but that doesn't mean the problem
+	// doesn't exist elsewhere.
+	//
+	// Details (in Russian):
+	//
+	//   https://habr.com/ru/articles/906796/
+	//
+	// As a workaround, we first call ServeTLS with a Listener
+	// that fails immediately, causing the function to exit.
+	// Before hitting the Listener and returning, however, it
+	// performs the lazy initialization — which is exactly what
+	// we want.
+	srvr.ServeTLS(ErrListener{}, "", "")
+
 	done.Add(2)
 
 	go func() {
