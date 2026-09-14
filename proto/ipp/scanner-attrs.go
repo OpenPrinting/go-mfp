@@ -25,6 +25,19 @@ type InputScanRegion struct {
 	YOrigin    optional.Val[int] `ipp:"y-origin"`
 }
 
+// InputScanRegionsSupported represents the "input-scan-regions-supported"
+// printer description attribute. It defines the supported ranges
+// of the [InputScanRegion] members.
+//
+// All dimensions are in hundredths of a millimeter (1/100 mm).
+// See PWG5100.15.
+type InputScanRegionsSupported struct {
+	XDimension optional.Val[goipp.Range] `ipp:"x-dimension"`
+	XOrigin    optional.Val[goipp.Range] `ipp:"x-origin"`
+	YDimension optional.Val[goipp.Range] `ipp:"y-dimension"`
+	YOrigin    optional.Val[goipp.Range] `ipp:"y-origin"`
+}
+
 // OutputAttributes represents the "output-attributes" collection.
 //
 // It is used in scan job operation requests to specify per-job
@@ -93,6 +106,9 @@ type ScannerDescription struct {
 
 	// PWG5100.15: resolution
 	InputResolutionSupported []goipp.Resolution `ipp:"input-resolution-supported"`
+
+	// PWG5100.15: supported ranges of scan region
+	InputScanRegionsSupported optional.Val[InputScanRegionsSupported] `ipp:"input-scan-regions-supported"`
 
 	// PWG5100.15: sides (reuses KwSides values from RFC8011, 5.2.8)
 	InputSidesSupported []KwSides `ipp:"input-sides-supported"`
