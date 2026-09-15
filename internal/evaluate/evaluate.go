@@ -65,20 +65,16 @@ type Result struct {
 // Evaluator runs ImageComparator in a subprocess and provides
 // a simple Go API for image quality comparison.
 //
-// Create with [NewEvaluator] and release with [Evaluator.Close].
+// Create with [NewEvaluator] or [NewDefaultEvaluator] and release with [Evaluator.Close].
 type Evaluator struct {
-	comparatorPath string // path to enhanced_comparison.py
-	runnerPath     string // temp file containing the runner script
+	comparatorPath  string // path to enhanced_comparison.py
+	runnerPath      string // temp file containing the runner script
+	ownedComparator bool   // true when comparatorPath is a temp file we must remove on Close
 }
 
-// NewEvaluator creates a new Evaluator for the given enhanced_comparison.py
-// path. A small Python runner script is written to a temp file; it is removed
-// when [Evaluator.Close] is called.
-func NewEvaluator(comparatorPath string) (*Evaluator, error) {
-	if _, err := os.Stat(comparatorPath); err != nil {
-		return nil, fmt.Errorf("evaluate: %w", err)
-	}
-
+// newEvaluator is the shared constructor that writes the runner script and
+// returns a configured Evaluator. comparatorPath must already exist on disk.
+func newEvaluator(comparatorPath string) (*Evaluator, error) {
 	f, err := os.CreateTemp("", "mfp-evaluate-*.py")
 	if err != nil {
 		return nil, fmt.Errorf("evaluate: create runner: %w", err)
@@ -96,9 +92,47 @@ func NewEvaluator(comparatorPath string) (*Evaluator, error) {
 	}, nil
 }
 
-// Close removes the temporary runner script created by [NewEvaluator].
+// NewEvaluator creates a new Evaluator for the given enhanced_comparison.py
+// path. A small Python runner script is written to a temp file; it is removed
+// when [Evaluator.Close] is called.
+func NewEvaluator(comparatorPath string) (*Evaluator, error) {
+	if _, err := os.Stat(comparatorPath); err != nil {
+		return nil, fmt.Errorf("evaluate: %w", err)
+	}
+	return newEvaluator(comparatorPath)
+}
+
+// NewDefaultEvaluator creates an Evaluator from an in-memory script (typically
+// the embedded enhanced_comparison.py). The script is written to a temporary
+// file that is removed when [Evaluator.Close] is called.
+func NewDefaultEvaluator(script []byte) (*Evaluator, error) {
+	cf, err := os.CreateTemp("", "mfp-comparator-*.py")
+	if err != nil {
+		return nil, fmt.Errorf("evaluate: write comparator: %w", err)
+	}
+	comparatorPath := cf.Name()
+	if _, err := cf.Write(script); err != nil {
+		cf.Close()
+		os.Remove(comparatorPath)
+		return nil, fmt.Errorf("evaluate: write comparator: %w", err)
+	}
+	cf.Close()
+
+	e, err := newEvaluator(comparatorPath)
+	if err != nil {
+		os.Remove(comparatorPath)
+		return nil, err
+	}
+	e.ownedComparator = true
+	return e, nil
+}
+
+// Close removes the temporary files created by [NewEvaluator] or [NewDefaultEvaluator].
 func (e *Evaluator) Close() {
 	os.Remove(e.runnerPath)
+	if e.ownedComparator {
+		os.Remove(e.comparatorPath)
+	}
 }
 
 // Compare compares the captured image against the original and

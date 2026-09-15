@@ -73,7 +73,7 @@ var Command = argv.Command{
 		},
 		{
 			Name:      "--comparator",
-			Help:      "path to enhanced_comparison.py for image evaluation",
+			Help:      "path to enhanced_comparison.py (default: use embedded script)",
 			HelpArg:   "file",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
@@ -271,7 +271,8 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		timeout = d
 	}
 
-	// Set up image evaluator if --comparator is specified.
+	// Set up image evaluator. Use the embedded enhanced_comparison.py by
+	// default; --comparator overrides with an external file.
 	var eval *evaluate.Evaluator
 	if comparatorPath, ok := inv.Get("--comparator"); ok {
 		e, err := evaluate.NewEvaluator(comparatorPath)
@@ -280,6 +281,14 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		}
 		defer e.Close()
 		eval = e
+	} else {
+		e, err := evaluate.NewDefaultEvaluator(defaultComparatorScript)
+		if err != nil {
+			log.Info(ctx, "image evaluation disabled (embedded comparator unavailable): %v", err)
+		} else {
+			defer e.Close()
+			eval = e
+		}
 	}
 
 	keep := inv.Flag("--keep")
