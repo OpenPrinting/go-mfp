@@ -505,6 +505,8 @@ class COLLECTION:
         indented_parts = ",\n".join(parts)
         return f"ipp.COLLECTION(\n{indented_parts},\n{closing_spaces})"
 
-# attrs is the model-settable variable that defines the
-# IPP printer attributes
-attrs = None
+# The following parameters are defined by the device model:
+#   printer - attributes of IPP printer
+#   scanner - attributes of IPP scanner
+printer = None
+scanner = None

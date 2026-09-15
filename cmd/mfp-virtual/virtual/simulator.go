@@ -86,8 +86,8 @@ func simulate(ctx context.Context, model *modeling.Model,
 		runner.WSDPath = "/WSScan"
 	}
 
-	// Add IPP handler
-	if handler := model.NewIPPServer(); handler != nil {
+	// Add IPP-print handler
+	if handler := model.NewIPPPrinter(); handler != nil {
 		mux.Add("/ipp/print", handler)
 		runner.CUPSPort = portnum
 	}
