@@ -11,18 +11,12 @@ import (
 	"bytes"
 	"fmt"
 	"image/png"
-	"sync"
+	"os"
+	"os/exec"
 
+	"github.com/OpenPrinting/go-mfp/cmd/mfp-test/cupsraster"
 	"github.com/h2non/bimg"
-	"github.com/rusq/thermoprint/cupsraster"
-	"gopkg.in/gographics/imagick.v2/imagick"
 )
-
-var imagickOnce sync.Once
-
-func initImagick() {
-	imagickOnce.Do(imagick.Initialize)
-}
 
 // convertToPNG converts captured document bytes to a PNG image.
 // The format argument is the MIME type of the document (e.g. "image/pwg-raster").
@@ -59,32 +53,47 @@ func convertVipsToPNG(data []byte) ([]byte, error) {
 	return out, nil
 }
 
-// convertPSToPNG uses ImageMagick (via Ghostscript delegate) to convert
-// PostScript to PNG. Only the first page is returned.
-//
-// Note: on Ubuntu, /etc/ImageMagick-6/policy.xml blocks the PS and delegate
-// coders by default. PostScript conversion requires that the system policy
-// allows "read|write" on the PS coder and the Ghostscript delegate.
+// convertPSToPNG calls Ghostscript directly to convert the first page of a
+// PostScript document to PNG. Using gs avoids the ImageMagick dependency and
+// the Ubuntu policy.xml reconfiguration it requires.
 func convertPSToPNG(data []byte) ([]byte, error) {
-	initImagick()
-
-	mw := imagick.NewMagickWand()
-	defer mw.Destroy()
-
-	if err := mw.ReadImageBlob(data); err != nil {
-		return nil, fmt.Errorf("raster: imagick read PS: %w", err)
-	}
-	if !mw.SetIteratorIndex(0) {
-		return nil, fmt.Errorf("raster: imagick: no pages in document")
-	}
-	if err := mw.SetImageFormat("PNG"); err != nil {
-		return nil, fmt.Errorf("raster: imagick set format: %w", err)
-	}
-	out, err := mw.GetImageBlob()
+	// Write PostScript data to a temp input file.
+	inFile, err := os.CreateTemp("", "mfp-ps-*.ps")
 	if err != nil {
-		return nil, fmt.Errorf("raster: imagick get blob: %w", err)
+		return nil, fmt.Errorf("raster: gs: create input temp: %w", err)
 	}
-	return out, nil
+	defer os.Remove(inFile.Name())
+	if _, err := inFile.Write(data); err != nil {
+		inFile.Close()
+		return nil, fmt.Errorf("raster: gs: write PS: %w", err)
+	}
+	if err := inFile.Close(); err != nil {
+		return nil, fmt.Errorf("raster: gs: close input: %w", err)
+	}
+
+	// Create a temp file path for the PNG output.
+	outFile, err := os.CreateTemp("", "mfp-png-*.png")
+	if err != nil {
+		return nil, fmt.Errorf("raster: gs: create output temp: %w", err)
+	}
+	outPath := outFile.Name()
+	outFile.Close()
+	defer os.Remove(outPath)
+
+	// Run Ghostscript: render only the first page at 150 dpi.
+	cmd := exec.Command("gs",
+		"-dBATCH", "-dNOPAUSE", "-dQUIET",
+		"-sDEVICE=png16m",
+		"-r150",
+		"-dFirstPage=1", "-dLastPage=1",
+		"-sOutputFile="+outPath,
+		inFile.Name(),
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("raster: gs: %w: %s", err, out)
+	}
+
+	return os.ReadFile(outPath)
 }
 
 // convertRasterToPNG decodes a PWG Raster or Apple URF stream and encodes
