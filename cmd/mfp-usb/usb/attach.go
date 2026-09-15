@@ -17,7 +17,6 @@ import (
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
-	"github.com/godbus/dbus/v5"
 )
 
 const (
@@ -69,6 +68,7 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	if inputIP, ok := inv.Get("-i"); ok {
 		ip = inputIP
 	}
+	host, _, _ := net.SplitHostPort(ip)
 
 	busid := defaultBUSID
 	if inputBUSID, ok := inv.Get("-b"); ok {
@@ -85,18 +85,18 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 		}
 	}
 
-	sleepCh := make(chan bool, 1)
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- monitorSleepEvents(ctx, sleepCh)
-	}()
+	sm, err := newSleepMonitor(ctx)
+	if err != nil {
+		return err
+	}
+	defer sm.Close()
 
-	return runMonitor(ctx, sleepCh, errCh, ip, busid, isAvailable)
+	return runMonitor(ctx, sm.Chan(), ip, host, busid, isAvailable)
 }
 
 // runMonitor executes the main monitoring cycle for server availability
 // and sleep events, automatically attaching or detaching the device as needed.
-func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip, busid string, isAvailable bool) error {
+func runMonitor(ctx context.Context, sleepCh <-chan bool, ip, host, busid string, isAvailable bool) error {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -106,20 +106,16 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 		select {
 		case <-ctx.Done():
 			log.Info(ctx, "Shutting down...")
-			if isAvailable {
-				_ = detach(ctx)
-			}
+			_ = detach(ctx)
 			return nil
 
-		case errMsg := <-errCh:
-			if isAvailable {
-				log.Debug(ctx, "monitorSleepEvents Error")
-				_ = detach(ctx)
-			}
-			return errMsg
-
 		// Sleep event from D-Bus
-		case isSleep := <-sleepCh:
+		case isSleep, ok := <-sleepCh:
+			if !ok {
+				log.Error(ctx, "Sleep monitor connection lost")
+				_ = detach(ctx)
+				return fmt.Errorf("sleep monitor failed")
+			}
 			if isSleep {
 				log.Debug(ctx, "System is going to sleep. Detaching...")
 				if err := detach(ctx); err != nil {
@@ -147,7 +143,7 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 
 			if serverUp && !isAvailable {
 				log.Debug(ctx, "Server is up. Attempting to attach device...")
-				if err := attach(busid); err != nil {
+				if err := attach(host, busid); err != nil {
 					log.Debug(ctx, "Attach failed: %v", err)
 				} else {
 					isAvailable = true
@@ -164,58 +160,14 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, errCh <-chan error, ip
 	}
 }
 
-// monitorSleepEvents monitors system D-Bus for sleep/wake signals.
-// It sends true to sleepCh when the system is going to sleep,
-// and false when the system is waking up.
-func monitorSleepEvents(ctx context.Context, sleepCh chan<- bool) error {
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("context cancelled before D-Bus connection: %w", ctx.Err())
-	default:
-	}
-
-	conn, err := dbus.ConnectSystemBus()
-	if err != nil {
-		return fmt.Errorf("failed to connect to D-Bus: %w", err)
-	}
-	defer conn.Close()
-
-	err = conn.AddMatchSignal(
-		dbus.WithMatchInterface("org.freedesktop.login1.Manager"),
-		dbus.WithMatchMember("PrepareForSleep"),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to subscribe to D-Bus: %w", err)
-	}
-
-	dbusChan := make(chan *dbus.Signal, 10)
-	conn.Signal(dbusChan)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case signal := <-dbusChan:
-			if signal.Name == "org.freedesktop.login1.Manager.PrepareForSleep" && len(signal.Body) > 0 {
-				isSleeping := signal.Body[0].(bool)
-
-				select {
-				case sleepCh <- isSleeping:
-				default:
-				}
-			}
-		}
-	}
-}
-
 // attach loads the vhci_hcd kernel module and attaches the virtual USB device
 // using the specified bus ID.
-func attach(busID string) error {
+func attach(ip, busID string) error {
 	if out, err := exec.Command("modprobe", "vhci_hcd").CombinedOutput(); err != nil {
 		return fmt.Errorf("modprobe error: %w, output: %s", err, string(out))
 	}
 
-	cmd := exec.Command("usbip", "attach", "-r", "localhost", "-b", busID)
+	cmd := exec.Command("usbip", "attach", "-r", ip, "-b", busID)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("usbip attach error: %w, output: %s", err, string(out))
 	}
