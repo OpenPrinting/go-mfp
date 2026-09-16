@@ -41,6 +41,7 @@ func (bk *backendConsole) Send(levels []Level, lines [][]byte) {
 		line := lines[i]
 
 		var color string
+		var restore string
 		if atomic.LoadInt32(&bk.color) > 0 {
 			switch level {
 			case LevelTrace:
@@ -56,11 +57,12 @@ func (bk *backendConsole) Send(levels []Level, lines [][]byte) {
 			case LevelError, LevelFatal:
 				color = "\033[1;37;41m" // White on Red
 			}
+			restore = "\033[0m"
 		}
 
 		buf.Write([]byte(color))
 		buf.Write(line)
-		buf.Write([]byte("\033[0m" + "\n"))
+		buf.Write([]byte(restore + "\n"))
 	}
 
 	// Now send buffer to the os.Stdout
