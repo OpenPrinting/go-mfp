@@ -21,11 +21,12 @@ func fromAbstractScannerDescription(
 	caps *abstract.ScannerCapabilities) ScannerDescription {
 
 	sd := ScannerDescription{
-		InputSourceSupported:     abstractInputSources(caps),
-		InputColorModeSupported:  abstractInputColorModes(caps),
-		InputResolutionSupported: abstractInputResolutions(caps),
-		InputSidesSupported:      abstractInputSides(caps),
-		InputAttributesSupported: abstractInputAttributesSupported(caps),
+		InputSourceSupported:      abstractInputSources(caps),
+		InputColorModeSupported:   abstractInputColorModes(caps),
+		InputResolutionSupported:  abstractInputResolutions(caps),
+		InputScanRegionsSupported: abstractInputScanRegions(caps),
+		InputSidesSupported:       abstractInputSides(caps),
+		InputAttributesSupported:  abstractInputAttributesSupported(caps),
 	}
 
 	if req := caps.DefaultRequest(); req != nil {
@@ -33,6 +34,53 @@ func fromAbstractScannerDescription(
 	}
 
 	return sd
+}
+
+// abstractInputScanRegions returns InputScanRegionsSupported value
+// derived from the abstract scanner capabilities.
+//
+// IPP doesn't define per-input geometry, so ranges are merged
+// across all inputs.
+func abstractInputScanRegions(
+	caps *abstract.ScannerCapabilities) optional.Val[InputScanRegionsSupported] {
+
+	inputs := abstractAllInputs(caps)
+	if len(inputs) == 0 {
+		return nil
+	}
+
+	minWid, maxWid := inputs[0].MinWidth, inputs[0].MaxWidth
+	minHei, maxHei := inputs[0].MinHeight, inputs[0].MaxHeight
+
+	for _, inp := range inputs[1:] {
+		minWid = min(minWid, inp.MinWidth)
+		maxWid = max(maxWid, inp.MaxWidth)
+		minHei = min(minHei, inp.MinHeight)
+		maxHei = max(maxHei, inp.MaxHeight)
+	}
+
+	// Zero MaxXOffset/MaxYOffset means "unset". In this case,
+	// offset is only limited by the max scan width/height.
+	maxXOff, maxYOff := maxWid-minWid, maxHei-minHei
+	for _, inp := range inputs {
+		if inp.MaxXOffset != 0 {
+			maxXOff = min(maxXOff, inp.MaxXOffset)
+		}
+		if inp.MaxYOffset != 0 {
+			maxYOff = min(maxYOff, inp.MaxYOffset)
+		}
+	}
+
+	return optional.New(InputScanRegionsSupported{
+		XDimension: optional.New(goipp.Range{
+			Lower: int(minWid), Upper: int(maxWid)}),
+		YDimension: optional.New(goipp.Range{
+			Lower: int(minHei), Upper: int(maxHei)}),
+		XOrigin: optional.New(goipp.Range{
+			Lower: 0, Upper: int(maxXOff)}),
+		YOrigin: optional.New(goipp.Range{
+			Lower: 0, Upper: int(maxYOff)}),
+	})
 }
 
 // abstractInputSources returns InputSourceSupported values derived
