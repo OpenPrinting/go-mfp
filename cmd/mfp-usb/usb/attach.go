@@ -96,7 +96,7 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 
 // runMonitor executes the main monitoring cycle for server availability
 // and sleep events, automatically attaching or detaching the device as needed.
-func runMonitor(ctx context.Context, sleepCh <-chan bool, ip, host, busid string, isAvailable bool) error {
+func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, busid string, isAvailable bool) error {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -110,13 +110,13 @@ func runMonitor(ctx context.Context, sleepCh <-chan bool, ip, host, busid string
 			return nil
 
 		// Sleep event from D-Bus
-		case isSleep, ok := <-sleepCh:
-			if !ok {
-				log.Error(ctx, "Sleep monitor connection lost")
+		case signal := <-sleepCh:
+			if signal.err != nil {
+				log.Error(ctx, "Sleep monitor connection lost: %v", signal.err)
 				_ = detach(ctx)
-				return fmt.Errorf("sleep monitor failed")
+				return fmt.Errorf("sleep monitor failed %w", signal.err)
 			}
-			if isSleep {
+			if signal.isSleep {
 				log.Debug(ctx, "System is going to sleep. Detaching...")
 				if err := detach(ctx); err != nil {
 					log.Debug(ctx, "Warning: failed to detach: %v", err)
