@@ -218,6 +218,7 @@ dnssd.device = dnssd.Device(
                 'DUUID=f38bbb71-3efa-4c8e-86d6-2b067a94cef1',
                 'TLS=1.2',
                 'ty=OpenPrinting Virtual IPP Scanner',
+                "rs=ipp/scan",
             ],
             endpoints = [
                 'ipp://192.168.1.100',
