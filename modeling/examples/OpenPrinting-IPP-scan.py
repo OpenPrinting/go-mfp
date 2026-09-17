@@ -123,7 +123,7 @@ ipp.scanner = ipp.COLLECTION(
         ipp.KEYWORD('platen'),
     ],
     ipp_features_supported = [
-        ipp.KEYWORD('none'),
+        ipp.KEYWORD('scan'),
     ],
     ipp_versions_supported = [
         ipp.KEYWORD('2.0'),
@@ -152,6 +152,7 @@ ipp.scanner = ipp.COLLECTION(
     ],
     printer_device_id = ipp.TEXT('MFG:OpenPrinting;MDL:Virtual IPP Scanner;CLS:SCANNER;CMD:JPEG,PNG'),
     printer_geo_location = ipp.UNKNOWN(),
+    printer_is_accepting_jobs = ipp.BOOLEAN(True),
     printer_get_attributes_supported = [
         ipp.KEYWORD('charset-configured'),
         ipp.KEYWORD('charset-supported'),
@@ -195,6 +196,9 @@ ipp.scanner = ipp.COLLECTION(
     printer_name = ipp.NAME('VIPP123456789'),
     printer_organization = ipp.TEXT(''),
     printer_organizational_unit = ipp.TEXT(''),
+    printer_state = ipp.ENUM(3),
+    printer_state_reasons = ipp.KEYWORD('none'),
+    printer_uuid = ipp.URI('urn:uuid:f38bbb71-3efa-4c8e-86d6-2b067a94cef1'),
     which_jobs_supported = [
         ipp.KEYWORD('completed'),
         ipp.KEYWORD('not-completed'),
