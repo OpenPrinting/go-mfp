@@ -38,23 +38,26 @@ func simulate(ctx context.Context, model *modeling.Model,
 	mux := transport.NewPathMux()
 	runner := env.Runner{}
 
-	// Add eSCL handler
-	if esclcaps := model.GetESCLScanCaps(); esclcaps != nil {
-		s := &abstract.VirtualScanner{
-			ScanCaps: esclcaps.ToAbstract(),
-			Resolution: abstract.Resolution{
-				XResolution: 600,
-				YResolution: 600,
-			},
-			PlatenImage: testutils.Images.PNG5100x7016,
-			ADFImages: [][]byte{
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-			},
-		}
+	// Virtual scanner template, common for all protocols
+	templateScanner := abstract.VirtualScanner{
+		Resolution: abstract.Resolution{
+			XResolution: 600,
+			YResolution: 600,
+		},
+		PlatenImage: testutils.Images.PNG5100x7016,
+		ADFImages: [][]byte{
+			testutils.Images.PNG5100x7016,
+			testutils.Images.PNG5100x7016,
+			testutils.Images.PNG5100x7016,
+		},
+	}
 
-		handler := model.NewESCLServer(s)
+	// Add eSCL scanner
+	if esclcaps := model.GetESCLScanCaps(); esclcaps != nil {
+		s := templateScanner
+		s.ScanCaps = esclcaps.ToAbstract()
+
+		handler := model.NewESCLServer(&s)
 		mux.Add("/eSCL", handler)
 
 		runner.ESCLName = "Virtual MFP Scanner"
@@ -62,23 +65,12 @@ func simulate(ctx context.Context, model *modeling.Model,
 		runner.ESCLPath = "/eSCL"
 	}
 
-	// Add WS-Scan handler
+	// Add WS-Scan scanner
 	if wsdcaps := model.GetWSDScanCaps(); wsdcaps != nil {
-		s := &abstract.VirtualScanner{
-			ScanCaps: wsdcaps.ToAbstract(),
-			Resolution: abstract.Resolution{
-				XResolution: 600,
-				YResolution: 600,
-			},
-			PlatenImage: testutils.Images.PNG5100x7016,
-			ADFImages: [][]byte{
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-			},
-		}
+		s := templateScanner
+		s.ScanCaps = wsdcaps.ToAbstract()
 
-		handler := model.NewWSDServer(s)
+		handler := model.NewWSDServer(&s)
 		mux.Add("/WSScan", handler)
 
 		runner.WSDName = "Virtual MFP Scanner"
@@ -86,7 +78,16 @@ func simulate(ctx context.Context, model *modeling.Model,
 		runner.WSDPath = "/WSScan"
 	}
 
-	// Add IPP-print handler
+	// Add IPP scanner
+	if ippcaps := model.GetIPPScannerAttrs(); ippcaps != nil {
+		s := templateScanner
+		s.ScanCaps = ippcaps.ToAbstractScannerCapabilities()
+
+		handler := model.NewIPPScanner(&s)
+		mux.Add("/ipp/scan", handler)
+	}
+
+	// Add IPP printer
 	if handler := model.NewIPPPrinter(); handler != nil {
 		mux.Add("/ipp/print", handler)
 		runner.CUPSPort = portnum
