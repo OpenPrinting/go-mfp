@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -82,10 +82,10 @@ func (e *ErrIPP) Encode() *goipp.Message {
 	msg.Operation.Add(goipp.MakeAttribute("attributes-charset",
 		goipp.TagCharset, goipp.String("utf-8")))
 	msg.Operation.Add(goipp.MakeAttribute("attributes-natural-language",
-		goipp.TagLanguage, goipp.String("en-US")))
+		goipp.TagLanguage, goipp.String(DefaultNaturalLanguage)))
 
 	if e.StatusMessage != "" {
-		msg.Operation.Add(goipp.MakeAttribute("status-message,",
+		msg.Operation.Add(goipp.MakeAttribute("status-message",
 			goipp.TagText, goipp.String(e.StatusMessage)))
 	}
 
