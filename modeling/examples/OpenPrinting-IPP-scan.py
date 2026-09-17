@@ -108,6 +108,12 @@ ipp.scanner = ipp.COLLECTION(
         ipp.RESOLUTION(600, 600, 'dpi'),
         ipp.RESOLUTION(1200, 1200, 'dpi'),
     ],
+    input_scan_regions_supported = ipp.COLLECTION(
+        x_origin = ipp.RANGE(0,10000),
+        y_origin = ipp.RANGE(0,10000),
+        x_dimension = ipp.RANGE(0,21000),
+        y_dimension = ipp.RANGE(0,29700),
+    ),
     input_sides_supported = [
         ipp.KEYWORD('one-sided'),
         ipp.KEYWORD('two-sided-long-edge'),
@@ -195,3 +201,31 @@ ipp.scanner = ipp.COLLECTION(
     ],
 )
 
+# DNS-SD parameters
+dnssd.device = dnssd.Device(
+    instance = 'OpenPrinting Virtual IPP Scanner',
+    UUID = UUID('f38bbb71-3efa-4c8e-86d6-2b067a94cef1'),
+    services = [
+               dnssd.Service(
+            types = [
+                '_ipp._tcp',
+                '_ipps._tcp',
+            ],
+            TXT = [
+                'txtvers=1',
+                'air=none',
+                'UUID=f38bbb71-3efa-4c8e-86d6-2b067a94cef1',
+                'DUUID=f38bbb71-3efa-4c8e-86d6-2b067a94cef1',
+                'TLS=1.2',
+                'ty=OpenPrinting Virtual IPP Scanner',
+            ],
+            endpoints = [
+                'ipp://192.168.1.100',
+                'ipps://192.168.1.100',
+                'ipp://[fe80::ce64:1aff:fe71:e2d0]',
+                'ipps://[fe80::ce64:1aff:fe71:e2d0]',
+            ],
+        ),
+
+    ],
+)
