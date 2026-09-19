@@ -9,6 +9,7 @@ package usb
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -17,8 +18,8 @@ import (
 type sleepMonitor struct {
 	conn     *dbus.Conn        // Active D-Bus system connection.
 	ch       chan sleepSignal  // Output channel for sleep/wake events and errors
-	doneCh   chan struct{}     // Сhan for synchronization
-	dbusChan chan *dbus.Signal // Chan for D-Bus signals
+	wg       sync.WaitGroup    // Waits for the background goroutine to terminate.
+	dbusChan chan *dbus.Signal // input channel receiving raw signals f
 }
 
 type sleepSignal struct {
@@ -49,11 +50,11 @@ func newSleepMonitor(ctx context.Context) (*sleepMonitor, error) {
 	sm := &sleepMonitor{
 		conn:     conn,
 		ch:       make(chan sleepSignal, 1),
-		doneCh:   make(chan struct{}),
 		dbusChan: dbusChan,
 	}
 
 	// Start the background goroutine
+	sm.wg.Add(1)
 	go sm.run(ctx)
 
 	return sm, nil
@@ -61,7 +62,7 @@ func newSleepMonitor(ctx context.Context) (*sleepMonitor, error) {
 
 // run listens for D-Bus signals and sends them to the event channel
 func (sm *sleepMonitor) run(ctx context.Context) {
-	defer close(sm.doneCh)
+	defer sm.wg.Done()
 	defer close(sm.ch)
 	for {
 		select {
@@ -91,19 +92,9 @@ func (sm *sleepMonitor) Chan() <-chan sleepSignal {
 
 // Close gracefully shuts down the sleep monitor and guarantees that the
 // background goroutine is completely terminated before returning.
-//
-// Exact sequence of events:
-//  1. sm.conn.Close() closes the underlying D-Bus socket connection
-//  2. The godbus library automatically closes the sm.dbusChan channel as a result
-//  3. The background run() goroutine, which is blocked reading from sm.dbusChan,
-//     wakes up and receives ok == false, indicating the channel is closed
-//  4. The run() goroutine exits its loop and executes its deferred functions,
-//     most importantly: defer close(sm.doneCh)
-//  5. The main thread, which is blocked waiting on <-sm.doneCh, is unblocked
-//     and the Close() method safely returns, preventing any goroutine leaks
 func (sm *sleepMonitor) Close() {
 
 	sm.conn.Close()
 
-	<-sm.doneCh
+	sm.wg.Wait()
 }
