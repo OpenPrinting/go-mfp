@@ -28,6 +28,7 @@ var (
 type ErrIPP struct {
 	Version       goipp.Version // IPP version
 	RequestID     uint32        // IPP Request ID
+	Op            goipp.Op      // IPP operation
 	Status        goipp.Status  // IPP status
 	StatusMessage string        // Optional error message
 }
@@ -41,6 +42,7 @@ func NewErrIPPFromMessage(rq *goipp.Message, code goipp.Status,
 	return &ErrIPP{
 		Version:       ver,
 		RequestID:     rq.RequestID,
+		Op:            goipp.Op(rq.Code),
 		Status:        code,
 		StatusMessage: fmt.Sprintf(format, args...),
 	}

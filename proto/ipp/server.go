@@ -59,8 +59,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 
 	// Dump request HTTP headers
 	dump, _ := httputil.DumpRequest(query.Request(), false)
-	log.Debug(ctx, "IPP request received:")
-	log.Debug(ctx, "%s", dump)
+	log.Debug(ctx, "IPP %s %s",
+		query.RequestMethod(), query.RequestURL())
+	log.Trace(ctx, "IPP request received:")
+	log.Trace(ctx, "%s", dump)
 
 	// Call the OnHTTPRequest hook
 	if s.options.Hooks.OnHTTPRequest != nil {
@@ -112,8 +114,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	// Log the IPP request
 	var buf bytes.Buffer
 	msg.Print(&buf, true)
-	log.Debug(ctx, "IPP request message:")
-	log.Debug(ctx, buf.String())
+	log.Debug(ctx, "IPP %s", goipp.Op(msg.Code))
+	log.Trace(ctx, "IPP request message:")
+	log.Trace(ctx, buf.String())
 
 	// Check IPP parameters
 	if msg.RequestID == 0 {
@@ -172,8 +175,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	// Log the response
 	buf.Reset()
 	rsp.Print(&buf, false)
-	log.Debug(ctx, "IPP response message:")
-	log.Debug(ctx, buf.String())
+	log.Debug(ctx, "IPP %s -- %s",
+		goipp.Op(msg.Code), goipp.Status(rsp.Code))
+	log.Trace(ctx, "IPP response message:")
+	log.Trace(ctx, buf.String())
 
 	// Send response
 	query.ResponseHeader().Set("Content-Type", "application/ipp")
@@ -229,8 +234,9 @@ func (s *Server) httpError(query *transport.ServerQuery, err error) {
 		ctx := query.RequestContext()
 
 		rsp.Print(&buf, false)
-		log.Debug(ctx, "IPP response message:")
-		log.Debug(ctx, buf.String())
+		log.Debug(ctx, "IPP %s -- %s", err.Op, err.Status)
+		log.Trace(ctx, "IPP response message:")
+		log.Trace(ctx, buf.String())
 
 		// Finish the HTTP query
 		query.ResponseHeader().Set("Content-Type", "application/ipp")
