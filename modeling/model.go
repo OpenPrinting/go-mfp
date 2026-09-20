@@ -32,6 +32,7 @@ type Model struct {
 
 	// Scanner and printer capabilities, protocol-specific
 	ippPrinterAttrs *ipp.PrinterAttributes
+	ippScannerAttrs *ipp.PrinterAttributes
 	esclScanCaps    *escl.ScannerCapabilities
 	wsdScanCaps     *wsscan.GetScannerElementsResponse
 
@@ -280,7 +281,12 @@ func (model *Model) Read(filename string, r io.Reader) error {
 		return err
 	}
 
-	err = model.ippLoad()
+	err = model.ippLoadPrinter()
+	if err != nil {
+		return err
+	}
+
+	err = model.ippLoadScanner()
 	if err != nil {
 		return err
 	}

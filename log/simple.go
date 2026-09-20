@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"runtime/debug"
 )
 
@@ -114,4 +115,11 @@ func Object(ctx context.Context, level Level, indent int,
 	obj Marshaler) context.Context {
 	CtxLogger(ctx).Object(CtxPrefix(ctx), level, indent, obj)
 	return ctx
+}
+
+// Writer returns [io.Writer] that writes messages to the Logger
+// associated with the Context.
+// It is suitable for using together with stdlib log.New function.
+func Writer(ctx context.Context, level Level) io.Writer {
+	return CtxLogger(ctx).Writer(CtxPrefix(ctx), level)
 }

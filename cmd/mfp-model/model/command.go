@@ -195,6 +195,17 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 			}
 		}
 
+		caps = model.GetIPPScannerAttrs()
+		if caps != nil {
+			errors := caps.Errors()
+			if errors != nil {
+				log.Warning(ctx, "ipp: scanner attributes decoded with warnings:")
+				for _, err := range errors {
+					log.Warning(ctx, "  %s", err)
+				}
+			}
+		}
+
 		return err
 	}
 

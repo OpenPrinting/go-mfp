@@ -149,7 +149,7 @@ func (printer *Printer) handleCreateJob(
 	return rsp.Encode(), nil, nil
 }
 
-// handleCreateJob handles Send-Document request.
+// handleSendDocument handles Send-Document request.
 func (printer *Printer) handleSendDocument(
 	ctx context.Context,
 	rq *SendDocumentRequest) (*goipp.Message, io.ReadCloser, error) {
@@ -251,6 +251,7 @@ func (printer *Printer) handleSendDocument(
 
 	// Generate response
 	rsp := &SendDocumentResponse{
+		ResponseHeader: rq.ResponseHeader(goipp.StatusOk),
 		Job: &JobDescriptionAndStatus{
 			JobDescriptionAttrs: JobDescriptionAttrs{
 				JobID:  j.JobID,

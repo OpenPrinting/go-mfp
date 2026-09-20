@@ -10,16 +10,21 @@ package virtual
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 
 	"github.com/OpenPrinting/go-mfp/abstract"
+	"github.com/OpenPrinting/go-mfp/discovery"
+	"github.com/OpenPrinting/go-mfp/discovery/dnssd"
 	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
 	"github.com/OpenPrinting/go-mfp/transport"
+	"github.com/OpenPrinting/go-mfp/transport/urlcache"
 )
 
 // simulate runs scanner simulator.
@@ -33,23 +38,26 @@ func simulate(ctx context.Context, model *modeling.Model,
 	mux := transport.NewPathMux()
 	runner := env.Runner{}
 
-	// Add eSCL handler
-	if esclcaps := model.GetESCLScanCaps(); esclcaps != nil {
-		s := &abstract.VirtualScanner{
-			ScanCaps: esclcaps.ToAbstract(),
-			Resolution: abstract.Resolution{
-				XResolution: 600,
-				YResolution: 600,
-			},
-			PlatenImage: testutils.Images.PNG5100x7016,
-			ADFImages: [][]byte{
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-			},
-		}
+	// Virtual scanner template, common for all protocols
+	templateScanner := abstract.VirtualScanner{
+		Resolution: abstract.Resolution{
+			XResolution: 600,
+			YResolution: 600,
+		},
+		PlatenImage: testutils.Images.PNG5100x7016,
+		ADFImages: [][]byte{
+			testutils.Images.PNG5100x7016,
+			testutils.Images.PNG5100x7016,
+			testutils.Images.PNG5100x7016,
+		},
+	}
 
-		handler := model.NewESCLServer(s)
+	// Add eSCL scanner
+	if esclcaps := model.GetESCLScanCaps(); esclcaps != nil {
+		s := templateScanner
+		s.ScanCaps = esclcaps.ToAbstract()
+
+		handler := model.NewESCLServer(&s)
 		mux.Add("/eSCL", handler)
 
 		runner.ESCLName = "Virtual MFP Scanner"
@@ -57,23 +65,12 @@ func simulate(ctx context.Context, model *modeling.Model,
 		runner.ESCLPath = "/eSCL"
 	}
 
-	// Add WS-Scan handler
+	// Add WS-Scan scanner
 	if wsdcaps := model.GetWSDScanCaps(); wsdcaps != nil {
-		s := &abstract.VirtualScanner{
-			ScanCaps: wsdcaps.ToAbstract(),
-			Resolution: abstract.Resolution{
-				XResolution: 600,
-				YResolution: 600,
-			},
-			PlatenImage: testutils.Images.PNG5100x7016,
-			ADFImages: [][]byte{
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-				testutils.Images.PNG5100x7016,
-			},
-		}
+		s := templateScanner
+		s.ScanCaps = wsdcaps.ToAbstract()
 
-		handler := model.NewWSDServer(s)
+		handler := model.NewWSDServer(&s)
 		mux.Add("/WSScan", handler)
 
 		runner.WSDName = "Virtual MFP Scanner"
@@ -81,8 +78,17 @@ func simulate(ctx context.Context, model *modeling.Model,
 		runner.WSDPath = "/WSScan"
 	}
 
-	// Add IPP handler
-	if handler := model.NewIPPServer(); handler != nil {
+	// Add IPP scanner
+	if ippcaps := model.GetIPPScannerAttrs(); ippcaps != nil {
+		s := templateScanner
+		s.ScanCaps = ippcaps.ToAbstractScannerCapabilities()
+
+		handler := model.NewIPPScanner(&s)
+		mux.Add("/ipp/scan", handler)
+	}
+
+	// Add IPP printer
+	if handler := model.NewIPPPrinter(); handler != nil {
 		mux.Add("/ipp/print", handler)
 		runner.CUPSPort = portnum
 	}
@@ -101,11 +107,43 @@ func simulate(ctx context.Context, model *modeling.Model,
 			return err
 		}
 
-		srvr := transport.NewServer(ctx, nil, mux)
+		cert := model.GetTLSCertificate()
+		template := http.Server{
+			TLSConfig: &tls.Config{
+				// Allow TLS 1.2 and 1.3
+				MinVersion: tls.VersionTLS12,
+				MaxVersion: tls.VersionTLS13,
+
+				// Let clients use their proffered
+				// cipher suites
+				PreferServerCipherSuites: false,
+
+				// Don't require TLS authentication
+				ClientAuth: tls.NoClientCert,
+
+				// Allow common curves
+				CurvePreferences: []tls.CurveID{
+					tls.X25519,
+					tls.CurveP256,
+					tls.CurveP384,
+				},
+
+				// Specify the TLS certificate
+				Certificates: []tls.Certificate{cert},
+			},
+		}
+
+		srvr := transport.NewServer(ctx, &template, mux)
 		log.Info(ctx, "starting virtual MFP at http://%s", addr)
-		go srvr.Serve(ln)
+		go srvr.ServeAutoTLS(ln)
 
 		defer srvr.Close()
+
+		if dnssddev := model.GetDNSSDDevice(); dnssddev != nil {
+			dnssddev = dnssdDeviceRewrite(dnssddev, portnum)
+			pub := dnssd.NewPublisher(ctx, dnssddev)
+			defer pub.Close()
+		}
 	} else {
 		desc := model.GetUSBDeviceDescriptor()
 		if desc == nil {
@@ -138,4 +176,34 @@ func simulate(ctx context.Context, model *modeling.Model,
 	log.Info(ctx, "Exiting...")
 
 	return nil
+}
+
+// dnssdDeviceRewrite rewrites DNSSDDevice to point to the simulator's
+// host and port.
+func dnssdDeviceRewrite(dnssddev *discovery.DNSSDDevice,
+	portnum int) *discovery.DNSSDDevice {
+
+	dnssddev = dnssddev.Clone()
+	for i := range dnssddev.Services {
+		svc := &dnssddev.Services[i]
+
+		out := 0
+		for _, ep := range svc.Endpoints {
+			u := urlcache.New(ep)
+			if u.IsHTTP() {
+				u = u.WithPortNum(uint16(portnum))
+				if u.IsIP4() {
+					u = u.WithHostname("127.0.0.1")
+				} else {
+					u = u.WithHostname("::1")
+				}
+
+				svc.Endpoints[out] = string(u)
+				out++
+			}
+		}
+		svc.Endpoints = svc.Endpoints[:out]
+	}
+
+	return dnssddev
 }

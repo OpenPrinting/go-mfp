@@ -1,5 +1,5 @@
-# This is the generated MFP model file.
-# You probably need to edit it appropriately before use.
+# This is Xerox B235 model, purposely broken so that driverless
+# printing doesn't work.
 
 # IPP printer attributes:
 ipp.printer = ipp.COLLECTION(
@@ -12,7 +12,7 @@ ipp.printer = ipp.COLLECTION(
     natural_language_configured = ipp.LANGUAGE('en-us'),
     generated_natural_language_supported = ipp.LANGUAGE('en-us'),
     job_ids_supported = ipp.BOOLEAN(True),
-    printer_name = ipp.NAME('Xerox(R) B235 MFP'),
+    printer_name = ipp.NAME('Broken Xerox B235 MFP'),
     printer_firmware_name = [
         ipp.NAME('IPP'),
         ipp.NAME('JPEG'),
@@ -41,7 +41,7 @@ ipp.printer = ipp.COLLECTION(
         ipp.STRING('\x01\x05'),
         ipp.STRING('MXLSG.230.090'),
     ],
-    printer_make_and_model = ipp.TEXT('Xerox(R) B235 MFP'),
+    printer_make_and_model = ipp.TEXT('Broken Xerox B235 MFP'),
     printer_organization = ipp.TEXT('no-value'),
     printer_organizational_unit = ipp.TEXT('no-value'),
     printer_device_id = ipp.TEXT('MANUFACTURER:Xerox;COMMAND SET:PCL 6 Emulation, PostScript Level 3 Emulation, URF, PWG, NPAP, PJL;MODEL:B235 MFP;CLS:PRINTER;DES:Xerox(R) B235 MFP;CID:XR_PCL6_XCPT_Mono_A4;COMMENT:ECP1.0, LV_0924, LP_9D3B, LF_00CC;'),
@@ -3914,7 +3914,7 @@ ipp.printer = ipp.COLLECTION(
     printer_config_change_date_time = ipp.DATE('2026-06-29T10:16:40+03:00'),
     printer_config_change_time = ipp.INTEGER(52),
     printer_current_time = ipp.DATE('2026-07-07T22:05:22+03:00'),
-    printer_dns_sd_name = ipp.NAME('Xerox(R) B235 MFP'),
+    printer_dns_sd_name = ipp.NAME('Broken Xerox B235 MFP'),
     printer_geo_location = ipp.UNKNOWN(),
     printer_get_attributes_supported = [
         ipp.KEYWORD('all'),
@@ -4050,16 +4050,6 @@ ipp.printer = ipp.COLLECTION(
     ],
     urf_supported = [
         ipp.KEYWORD('V1.5'),
-        ipp.KEYWORD('CP1'),
-        ipp.KEYWORD('PQ4'),
-        ipp.KEYWORD('W8'),
-        ipp.KEYWORD('MT1-2-3-4-5-6-8-10-11-12-13'),
-        ipp.KEYWORD('RS300-600'),
-        ipp.KEYWORD('DM1'),
-        ipp.KEYWORD('OB10'),
-        ipp.KEYWORD('IS5-4-20'),
-        ipp.KEYWORD('IFU5-4'),
-        ipp.KEYWORD('FN3'),
     ],
     uri_security_supported = [
         ipp.KEYWORD('none'),
@@ -4079,330 +4069,9 @@ ipp.printer = ipp.COLLECTION(
     job_accounting_user_id_supported = ipp.BOOLEAN(False),
 )
 
-
-# eSCL scanner parameters:
-escl.scanner = escl.ScannerCapabilities(
-    Version = '2.9',
-    MakeAndModel = 'Xerox(R) B235 MFP',
-    SerialNumber = '34004H030206H',
-    Uuid = UUID('67bbb526-3a17-474f-a567-2ca5f6156613'),
-    AdminUri = 'http://ETE84DEC1C0C90.local./#/Settings/Network/AirPrint',
-    IconUri = 'http://ETE84DEC1C0C90.local./images/model/mfp/dap_icon.128x128.png',
-    Platen = escl.Platen(
-        PlatenInputCaps = escl.InputSourceCaps(
-            MinWidth = 300,
-            MaxWidth = 2550,
-            MinHeight = 300,
-            MaxHeight = 3508,
-            MaxOpticalXResolution = 600,
-            MaxOpticalYResolution = 600,
-            MaxScanRegions = 1,
-            MaxPhysicalWidth = 2550,
-            MaxPhysicalHeight = 3508,
-            SupportedIntents = [
-                escl.Document,
-                escl.Photo,
-                escl.Preview,
-                escl.TextAndGraphic,
-            ],
-            SettingProfiles = [
-                escl.SettingProfile(
-                    ColorModes = [
-                        escl.RGB24,
-                        escl.Grayscale8,
-                        escl.BlackAndWhite1,
-                    ],
-                    ContentTypes = [
-                        escl.Photo,
-                        escl.Text,
-                        escl.TextAndPhoto,
-                    ],
-                    DocumentFormats = [
-                        'application/pdf',
-                        'image/jpeg',
-                        'image/tiff',
-                    ],
-                    DocumentFormatsExt = [
-                        'application/pdf',
-                        'image/jpeg',
-                        'image/tiff',
-                    ],
-                    SupportedResolutions = [
-                        escl.SupportedResolutions(
-                            ColorMode = escl.RGB24,
-                            DiscreteResolutions = [
-                                escl.DiscreteResolution(
-                                    XResolution = 75,
-                                    YResolution = 75,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 150,
-                                    YResolution = 150,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 200,
-                                    YResolution = 200,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 300,
-                                    YResolution = 300,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 400,
-                                    YResolution = 400,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 600,
-                                    YResolution = 600,
-                                ),
-                            ],
-                        ),
-                        escl.SupportedResolutions(
-                            ColorMode = escl.Grayscale8,
-                            DiscreteResolutions = [
-                                escl.DiscreteResolution(
-                                    XResolution = 75,
-                                    YResolution = 75,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 150,
-                                    YResolution = 150,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 200,
-                                    YResolution = 200,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 300,
-                                    YResolution = 300,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 400,
-                                    YResolution = 400,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 600,
-                                    YResolution = 600,
-                                ),
-                            ],
-                        ),
-                        escl.SupportedResolutions(
-                            ColorMode = escl.BlackAndWhite1,
-                            DiscreteResolutions = [
-                                escl.DiscreteResolution(
-                                    XResolution = 75,
-                                    YResolution = 75,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 150,
-                                    YResolution = 150,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 200,
-                                    YResolution = 200,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 300,
-                                    YResolution = 300,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 400,
-                                    YResolution = 400,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 600,
-                                    YResolution = 600,
-                                ),
-                            ],
-                        ),
-                    ],
-                    ColorSpaces = [
-                        'RGB',
-                        escl.sRGB,
-                    ],
-                ),
-            ],
-            FeedDirections = [
-                escl.LongEdgeFeed,
-                escl.ShortEdgeFeed,
-            ],
-        ),
-    ),
-    Adf = escl.Adf(
-        AdfSimplexInputCaps = escl.InputSourceCaps(
-            MinWidth = 1230,
-            MaxWidth = 2550,
-            MinHeight = 1740,
-            MaxHeight = 4200,
-            MaxOpticalXResolution = 600,
-            MaxOpticalYResolution = 600,
-            MaxScanRegions = 1,
-            SupportedIntents = [
-                escl.Document,
-                escl.Photo,
-                escl.Preview,
-                escl.TextAndGraphic,
-            ],
-            SettingProfiles = [
-                escl.SettingProfile(
-                    ColorModes = [
-                        escl.RGB24,
-                        escl.Grayscale8,
-                        escl.BlackAndWhite1,
-                    ],
-                    DocumentFormats = [
-                        'application/pdf',
-                        'image/jpeg',
-                        'image/tiff',
-                    ],
-                    DocumentFormatsExt = [
-                        'application/pdf',
-                        'image/jpeg',
-                        'image/tiff',
-                    ],
-                    SupportedResolutions = [
-                        escl.SupportedResolutions(
-                            ColorMode = escl.RGB24,
-                            DiscreteResolutions = [
-                                escl.DiscreteResolution(
-                                    XResolution = 75,
-                                    YResolution = 75,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 150,
-                                    YResolution = 150,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 200,
-                                    YResolution = 200,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 300,
-                                    YResolution = 300,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 400,
-                                    YResolution = 400,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 600,
-                                    YResolution = 600,
-                                ),
-                            ],
-                        ),
-                        escl.SupportedResolutions(
-                            ColorMode = escl.Grayscale8,
-                            DiscreteResolutions = [
-                                escl.DiscreteResolution(
-                                    XResolution = 75,
-                                    YResolution = 75,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 150,
-                                    YResolution = 150,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 200,
-                                    YResolution = 200,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 300,
-                                    YResolution = 300,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 400,
-                                    YResolution = 400,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 600,
-                                    YResolution = 600,
-                                ),
-                            ],
-                        ),
-                        escl.SupportedResolutions(
-                            ColorMode = escl.BlackAndWhite1,
-                            DiscreteResolutions = [
-                                escl.DiscreteResolution(
-                                    XResolution = 75,
-                                    YResolution = 75,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 150,
-                                    YResolution = 150,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 200,
-                                    YResolution = 200,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 300,
-                                    YResolution = 300,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 400,
-                                    YResolution = 400,
-                                ),
-                                escl.DiscreteResolution(
-                                    XResolution = 600,
-                                    YResolution = 600,
-                                ),
-                            ],
-                        ),
-                    ],
-                    ColorSpaces = [
-                        'RGB',
-                        escl.sRGB,
-                    ],
-                ),
-            ],
-            FeedDirections = [
-                escl.LongEdgeFeed,
-                escl.ShortEdgeFeed,
-            ],
-        ),
-        AdfOptions = [
-            escl.DetectPaperLoaded,
-        ],
-        Justification = escl.Justification(
-            XImagePosition = escl.Left,
-            YImagePosition = escl.Top,
-        ),
-    ),
-    BrightnessSupport = escl.Range(
-        Min = 1,
-        Max = 9,
-        Normal = 5,
-        Step = 1,
-    ),
-    CompressionFactorSupport = escl.Range(
-        Min = 5,
-        Max = 95,
-        Normal = 25,
-        Step = 1,
-    ),
-    ContrastSupport = escl.Range(
-        Min = 0,
-        Max = 5,
-        Normal = 0,
-        Step = 1,
-    ),
-    BlankPageDetectionAndRemoval = False,
-)
-
-
-# ----- PUT YOUR ESCL HOOKS HERE -----
-
-# Called on request:  POST /{root}/ScanJobs
-#
-# def escl_onScanJobsRequest (q: query.Query, rq: escl.ScanSettings):
-
-# Called on response: GET /{JobUri}/NextDocument
-#
-# def escl_onNextDocumentResponse (q: query.Query, flt: escl.ImageFilter):
-
 # DNS-SD parameters
 dnssd.device = dnssd.Device(
-    instance = 'Xerox(R) B235 MFP',
+    instance = 'Broken Xerox B235 MFP',
     UUID = UUID('67bbb526-3a17-474f-a567-2ca5f6156613'),
     services = [
         dnssd.Service(
@@ -4421,13 +4090,13 @@ dnssd.device = dnssd.Device(
                 'adminurl=http://ETE84DEC1C0C90.local./#/Settings/Network/AirPrint',
                 'UUID=67bbb526-3a17-474f-a567-2ca5f6156613',
                 'DUUID=67bbb526-3a17-474f-a567-2ca5f6156613',
-                'ty=Xerox Xerox(R) B235 MFP',
+                'ty=Broken Xerox B235 MFP',
                 'Color=F',
                 'Duplex=T',
                 'PaperMax=<legal-A4',
                 'Staple=F',
-                'usb_MFG=Xerox',
-                'usb_MDL=Xerox(R) B235 MFP',
+                'usb_MFG=Broken Xerox',
+                'usb_MDL=B235 MFP',
                 'pdl=application/PCLm,application/octet-stream,image/urf,image/pwg-raster,image/jpeg,application/postscript,text/plain',
                 'Fax=T',
                 'Scan=T',
@@ -4462,35 +4131,6 @@ dnssd.device = dnssd.Device(
                 'lpd://[fe80::ce64:1aff:fe71:e2d0]',
             ],
         ),
-        dnssd.Service(
-            types = [
-                '_uscan._tcp',
-                '_uscans._tcp',
-            ],
-            TXT = [
-                'txtvers=1',
-                'UUID=67bbb526-3a17-474f-a567-2ca5f6156613',
-                'adminurl=http://ETE84DEC1C0C90.local./#/Settings/Network/AirPrint',
-                'cs=color,grayscale',
-                'duplex=F',
-                'is=platen,adf',
-                'mopria-certified-scan=1.4',
-                'note=',
-                'pdl=application/pdf,image/jpeg,image/tiff',
-                'representation=http://ETE84DEC1C0C90.local./images/model/mfp/dap_icon.128x128.png',
-                'rs=eSCL',
-                'ty=Xerox Xerox(R) B235 MFP',
-                'usb_MDL=Xerox(R) B235 MFP',
-                'usb_MFG=Xerox',
-                'vers=2.9',
-            ],
-            endpoints = [
-                'http://192.168.1.100/eSCL',
-                'https://192.168.1.100/eSCL',
-                'http://[fe80::ce64:1aff:fe71:e2d0]/eSCL/',
-                'https://[fe80::ce64:1aff:fe71:e2d0]/eSCL/',
-            ],
-        ),
     ],
 )
 
@@ -4506,8 +4146,8 @@ usb.device = usb.DeviceDescriptor(
     idVendor = 2340,
     idProduct = 40251,
     bcdDevice = '0.0',
-    iManufacturer = 'Xerox',
-    iProduct = 'Xerox(R) B235 MFP',
+    iManufacturer = 'Broken Xerox',
+    iProduct = 'Broken Xerox B235 MFP',
     iSerialNumber = '34004H030206H',
     Configurations = [
         usb.ConfigurationDescriptor(

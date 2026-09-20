@@ -21,7 +21,7 @@ type Region struct {
 
 // String returns string representation of [Region], for logging.
 func (reg Region) String() string {
-	return fmt.Sprintf("%dx%d+%d+%x",
+	return fmt.Sprintf("%dx%d+%d+%d",
 		reg.Width, reg.Height, reg.XOffset, reg.YOffset)
 }
 

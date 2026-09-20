@@ -1,4 +1,4 @@
-// MFP - Miulti-Function Printers and scanners toolkit
+// MFP - Multi-Function Printers and scanners toolkit
 // IPP - Internet Printing Protocol implementation
 //
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
@@ -28,6 +28,7 @@ var (
 type ErrIPP struct {
 	Version       goipp.Version // IPP version
 	RequestID     uint32        // IPP Request ID
+	Op            goipp.Op      // IPP operation
 	Status        goipp.Status  // IPP status
 	StatusMessage string        // Optional error message
 }
@@ -41,6 +42,7 @@ func NewErrIPPFromMessage(rq *goipp.Message, code goipp.Status,
 	return &ErrIPP{
 		Version:       ver,
 		RequestID:     rq.RequestID,
+		Op:            goipp.Op(rq.Code),
 		Status:        code,
 		StatusMessage: fmt.Sprintf(format, args...),
 	}
@@ -82,10 +84,10 @@ func (e *ErrIPP) Encode() *goipp.Message {
 	msg.Operation.Add(goipp.MakeAttribute("attributes-charset",
 		goipp.TagCharset, goipp.String("utf-8")))
 	msg.Operation.Add(goipp.MakeAttribute("attributes-natural-language",
-		goipp.TagLanguage, goipp.String("en-US")))
+		goipp.TagLanguage, goipp.String(DefaultNaturalLanguage)))
 
 	if e.StatusMessage != "" {
-		msg.Operation.Add(goipp.MakeAttribute("status-message,",
+		msg.Operation.Add(goipp.MakeAttribute("status-message",
 			goipp.TagText, goipp.String(e.StatusMessage)))
 	}
 

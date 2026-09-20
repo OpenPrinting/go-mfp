@@ -9,12 +9,23 @@
 package modeling
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/OpenPrinting/go-mfp/cpython"
 	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/util/uuid"
 )
+
+// SetDNSSDDevice sets the DNS-SD device information.
+func (model *Model) SetDNSSDDevice(dnssddev *discovery.DNSSDDevice) {
+	model.dnssd = dnssddev
+}
+
+// GetDNSSDDevice returns the DNS-SD device information.
+func (model *Model) GetDNSSDDevice() *discovery.DNSSDDevice {
+	return model.dnssd
+}
 
 // dnssdLoad decodes DNS-SD part of model. The model file assumed to be
 // preloaded into the Model's Python interpreter (model.py).
@@ -87,6 +98,9 @@ func dnssdExportService(py *cpython.Python, svc discovery.DNSSDService) *cpython
 	err := svcobj.Set("types", svc.Types)
 	if err == nil {
 		err = svcobj.Set("TXT", svc.TXT)
+	}
+	if err == nil {
+		err = svcobj.Set("endpoints", svc.Endpoints)
 	}
 
 	if err != nil {
@@ -182,6 +196,25 @@ func dnssdImportService(obj *cpython.Object) (discovery.DNSSDService, error) {
 		}
 
 		svc.TXT = append(svc.TXT, s)
+	}
+
+	// Decode endpoints
+	sliceobjects, err = obj.Get("endpoints").Slice()
+	if err != nil && !errors.Is(err, cpython.ErrNotFound{}) {
+		err = errImportWrap("endpoints", err)
+		return svc, err
+	}
+
+	svc.Endpoints = make([]string, 0, len(sliceobjects))
+	for i, item := range sliceobjects {
+		s, err := item.Unicode()
+		if err != nil {
+			err = errImportWrap(fmt.Sprintf("%d", i), err)
+			err = errImportWrap("TXT", err)
+			return svc, err
+		}
+
+		svc.Endpoints = append(svc.Endpoints, s)
 	}
 
 	return svc, nil

@@ -11,22 +11,33 @@ package modeling
 import (
 	"fmt"
 
+	"github.com/OpenPrinting/go-mfp/abstract"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
 )
 
-// SetIPPPrinterAttrs sets the [escl.ScannerCapabilities].
+// SetIPPPrinterAttrs sets the IPP printer attributes.
 func (model *Model) SetIPPPrinterAttrs(attrs *ipp.PrinterAttributes) {
 	model.ippPrinterAttrs = attrs
 }
 
-// GetIPPPrinterAttrs returns the [escl.ScannerCapabilities].
+// GetIPPPrinterAttrs returns the IPP printer attributes.
 func (model *Model) GetIPPPrinterAttrs() *ipp.PrinterAttributes {
 	return model.ippPrinterAttrs
 }
 
-// NewIPPServer creates a virtual IPP server.
+// SetIPPScannerAttrs sets the IPP scanner attributes.
+func (model *Model) SetIPPScannerAttrs(attrs *ipp.PrinterAttributes) {
+	model.ippScannerAttrs = attrs
+}
+
+// GetIPPScannerAttrs returns the IPP scanner attributes.
+func (model *Model) GetIPPScannerAttrs() *ipp.PrinterAttributes {
+	return model.ippScannerAttrs
+}
+
+// NewIPPPrinter creates a virtual IPP printer.
 // It will return nil, if model doesn't have the IPP printer attributes.
-func (model *Model) NewIPPServer() *ipp.Printer {
+func (model *Model) NewIPPPrinter() *ipp.Printer {
 	// Obtain printer attributes
 	attrs := model.GetIPPPrinterAttrs()
 	if attrs == nil {
@@ -40,16 +51,28 @@ func (model *Model) NewIPPServer() *ipp.Printer {
 	return ipp.NewPrinter(attrs, options)
 }
 
-// ippLoad decodes the IPP part of the model. The model file assumed to
-// be already loaded into the Model's Python interpreter (model.py).
-func (model *Model) ippLoad() error {
+// NewIPPScanner creates a virtual IPP scanner.
+// It will return nil, if model doesn't have the IPP scanner. attributes.
+func (model *Model) NewIPPScanner(scanner abstract.Scanner) *ipp.Scanner {
+	// Obtain printer attributes
+	attrs := model.GetIPPScannerAttrs()
+	if attrs == nil {
+		return nil
+	}
+
+	// Create the IPP print server
+	options := ipp.ScannerOptions{
+		Scanner:                 scanner,
+		UseRawPrinterAttributes: true,
+	}
+	return ipp.NewScanner(attrs, options)
+}
+
+// ippLoadPrinter decodes the IPP-print part of the model.
+func (model *Model) ippLoadPrinter() error {
 	// Load and decode printer capabilities
 	name := "ipp.printer"
 	obj := model.py.Eval(name)
-	if obj.Err() != nil {
-		name = "ipp.attrs"
-		obj = model.py.Eval(name)
-	}
 
 	if err := obj.Err(); err != nil {
 		err = fmt.Errorf("%s: %w", name, err)
@@ -64,6 +87,33 @@ func (model *Model) ippLoad() error {
 		}
 
 		model.ippPrinterAttrs = pa
+	}
+
+	// Load IPP hooks
+	// TODO
+
+	return nil
+}
+
+// ippLoadScanner decodes the IPP-scan part of the model.
+func (model *Model) ippLoadScanner() error {
+	// Load and decode printer capabilities
+	name := "ipp.scanner"
+	obj := model.py.Eval(name)
+
+	if err := obj.Err(); err != nil {
+		err = fmt.Errorf("%s: %w", name, err)
+		return err
+	}
+
+	if !obj.IsNone() {
+		pa, err := ippImportPrinterAppributes(obj)
+		if err != nil {
+			err = fmt.Errorf("%s: %w", name, err)
+			return err
+		}
+
+		model.ippScannerAttrs = pa
 	}
 
 	// Load IPP hooks

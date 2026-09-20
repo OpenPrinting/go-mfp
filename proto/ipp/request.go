@@ -11,6 +11,7 @@ package ipp
 import (
 	"io"
 
+	"github.com/OpenPrinting/go-mfp/util/generic"
 	"github.com/OpenPrinting/goipp"
 )
 
@@ -58,9 +59,17 @@ func (rqh *RequestHeader) Header() *RequestHeader {
 
 // ResponseHeader returns the appropriate [ResponseHeader]
 // for the request.
+//
+// The response version matches the request version (RFC 8011,
+// 4.1.8), limited by the [MaxVersion].
 func (rqh *RequestHeader) ResponseHeader(status goipp.Status) ResponseHeader {
+	ver := generic.Min(rqh.Version, MaxVersion)
+	if ver == 0 {
+		ver = DefaultVersion
+	}
+
 	return ResponseHeader{
-		Version:                   goipp.DefaultVersion,
+		Version:                   ver,
 		RequestID:                 rqh.RequestID,
 		Status:                    status,
 		StatusMessage:             status.String(),
