@@ -72,14 +72,6 @@ var Command = argv.Command{
 			Complete:  argv.CompleteOSPath,
 		},
 		{
-			Name:      "--comparator",
-			Help:      "path to enhanced_comparison.py (default: use embedded script)",
-			HelpArg:   "file",
-			Singleton: true,
-			Validate:  argv.ValidateAny,
-			Complete:  argv.CompleteOSPath,
-		},
-		{
 			Name:      "--threshold",
 			Help:      fmt.Sprintf("minimum similarity score to pass (0.0-1.0, default %.2f)", defaultThreshold),
 			HelpArg:   "score",
@@ -271,24 +263,14 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		timeout = d
 	}
 
-	// Set up image evaluator. Use the embedded enhanced_comparison.py by
-	// default; --comparator overrides with an external file.
+	// Set up image evaluator using the embedded enhanced_comparison.py.
 	var eval *evaluate.Evaluator
-	if comparatorPath, ok := inv.Get("--comparator"); ok {
-		e, err := evaluate.NewEvaluator(comparatorPath)
-		if err != nil {
-			return fmt.Errorf("evaluator: %w", err)
-		}
+	e, err := evaluate.NewDefaultEvaluator(defaultComparatorScript)
+	if err != nil {
+		log.Info(ctx, "image evaluation disabled (embedded comparator unavailable): %v", err)
+	} else {
 		defer e.Close()
 		eval = e
-	} else {
-		e, err := evaluate.NewDefaultEvaluator(defaultComparatorScript)
-		if err != nil {
-			log.Info(ctx, "image evaluation disabled (embedded comparator unavailable): %v", err)
-		} else {
-			defer e.Close()
-			eval = e
-		}
 	}
 
 	keep := inv.Flag("--keep")
