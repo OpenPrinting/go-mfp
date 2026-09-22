@@ -276,18 +276,39 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	keep := inv.Flag("--keep")
 	verbose := inv.Flag("-v")
 
-	// Run each test configuration.
+	// Run each test configuration and collect results.
+	var results []*testResult
 	for _, cfg := range configs {
 		log.Info(ctx, "running test: %s", cfg.Name)
 		result, err := runTest(ctx, cfg, queueName, capture, eval, threshold, timeout, keep, verbose)
 		if err != nil {
 			log.Info(ctx, "FAIL %s: %v", cfg.Name, err)
+			results = append(results, &testResult{Config: cfg, Score: 0, Passed: false})
 			continue
 		}
 		if result.Passed {
 			log.Info(ctx, "PASS %s (score=%.4f)", cfg.Name, result.Score)
 		} else {
 			log.Info(ctx, "FAIL %s (score=%.4f < threshold=%.4f)", cfg.Name, result.Score, threshold)
+		}
+		results = append(results, result)
+	}
+
+	// Print summary table and per-metric details.
+	printSummaryTable(results)
+	for _, res := range results {
+		if verbose || !res.Passed {
+			printVerboseDetails(res)
+		}
+	}
+
+	// Write JSON report if --output is set.
+	if outPath, ok := inv.Get("-o"); ok {
+		report := buildReport(results)
+		if err := writeReport(outPath, report); err != nil {
+			log.Info(ctx, "report: %v", err)
+		} else {
+			log.Info(ctx, "report written to %s", outPath)
 		}
 	}
 
