@@ -161,7 +161,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Create document capture backend
 	capture := newDocumentCapture()
 
-	// Create virtual IPP printer from model and hook capture into it
+	// Create virtual IPP printer from model and hook capture into it.
 	ippPrinter := model.NewIPPPrinter()
 	if ippPrinter == nil {
 		return fmt.Errorf("model has no IPP printer attributes")
