@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 // DefaultThreshold is the minimum overall quality score to pass.
@@ -67,9 +68,9 @@ type Result struct {
 //
 // Create with [NewEvaluator] or [NewDefaultEvaluator] and release with [Evaluator.Close].
 type Evaluator struct {
-	comparatorPath  string // path to enhanced_comparison.py
-	runnerPath      string // temp file containing the runner script
-	ownedComparator bool   // true when comparatorPath is a temp file we must remove on Close
+	comparatorPath string // path to enhanced_comparison.py
+	runnerPath     string // temp file containing the runner script
+	comparatorDir  string // non-empty when we own the temp dir and must RemoveAll on Close
 }
 
 // newEvaluator is the shared constructor that writes the runner script and
@@ -103,35 +104,35 @@ func NewEvaluator(comparatorPath string) (*Evaluator, error) {
 }
 
 // NewDefaultEvaluator creates an Evaluator from an in-memory script (typically
-// the embedded enhanced_comparison.py). The script is written to a temporary
-// file that is removed when [Evaluator.Close] is called.
+// the embedded enhanced_comparison.py). The script is written to a private temp
+// directory as "enhanced_comparison.py" so the runner can import it by that
+// exact module name. The directory is removed when [Evaluator.Close] is called.
 func NewDefaultEvaluator(script []byte) (*Evaluator, error) {
-	cf, err := os.CreateTemp("", "mfp-comparator-*.py")
+	dir, err := os.MkdirTemp("", "mfp-evaluate-*")
 	if err != nil {
+		return nil, fmt.Errorf("evaluate: create temp dir: %w", err)
+	}
+
+	comparatorPath := filepath.Join(dir, "enhanced_comparison.py")
+	if err := os.WriteFile(comparatorPath, script, 0644); err != nil {
+		os.RemoveAll(dir)
 		return nil, fmt.Errorf("evaluate: write comparator: %w", err)
 	}
-	comparatorPath := cf.Name()
-	if _, err := cf.Write(script); err != nil {
-		cf.Close()
-		os.Remove(comparatorPath)
-		return nil, fmt.Errorf("evaluate: write comparator: %w", err)
-	}
-	cf.Close()
 
 	e, err := newEvaluator(comparatorPath)
 	if err != nil {
-		os.Remove(comparatorPath)
+		os.RemoveAll(dir)
 		return nil, err
 	}
-	e.ownedComparator = true
+	e.comparatorDir = dir
 	return e, nil
 }
 
 // Close removes the temporary files created by [NewEvaluator] or [NewDefaultEvaluator].
 func (e *Evaluator) Close() {
 	os.Remove(e.runnerPath)
-	if e.ownedComparator {
-		os.Remove(e.comparatorPath)
+	if e.comparatorDir != "" {
+		os.RemoveAll(e.comparatorDir)
 	}
 }
 
