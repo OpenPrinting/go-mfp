@@ -12,6 +12,9 @@ cmd/mfp-ppd/mfp-ppd
 cmd/mfp-proxy/mfp-proxy
 cmd/mfp-usb/mfp-usb
 cmd/mfp-virtual/mfp-virtual
+cmd/mfp-test/mfp-test
+
+internal/evaluate/*.png
 
 tools/ipp-registrations-generate/ipp-registrations-generate
 
