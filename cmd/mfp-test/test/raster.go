@@ -20,8 +20,9 @@ import (
 
 // convertToPNG converts captured document bytes to a PNG image.
 // The format argument is the MIME type of the document (e.g. "image/pwg-raster").
+// dpi is used for PostScript rendering; if zero, 300 DPI is used.
 // For multi-page documents, the first page is returned.
-func convertToPNG(data []byte, format string) ([]byte, error) {
+func convertToPNG(data []byte, format string, dpi int) ([]byte, error) {
 	switch format {
 	case "image/pwg-raster", "image/urf":
 		return convertRasterToPNG(data)
@@ -35,7 +36,7 @@ func convertToPNG(data []byte, format string) ([]byte, error) {
 		return convertVipsToPNG(data)
 	case "application/postscript",
 		"application/vnd.cups-postscript":
-		return convertPSToPNG(data)
+		return convertPSToPNG(data, dpi)
 	default:
 		// image/vnd.cups-raster and image/jpeg+gzip are not yet supported
 		// for image evaluation; captured bytes are still saved with --keep.
@@ -56,7 +57,11 @@ func convertVipsToPNG(data []byte) ([]byte, error) {
 // convertPSToPNG calls Ghostscript directly to convert the first page of a
 // PostScript document to PNG. Using gs avoids the ImageMagick dependency and
 // the Ubuntu policy.xml reconfiguration it requires.
-func convertPSToPNG(data []byte) ([]byte, error) {
+// dpi is the render resolution; if zero, 300 DPI is used as a safe default.
+func convertPSToPNG(data []byte, dpi int) ([]byte, error) {
+	if dpi <= 0 {
+		dpi = 300
+	}
 	// Write PostScript data to a temp input file.
 	inFile, err := os.CreateTemp("", "mfp-ps-*.ps")
 	if err != nil {
@@ -80,11 +85,11 @@ func convertPSToPNG(data []byte) ([]byte, error) {
 	outFile.Close()
 	defer os.Remove(outPath)
 
-	// Run Ghostscript: render only the first page at 150 dpi.
+	// Run Ghostscript: render only the first page at the negotiated DPI.
 	cmd := exec.Command("gs",
 		"-dBATCH", "-dNOPAUSE", "-dQUIET",
 		"-sDEVICE=png16m",
-		"-r150",
+		fmt.Sprintf("-r%d", dpi),
 		"-dFirstPage=1", "-dLastPage=1",
 		"-sOutputFile="+outPath,
 		inFile.Name(),

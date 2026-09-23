@@ -25,11 +25,13 @@ import (
 	"github.com/OpenPrinting/go-mfp/transport"
 )
 
-// defaultTCPPort is the default IPP server TCP port.
-const defaultTCPPort = 60000
+// defaultTCPPort 0 asks the OS to pick a free port automatically,
+// avoiding conflicts with other services (e.g. ipp-usb uses port 60000).
+const defaultTCPPort = 0
 
-// defaultQueueName is the default CUPS queue name.
-const defaultQueueName = "mfp-test"
+// queueNamePrefix is prepended to the sanitised printer model name
+// to form the CUPS queue name (e.g. "mfp-test-xerox-b235").
+const queueNamePrefix = "mfp-test"
 
 // Command is the mfp-test command description.
 var Command = argv.Command{
@@ -49,7 +51,7 @@ var Command = argv.Command{
 		{
 			Name:      "-P",
 			Aliases:   []string{"--port"},
-			Help:      fmt.Sprintf("IPP server TCP port (default %d)", defaultTCPPort),
+			Help:      "IPP server TCP port (default: OS-assigned free port)",
 			HelpArg:   "port",
 			Singleton: true,
 			Validate:  argv.ValidateUint16,
@@ -57,7 +59,7 @@ var Command = argv.Command{
 		{
 			Name:      "-n",
 			Aliases:   []string{"--name"},
-			Help:      fmt.Sprintf("CUPS queue name (default %q)", defaultQueueName),
+			Help:      "CUPS queue name (default: mfp-test-<printer-model>)",
 			HelpArg:   "name",
 			Singleton: true,
 			Validate:  argv.ValidateAny,
@@ -178,20 +180,31 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	if err != nil {
 		return err
 	}
+	// When port 0 was requested the OS assigns a free port; read it back.
+	actualPort := ln.Addr().(*net.TCPAddr).Port
 
 	srvr := transport.NewServer(ctx, nil, mux)
-	log.Info(ctx, "virtual IPP printer at ipp://%s/ipp/print", addr)
+	log.Info(ctx, "virtual IPP printer at ipp://localhost:%d/ipp/print", actualPort)
 	go srvr.Serve(ln)
 	defer srvr.Close()
 
-	// Get CUPS queue name
-	queueName := defaultQueueName
+	// Build the IPP URL with the actual assigned port.
+	ippURL := fmt.Sprintf("ipp://localhost:%d/ipp/print", actualPort)
+
+	// Query printer capabilities now so we can derive the queue name from
+	// the printer's model string before registering the CUPS queue.
+	caps, err := queryPrinterCaps(ctx, ippURL)
+	if err != nil {
+		return fmt.Errorf("query printer capabilities: %w", err)
+	}
+
+	// Determine CUPS queue name: use -n override or derive from printer model.
+	queueName := queueNamePrefix + "-" + safeModelName(caps.ModelName)
 	if name, ok := inv.Get("-n"); ok {
 		queueName = name
 	}
 
 	// Register virtual printer with CUPS
-	ippURL := fmt.Sprintf("ipp://localhost:%d/ipp/print", port)
 	if err := CreateCUPSQueue(ctx, queueName, ippURL); err != nil {
 		return err
 	}
@@ -200,12 +213,6 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	defer RemoveCUPSQueue(context.WithoutCancel(ctx), queueName)
 
 	log.Info(ctx, "CUPS queue %q ready at %s", queueName, ippURL)
-
-	// Query printer capabilities for test matrix generation.
-	caps, err := queryPrinterCaps(ctx, ippURL)
-	if err != nil {
-		return fmt.Errorf("query printer capabilities: %w", err)
-	}
 
 	// --list: print all configurations (full batch matrix) and exit.
 	if inv.Flag("--list") {
