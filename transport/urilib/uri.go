@@ -4,7 +4,7 @@
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
 // See LICENSE for license terms and conditions
 //
-// Package documentation
+// URI type and methods
 
 package urilib
 
@@ -15,27 +15,27 @@ import (
 	"strings"
 )
 
-// URL represents an URL string.
-type URL string
+// URI represents an URI string.
+type URI string
 
-// New returns a new URL, based on a given string.
-func New(s string) URL {
-	return URL(s)
+// New returns a new URI, based on a given string.
+func New(s string) URI {
+	return URI(s)
 }
 
-// Valid reports if URL is valid.
-func (u URL) Valid() bool {
+// Valid reports if URI is valid.
+func (u URI) Valid() bool {
 	return lookup(u).Valid()
 }
 
-// Err returns parse error for invalid URL or nil if URL is valid.
-func (u URL) Err() error {
+// Err returns parse error for invalid URI or nil if URI is valid.
+func (u URI) Err() error {
 	return lookup(u).err
 }
 
-// Scheme returns URL scheme (e.g., "http" or "ipp").
-// For invalid URLs it returns "".
-func (u URL) Scheme() string {
+// Scheme returns URI scheme (e.g., "http" or "ipp").
+// For invalid URIs it returns "".
+func (u URI) Scheme() string {
 	cached := lookup(u)
 	if !cached.Valid() {
 		return ""
@@ -43,13 +43,13 @@ func (u URL) Scheme() string {
 	return cached.parsed.Scheme
 }
 
-// Hostname returns Hostname of the URL.
+// Hostname returns Hostname of the URI.
 //
 // If the result is enclosed in square brackets, as literal IPv6 addresses are,
 // the square brackets are removed from the result.
 //
-// For invalid URLs it returns "".
-func (u URL) Hostname() string {
+// For invalid URIs it returns "".
+func (u URI) Hostname() string {
 	cached := lookup(u)
 	if !cached.Valid() {
 		return ""
@@ -58,8 +58,8 @@ func (u URL) Hostname() string {
 	return cached.parsed.Hostname()
 }
 
-// Portname returns Portname of the URL.
-func (u URL) Portname() string {
+// Portname returns Portname of the URI.
+func (u URI) Portname() string {
 	cached := lookup(u)
 	if !cached.Valid() {
 		return ""
@@ -68,12 +68,12 @@ func (u URL) Portname() string {
 	return cached.parsed.Port()
 }
 
-// PortNum returns port number, defined by the URL.
+// PortNum returns port number, defined by the URI.
 // It may return 0 in the following cases:
-//   - URL scheme doesn't support port
+//   - URI scheme doesn't support port
 //   - Port is present, but it is not numeric
-//   - URL is invalid
-func (u URL) PortNum() uint16 {
+//   - URI is invalid
+func (u URI) PortNum() uint16 {
 	p := u.Portname()
 	if p == "" {
 		return u.DefaultPort()
@@ -87,8 +87,8 @@ func (u URL) PortNum() uint16 {
 	return uint16(n)
 }
 
-// DefaultPort returns the default port, based on the URL scheme.
-// If URL is not valid or scheme doesn't imply the port, it
+// DefaultPort returns the default port, based on the URI scheme.
+// If URI is not valid or scheme doesn't imply the port, it
 // returns 0.
 //
 // The following schemes are supported here:
@@ -97,11 +97,11 @@ func (u URL) PortNum() uint16 {
 //   - ipp, ipps - 631
 //   - lpd       - 515
 //   - socket    - 9100
-func (u URL) DefaultPort() uint16 {
+func (u URI) DefaultPort() uint16 {
 	return lookup(u).DefaultPort()
 }
 
-// Canonical returns the canonical form of the URL:
+// Canonical returns the canonical form of the URI:
 //   - Scheme, Host and Port converted to lower case
 //   - Literal IP addressed are canonicalized
 //   - Leading zeroes from port are trimmed
@@ -109,20 +109,20 @@ func (u URL) DefaultPort() uint16 {
 //   - Path is normalized, "." and ".." and repeated "/" are processed
 //   - Empty path replaced with "/". Otherwise, trailing slash
 //     is preserved
-//   - unix URLs converted to the short form (unix:/path)
+//   - unix URIs converted to the short form (unix:/path)
 //
-// Invalid URLs returned unmodified
-func (u URL) Canonical() URL {
+// Invalid URIs returned unmodified
+func (u URI) Canonical() URI {
 	return lookup(u).canonical
 }
 
-// WithHostname replaces Hostname part of the URL.
+// WithHostname replaces Hostname part of the URI.
 //
 // Host MUST be valid hostname. IPv6 literals MUST NOT
 // be enclosed into square braces.
 //
-// Invalid or non-TCP URLs returned unchanged.
-func (u URL) WithHostname(newHostname string) URL {
+// Invalid or non-TCP URIs returned unchanged.
+func (u URI) WithHostname(newHostname string) URI {
 	cached := lookup(u)
 	if !cached.IsTCP() {
 		return u
@@ -143,13 +143,13 @@ func (u URL) WithHostname(newHostname string) URL {
 	return New(parsed.String())
 }
 
-// WithPortNum replaces Port part of the URL.
+// WithPortNum replaces Port part of the URI.
 //
 // If newPortNum <= 0, port will be removed. Otherwise,
 // it will be set, as specified.
 //
-// Invalid or non-TCP URLs returned unchanged.
-func (u URL) WithPortNum(newPortNum uint16) URL {
+// Invalid or non-TCP URIs returned unchanged.
+func (u URI) WithPortNum(newPortNum uint16) URI {
 	cached := lookup(u)
 	if !cached.IsTCP() {
 		return u
@@ -164,10 +164,10 @@ func (u URL) WithPortNum(newPortNum uint16) URL {
 	return New(parsed.String())
 }
 
-// WithoutPort removes Port part of the URL.
+// WithoutPort removes Port part of the URI.
 //
-// Invalid or non-TCP URLs returned unchanged.
-func (u URL) WithoutPort() URL {
+// Invalid or non-TCP URIs returned unchanged.
+func (u URI) WithoutPort() URI {
 	cached := lookup(u)
 	if !cached.IsTCP() {
 		return u
@@ -185,12 +185,12 @@ func (u URL) WithoutPort() URL {
 	return New(parsed.String())
 }
 
-// IPAddress returns URL's IP address.
-// It doesn't do any name resolution, URL must contain literal IP address.
+// IPAddress returns URI's IP address.
+// It doesn't do any name resolution, URI must contain literal IP address.
 //
-// If URL is invalid, or not network URL or its hostname is not literal,
+// If URI is invalid, or not network URI or its hostname is not literal,
 // it returns a zero netip.AddrPort
-func (u URL) IPAddress() netip.AddrPort {
+func (u URI) IPAddress() netip.AddrPort {
 	cached := lookup(u)
 	if !cached.IsTCP() {
 		return netip.AddrPort{}
@@ -210,27 +210,27 @@ func (u URL) IPAddress() netip.AddrPort {
 	return netip.AddrPortFrom(addr, uint16(port))
 }
 
-// IsTCP reports if URL uses TCP-based transport.
-func (u URL) IsTCP() bool {
+// IsTCP reports if URI uses TCP-based transport.
+func (u URI) IsTCP() bool {
 	return lookup(u).IsTCP()
 }
 
-// IsIP4 returns true, if URL has literal IP address and this address is IPv4.
-func (u URL) IsIP4() bool {
+// IsIP4 returns true, if URI has literal IP address and this address is IPv4.
+func (u URI) IsIP4() bool {
 	return u.IPAddress().Addr().Is4()
 }
 
-// IsIP6 returns true, if URL has literal IP address and this address is IPv6.
-func (u URL) IsIP6() bool {
+// IsIP6 returns true, if URI has literal IP address and this address is IPv6.
+func (u URI) IsIP6() bool {
 	return u.IPAddress().Addr().Is6()
 }
 
-// IsHTTP reports if URL uses HTTP or HTTPS - based transport.
-func (u URL) IsHTTP() bool {
+// IsHTTP reports if URI uses HTTP or HTTPS - based transport.
+func (u URI) IsHTTP() bool {
 	return lookup(u).IsHTTP()
 }
 
-// IsTLS reports if URL uses TLS encryption.
-func (u URL) IsTLS() bool {
+// IsTLS reports if URI uses TLS encryption.
+func (u URI) IsTLS() bool {
 	return lookup(u).IsTLS()
 }

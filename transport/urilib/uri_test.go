@@ -4,7 +4,7 @@
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
 // See LICENSE for license terms and conditions
 //
-// URL tests
+// URI tests
 
 package urilib
 
@@ -13,16 +13,16 @@ import (
 	"testing"
 )
 
-// TestURLValid tests URL.Valid function
-func TestURLValid(t *testing.T) {
+// TestURIValid tests URI.Valid function
+func TestURIValid(t *testing.T) {
 	type testData struct {
-		u     URL
+		u     URI
 		valid bool
 	}
 
 	tests := []testData{
 		{"http://example.com", true},
-		{"invalid URL", false},
+		{"invalid URI", false},
 		{"localhost", false},
 		{"", false},
 		{"unix://localhost", true},
@@ -36,24 +36,24 @@ func TestURLValid(t *testing.T) {
 	for _, test := range tests {
 		valid := test.u.Valid()
 		if valid != test.valid {
-			t.Errorf("%q: URL.Valid failed:\n"+
+			t.Errorf("%q: URI.Valid failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.valid, valid)
 		}
 	}
 }
 
-// TestURLCanonical tests URL.Canonical function
-func TestURLCanonical(t *testing.T) {
+// TestURICanonical tests URI.Canonical function
+func TestURICanonical(t *testing.T) {
 	type testData struct {
-		u         URL
-		canonical URL
+		u         URI
+		canonical URI
 	}
 
 	tests := []testData{
-		// Invalid URLs are not modified
+		// Invalid URIs are not modified
 		{"", ""},
-		{"invalid URL", "invalid URL"},
+		{"invalid URI", "invalid URI"},
 
 		// Scheme and Host are lowercased
 		{"HtTp://example.com", "http://example.com/"},
@@ -96,7 +96,7 @@ func TestURLCanonical(t *testing.T) {
 		{"http://example.com/path", "http://example.com/path"},
 		{"http://example.com/path/", "http://example.com/path/"},
 
-		// unix URLs converted to the short form (unix:/path)
+		// unix URIs converted to the short form (unix:/path)
 		{"unix://localhost", "unix:/"},
 		{"unix://localhost/", "unix:/"},
 		{"unix://localhost/path", "unix:/path"},
@@ -105,19 +105,19 @@ func TestURLCanonical(t *testing.T) {
 	for _, test := range tests {
 		c := test.u.Canonical()
 		if c != test.canonical {
-			t.Errorf("%q: URL.Canonical failed:\n"+
+			t.Errorf("%q: URI.Canonical failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.canonical, c)
 		}
 	}
 }
 
-// TestURLWithHostname tests URL.WithHostname
-func TestURLWithHostname(t *testing.T) {
+// TestURIWithHostname tests URI.WithHostname
+func TestURIWithHostname(t *testing.T) {
 	type testData struct {
-		u    URL
+		u    URI
 		host string
-		out  URL
+		out  URI
 	}
 
 	tests := []testData{
@@ -146,15 +146,15 @@ func TestURLWithHostname(t *testing.T) {
 		{"http://[::1]", "127.0.0.1", "http://127.0.0.1"},
 		{"http://[::1]:80", "127.0.0.1", "http://127.0.0.1:80"},
 
-		// Invalid or non-TCP URL
-		{"invalid URL", "localhost", "invalid URL"},
+		// Invalid or non-TCP URI
+		{"invalid URI", "localhost", "invalid URI"},
 		{"unix:/path", "localhost", "unix:/path"},
 	}
 
 	for _, test := range tests {
 		out := test.u.WithHostname(test.host)
 		if out != test.out {
-			t.Errorf("%q: URL.WithHostname(%q) failed:\n"+
+			t.Errorf("%q: URI.WithHostname(%q) failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n",
 				test.u, test.host, test.out, out)
@@ -162,16 +162,16 @@ func TestURLWithHostname(t *testing.T) {
 	}
 }
 
-// TestURLWithPortNum tests URL.WithPortNum
-func TestURLWithPortNum(t *testing.T) {
+// TestURIWithPortNum tests URI.WithPortNum
+func TestURIWithPortNum(t *testing.T) {
 	type testData struct {
-		u    URL
+		u    URI
 		port uint16
-		out  URL
+		out  URI
 	}
 
 	tests := []testData{
-		// Symbolic URLs
+		// Symbolic URIs
 		{"http://example.com", 1234, "http://example.com:1234"},
 		{"http://example.com", 80, "http://example.com:80"},
 		{"http://example.com:8888", 1234, "http://example.com:1234"},
@@ -188,15 +188,15 @@ func TestURLWithPortNum(t *testing.T) {
 		{"http://[::1]:80", 1234, "http://[::1]:1234"},
 		{"http://[::1]:80", 0, "http://[::1]:0"},
 
-		// Invalid or non-TCP URL
-		{"invalid URL", 80, "invalid URL"},
+		// Invalid or non-TCP URI
+		{"invalid URI", 80, "invalid URI"},
 		{"unix:/path", 80, "unix:/path"},
 	}
 
 	for _, test := range tests {
 		out := test.u.WithPortNum(test.port)
 		if out != test.out {
-			t.Errorf("%q: URL.WithPortNum(%v) failed:\n"+
+			t.Errorf("%q: URI.WithPortNum(%v) failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n",
 				test.u, test.port, test.out, out)
@@ -204,25 +204,25 @@ func TestURLWithPortNum(t *testing.T) {
 	}
 }
 
-// TestURLWithoutPort tests URL.WithoutPort
-func TestURLWithoutPort(t *testing.T) {
+// TestURIWithoutPort tests URI.WithoutPort
+func TestURIWithoutPort(t *testing.T) {
 	type testData struct {
-		u   URL
-		out URL
+		u   URI
+		out URI
 	}
 
 	tests := []testData{
 		{"http://example.com:8888", "http://example.com"},
 		{"http://192.168.0.1:80", "http://192.168.0.1"},
 		{"http://[::1]:80", "http://[::1]"},
-		{"invalid URL", "invalid URL"},
+		{"invalid URI", "invalid URI"},
 		{"unix:/path", "unix:/path"},
 	}
 
 	for _, test := range tests {
 		out := test.u.WithoutPort()
 		if out != test.out {
-			t.Errorf("%q: URL.WithoutPort() failed:\n"+
+			t.Errorf("%q: URI.WithoutPort() failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n",
 				test.u, test.out, out)
@@ -230,10 +230,10 @@ func TestURLWithoutPort(t *testing.T) {
 	}
 }
 
-// TestURLHostPortName tests URL.Hostname and URL.Portname
-func TestURLHostPortName(t *testing.T) {
+// TestURIHostPortName tests URI.Hostname and URI.Portname
+func TestURIHostPortName(t *testing.T) {
 	type testData struct {
-		u          URL
+		u          URI
 		host, port string
 	}
 
@@ -251,23 +251,23 @@ func TestURLHostPortName(t *testing.T) {
 		port := test.u.Portname()
 
 		if host != test.host {
-			t.Errorf("%q: URL.Hostname failed:\n"+
+			t.Errorf("%q: URI.Hostname failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.host, host)
 		}
 
 		if port != test.port {
-			t.Errorf("%q: URL.Portname failed:\n"+
+			t.Errorf("%q: URI.Portname failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.port, port)
 		}
 	}
 }
 
-// TestURLIPAddress tests URL.IPAddress
-func TestURLIPAddress(t *testing.T) {
+// TestURIIPAddress tests URI.IPAddress
+func TestURIIPAddress(t *testing.T) {
 	type testData struct {
-		u    URL
+		u    URI
 		addr netip.AddrPort
 	}
 
@@ -282,17 +282,17 @@ func TestURLIPAddress(t *testing.T) {
 	for _, test := range tests {
 		addr := test.u.IPAddress()
 		if addr != test.addr {
-			t.Errorf("%q: URL.IPAddress failed:\n"+
+			t.Errorf("%q: URI.IPAddress failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.addr, addr)
 		}
 	}
 }
 
-// TestURLIsIP46 tests URL.IsIP4 and URL.IsIP6 functions
-func TestURLIsIP46(t *testing.T) {
+// TestURIIsIP46 tests URI.IsIP4 and URI.IsIP6 functions
+func TestURIIsIP46(t *testing.T) {
 	type testData struct {
-		u   URL
+		u   URI
 		is4 bool
 		is6 bool
 	}
@@ -303,7 +303,7 @@ func TestURLIsIP46(t *testing.T) {
 		{"http://[::1]", false, true},
 		{"http://[::1]:80", false, true},
 		{"http://example.com", false, false},
-		{"invalid URL", false, false},
+		{"invalid URI", false, false},
 		{"unix:/path", false, false},
 	}
 
@@ -312,23 +312,23 @@ func TestURLIsIP46(t *testing.T) {
 		is6 := test.u.IsIP6()
 
 		if is4 != test.is4 {
-			t.Errorf("%q: URL.IsIP4 failed:\n"+
+			t.Errorf("%q: URI.IsIP4 failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.is4, is4)
 		}
 
 		if is6 != test.is6 {
-			t.Errorf("%q: URL.IsIP6 failed:\n"+
+			t.Errorf("%q: URI.IsIP6 failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.is6, is6)
 		}
 	}
 }
 
-// TestURLIs tests URL.IsTCP, URL.IsHTTP, URL.IsTLS, ... methods
-func TestURLIs(t *testing.T) {
+// TestURIIs tests URI.IsTCP, URI.IsHTTP, URI.IsTLS, ... methods
+func TestURIIs(t *testing.T) {
 	type testData struct {
-		u      URL
+		u      URI
 		valid  bool
 		isTCP  bool
 		isHTTP bool
@@ -393,7 +393,7 @@ func TestURLIs(t *testing.T) {
 		},
 
 		{
-			u:      "invalid URL",
+			u:      "invalid URI",
 			valid:  false,
 			isTCP:  false,
 			isHTTP: false,
@@ -408,25 +408,25 @@ func TestURLIs(t *testing.T) {
 		isTLS := test.u.IsTLS()
 
 		if valid != test.valid {
-			t.Errorf("%q: URL.Valid failed:\n"+
+			t.Errorf("%q: URI.Valid failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.valid, valid)
 		}
 
 		if isTCP != test.isTCP {
-			t.Errorf("%q: URL.IsTCP failed:\n"+
+			t.Errorf("%q: URI.IsTCP failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.isTCP, isTCP)
 		}
 
 		if isHTTP != test.isHTTP {
-			t.Errorf("%q: URL.IsHTTP failed:\n"+
+			t.Errorf("%q: URI.IsHTTP failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.isHTTP, isHTTP)
 		}
 
 		if isTLS != test.isTLS {
-			t.Errorf("%q: URL.IsTLS failed:\n"+
+			t.Errorf("%q: URI.IsTLS failed:\n"+
 				"expected: %v\n"+
 				"present:  %v\n", test.u, test.isTLS, isTLS)
 		}

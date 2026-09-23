@@ -4,7 +4,7 @@
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
 // See LICENSE for license terms and conditions
 //
-// Cache of parsed URLs
+// Cache of parsed URIs
 
 package urilib
 
@@ -19,19 +19,19 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
-// CacheSize is the size of cache of parsed URLs
+// CacheSize is the size of cache of parsed URIs
 const CacheSize = 16384
 
-// cachedURL represents an URL cache entry.
-// It contains the parsed URL.
-type cachedURL struct {
-	parsed    *url.URL // Parsed URL (nil for invalid URL)
-	err       error    // URL parsing error, if any
-	canonical URL      // Cached canonical form of the URL
+// cachedURI represents an URI cache entry.
+// It contains the parsed URI.
+type cachedURI struct {
+	parsed    *url.URL // Parsed URI (nil for invalid URI)
+	err       error    // URI parsing error, if any
+	canonical URI      // Cached canonical form of the URI
 }
 
-// canonicalize precomputes cachedURL.canonical
-func (cached *cachedURL) canonicalize() {
+// canonicalize precomputes cachedURI.canonical
+func (cached *cachedURI) canonicalize() {
 	// Lowercase Scheme and Host
 	parsed := *cached.parsed
 	parsed.Scheme = strings.ToLower(parsed.Scheme)
@@ -88,16 +88,16 @@ func (cached *cachedURL) canonicalize() {
 		}
 	}
 
-	cached.canonical = URL(parsed.String())
+	cached.canonical = URI(parsed.String())
 }
 
-// Valid reports if cachedURL is valid
-func (cached *cachedURL) Valid() bool {
+// Valid reports if cachedURI is valid
+func (cached *cachedURI) Valid() bool {
 	return cached.err == nil
 }
 
-// IsTCP reports if cachedURL uses TCP-based transport.
-func (cached *cachedURL) IsTCP() bool {
+// IsTCP reports if cachedURI uses TCP-based transport.
+func (cached *cachedURI) IsTCP() bool {
 	if cached.err == nil {
 		switch strings.ToLower(cached.parsed.Scheme) {
 		case "http", "https", "ipp", "ipps", "lpd", "socket":
@@ -107,8 +107,8 @@ func (cached *cachedURL) IsTCP() bool {
 	return false
 }
 
-// IsHTTP reports if cachedURL uses HTTP or HTTPS - based transport.
-func (cached *cachedURL) IsHTTP() bool {
+// IsHTTP reports if cachedURI uses HTTP or HTTPS - based transport.
+func (cached *cachedURI) IsHTTP() bool {
 	if cached.err == nil {
 		switch strings.ToLower(cached.parsed.Scheme) {
 		case "http", "https", "ipp", "ipps":
@@ -118,8 +118,8 @@ func (cached *cachedURL) IsHTTP() bool {
 	return false
 }
 
-// IsTLS reports if cachedURL uses TLS encryption.
-func (cached *cachedURL) IsTLS() bool {
+// IsTLS reports if cachedURI uses TLS encryption.
+func (cached *cachedURI) IsTLS() bool {
 	if cached.err == nil {
 		switch strings.ToLower(cached.parsed.Scheme) {
 		case "https", "ipps":
@@ -129,10 +129,10 @@ func (cached *cachedURL) IsTLS() bool {
 	return false
 }
 
-// DefaultPort returns the default port, based on the URL scheme.
-// If URL is not valid or scheme doesn't imply the port, it
+// DefaultPort returns the default port, based on the URI scheme.
+// If URI is not valid or scheme doesn't imply the port, it
 // returns 0.
-func (cached *cachedURL) DefaultPort() uint16 {
+func (cached *cachedURI) DefaultPort() uint16 {
 	if cached.IsTCP() {
 		switch strings.ToLower(cached.parsed.Scheme) {
 		case "http":
@@ -151,28 +151,28 @@ func (cached *cachedURL) DefaultPort() uint16 {
 	return 0
 }
 
-// cache is a process-global cache of parsed URLs
-var cache *lru.Cache[URL, *cachedURL]
+// cache is a process-global cache of parsed URIs
+var cache *lru.Cache[URI, *cachedURI]
 
 // init creates a cache
 func init() {
 	var err error
-	cache, err = lru.New[URL, *cachedURL](CacheSize)
+	cache, err = lru.New[URI, *cachedURI](CacheSize)
 	if err != nil {
 		panic(err)
 	}
 }
 
-// lookup returns cachedURL.
-// In a case of cache miss, new cachedURL will be created on demand.
-func lookup(u URL) *cachedURL {
+// lookup returns cachedURI.
+// In a case of cache miss, new cachedURI will be created on demand.
+func lookup(u URI) *cachedURI {
 	cached, _ := cache.Get(u)
 	if cached != nil {
 		return cached
 	}
 
 	parsed, err := parse(string(u))
-	cached = &cachedURL{err: err, canonical: u}
+	cached = &cachedURI{err: err, canonical: u}
 
 	if err == nil {
 		cached.parsed = parsed

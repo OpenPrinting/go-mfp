@@ -14,24 +14,24 @@ import (
 	"strings"
 )
 
-// parse parses the URL string.
+// parse parses the URI string.
 //
 // In comparison to the [url.Parse] from the standard library,
 // it has the following differences:
 //
-//   - URL must be absolute (i.e., must contain scheme)
-//   - only "unix" URLs allowed to miss host.
+//   - URI must be absolute (i.e., must contain scheme)
+//   - only "unix" URIs allowed to miss host.
 //   - for the "unix" scheme host must be "" or "localhost".
 //
-// The "unix" URL schema is similar to the "file" schema, as defined
+// The "unix" URI schema is similar to the "file" schema, as defined
 // in the [RFC 8089] (surprisingly, there are still no official registration
 // for the "unix" schema), with the following notes:
 //
-//   - "authority" part of URL may be set or omitted. If set, it
+//   - "authority" part of URI may be set or omitted. If set, it
 //     must be either empty or "localhost" (case-insensitive). So
 //     valid forms are: "unix:/path" (no authority), "unix:///path" (empty
 //     authority) or "unix://localhost/path" (localhost authority).
-//   - in any case, the "unix" URL is normalized into "no authority"
+//   - in any case, the "unix" URI is normalized into "no authority"
 //     short form (i.e., "unix:/path")
 func parse(s string) (*url.URL, error) {
 	// Test some corner cases
@@ -39,7 +39,7 @@ func parse(s string) (*url.URL, error) {
 		return nil, ErrURIInvalid
 	}
 
-	// Parse the URL string
+	// Parse the URI string
 	parsed, err := url.Parse(s)
 	if err != nil {
 		fmt.Println(s, err)
@@ -52,7 +52,7 @@ func parse(s string) (*url.URL, error) {
 		return nil, ErrURISchemeMissed
 
 	case "unix":
-		// For unix URLs, Scheme must be omitted or "localhost"
+		// For unix URIs, Scheme must be omitted or "localhost"
 		switch strings.ToLower(parsed.Host) {
 		case "", "localhost":
 		default:
