@@ -9,8 +9,10 @@ package test
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"image/png"
+	"io"
 	"os"
 	"os/exec"
 
@@ -22,7 +24,21 @@ import (
 // The format argument is the MIME type of the document (e.g. "image/pwg-raster").
 // dpi is used for PostScript rendering; if zero, 300 DPI is used.
 // For multi-page documents, the first page is returned.
+// CUPS may gzip-compress documents before delivery; gzip is transparently
+// decompressed before format-specific conversion.
 func convertToPNG(data []byte, format string, dpi int) ([]byte, error) {
+	// Decompress gzip-wrapped data (magic bytes 1f 8b).
+	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+		r, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("raster: gzip: %w", err)
+		}
+		data, err = io.ReadAll(r)
+		r.Close()
+		if err != nil {
+			return nil, fmt.Errorf("raster: gzip decompress: %w", err)
+		}
+	}
 	switch format {
 	case "image/pwg-raster", "image/urf":
 		return convertRasterToPNG(data)
