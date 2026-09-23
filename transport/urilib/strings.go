@@ -77,8 +77,8 @@ func DefaultPort(s string) uint16 {
 //   - unix URIs converted to the short form (unix:/path)
 //
 // Invalid URIs returned unmodified
-func Canonical(s string) URI {
-	return URI(s).Canonical()
+func Canonical(s string) string {
+	return string(URI(s).Canonical())
 }
 
 // WithHostname replaces Hostname part of the URI.
@@ -87,8 +87,8 @@ func Canonical(s string) URI {
 // be enclosed into square braces.
 //
 // Invalid or non-TCP URIs returned unchanged.
-func WithHostname(s string, newHostname string) URI {
-	return URI(s).WithHostname(newHostname)
+func WithHostname(s string, newHostname string) string {
+	return string(URI(s).WithHostname(newHostname))
 }
 
 // WithPortNum replaces Port part of the URI.
@@ -97,15 +97,15 @@ func WithHostname(s string, newHostname string) URI {
 // it will be set, as specified.
 //
 // Invalid or non-TCP URIs returned unchanged.
-func WithPortNum(s string, newPortNum uint16) URI {
-	return URI(s).WithPortNum(newPortNum)
+func WithPortNum(s string, newPortNum uint16) string {
+	return string(URI(s).WithPortNum(newPortNum))
 }
 
 // WithoutPort removes Port part of the URI.
 //
 // Invalid or non-TCP URIs returned unchanged.
-func WithoutPort(s string) URI {
-	return URI(s).WithoutPort()
+func WithoutPort(s string) string {
+	return string(URI(s).WithoutPort())
 }
 
 // IPAddress returns URI's IP address.
