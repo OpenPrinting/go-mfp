@@ -74,7 +74,9 @@
 //
 //       - application/postscript, application/vnd.cups-postscript:
 //         Rendered by a Ghostscript subprocess (gs). The first page is
-//         rendered at 150 DPI. Requires ghostscript to be installed.
+//         rendered at the printer's negotiated resolution (printer-resolution-
+//         supported[0]), defaulting to 300 DPI. Requires ghostscript to be
+//         installed.
 //
 //  5. Image evaluation (internal/evaluate)
 //
@@ -131,8 +133,8 @@
 //
 // Options:
 //
-//	-P, --port PORT       IPP server TCP port (default 60000)
-//	-n, --name NAME       CUPS queue name (default "mfp-test")
+//	-P, --port PORT       IPP server TCP port (default: OS-assigned free port)
+//	-n, --name NAME       CUPS queue name (default: mfp-test-<printer-model>)
 //	-o, --output FILE     Write JSON report to FILE after all tests finish
 //	    --threshold SCORE Minimum overall_quality score to pass (default 0.95)
 //	    --timeout DUR     Document capture timeout per test (default 30s)
@@ -147,6 +149,16 @@
 //
 //   - CUPS           — queue management and job processing
 //                      (sudo apt install cups)
+//
+// mfp-test calls lpadmin to create and remove the temporary CUPS queue.
+// lpadmin requires CUPS administrative privileges. On most systems the
+// invoking user must be a member of the "lpadmin" group (Debian/Ubuntu) or
+// the "sys" group (Fedora/RHEL):
+//
+//	sudo usermod -aG lpadmin $USER   # Debian/Ubuntu
+//	sudo usermod -aG sys    $USER   # Fedora/RHEL
+//
+// Alternatively, run mfp-test as root (not recommended in production).
 //   - Ghostscript    — PostScript → PNG conversion
 //                      (sudo apt install ghostscript)
 //   - libvips        — PDF / JPEG / TIFF / WEBP / GIF conversion
@@ -179,6 +191,27 @@
 // A machine-readable JSON report can be written with --output report.json.
 // The report contains the same information as the table plus the generation
 // timestamp and is suitable for processing in CI pipelines.
+//
+// JSON report schema:
+//
+//	{
+//	  "generated_at": "<RFC3339 timestamp>",
+//	  "total":        <integer — number of test configurations run>,
+//	  "passed":       <integer — number that scored >= threshold>,
+//	  "failed":       <integer — number that scored < threshold>,
+//	  "results": [
+//	    {
+//	      "name":    "<sides/color-mode/format>",
+//	      "passed":  <bool>,
+//	      "score":   <float64 0.0–1.0>,
+//	      "details": {            // omitted when evaluator is disabled
+//	        "<metric>": <float64>,
+//	        ...
+//	      }
+//	    },
+//	    ...
+//	  ]
+//	}
 //
 // # Printer Model Files
 //

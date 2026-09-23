@@ -106,7 +106,7 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 	}
 
 	// Convert captured document to PNG for evaluation.
-	pngData, err := convertToPNG(d.Data, d.Params.Format)
+	pngData, err := convertToPNG(d.Data, d.Params.Format, cfg.DPI)
 	if err != nil {
 		return nil, fmt.Errorf("convert to PNG: %w", err)
 	}
