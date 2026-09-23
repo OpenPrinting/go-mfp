@@ -6,7 +6,7 @@
 //
 // Cache of parsed URLs
 
-package urlcache
+package urilib
 
 import (
 	"net"

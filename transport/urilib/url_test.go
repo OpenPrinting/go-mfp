@@ -6,7 +6,7 @@
 //
 // URL tests
 
-package urlcache
+package urilib
 
 import (
 	"net/netip"

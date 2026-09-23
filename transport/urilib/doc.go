@@ -6,4 +6,4 @@
 //
 // Package documentation
 
-package urlcache
+package urilib

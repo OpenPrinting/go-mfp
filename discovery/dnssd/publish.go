@@ -19,7 +19,7 @@ import (
 	"github.com/OpenPrinting/go-avahi"
 	"github.com/OpenPrinting/go-mfp/discovery"
 	"github.com/OpenPrinting/go-mfp/log"
-	"github.com/OpenPrinting/go-mfp/transport/urlcache"
+	"github.com/OpenPrinting/go-mfp/transport/urilib"
 	"github.com/OpenPrinting/go-mfp/util/generic"
 )
 
@@ -146,7 +146,7 @@ func serviceEndpoints(svctype string, endpoints []string) []netip.AddrPort {
 	// Extract addresses of matched URLs
 	addresses := generic.NewSet[netip.AddrPort]()
 	for _, ep := range endpoints {
-		u := urlcache.New(ep)
+		u := urilib.New(ep)
 
 		if u.IsHTTP() == wantHTTP && u.IsTLS() == wantTLS {
 			addr := u.IPAddress()

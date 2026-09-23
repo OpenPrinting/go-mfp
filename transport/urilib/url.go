@@ -6,7 +6,7 @@
 //
 // Package documentation
 
-package urlcache
+package urilib
 
 import (
 	"net"

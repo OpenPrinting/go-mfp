@@ -4,9 +4,9 @@
 // Copyright (C) 2024 and up by Alexander Pevzner (pzz@apevzner.com)
 // See LICENSE for license terms and conditions
 //
-// URL parser
+// URI parser
 
-package urlcache
+package urilib
 
 import (
 	"fmt"
@@ -36,27 +36,27 @@ import (
 func parse(s string) (*url.URL, error) {
 	// Test some corner cases
 	if s == "" {
-		return nil, ErrURLInvalid
+		return nil, ErrURIInvalid
 	}
 
 	// Parse the URL string
 	parsed, err := url.Parse(s)
 	if err != nil {
 		fmt.Println(s, err)
-		return nil, ErrURLInvalid
+		return nil, ErrURIInvalid
 	}
 
 	// Do schema-specific checks
 	switch parsed.Scheme {
 	case "":
-		return nil, ErrURLSchemeMissed
+		return nil, ErrURISchemeMissed
 
 	case "unix":
 		// For unix URLs, Scheme must be omitted or "localhost"
 		switch strings.ToLower(parsed.Host) {
 		case "", "localhost":
 		default:
-			return nil, ErrURLUNIXHost
+			return nil, ErrURIUNIXHost
 		}
 
 		parsed.Host = ""
@@ -64,7 +64,7 @@ func parse(s string) (*url.URL, error) {
 
 	default:
 		if parsed.Host == "" {
-			return nil, ErrURLHostMissed
+			return nil, ErrURIHostMissed
 		}
 	}
 

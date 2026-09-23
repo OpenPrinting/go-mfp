@@ -24,7 +24,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
 	"github.com/OpenPrinting/go-mfp/transport"
-	"github.com/OpenPrinting/go-mfp/transport/urlcache"
+	"github.com/OpenPrinting/go-mfp/transport/urilib"
 )
 
 // simulate runs scanner simulator.
@@ -189,7 +189,7 @@ func dnssdDeviceRewrite(dnssddev *discovery.DNSSDDevice,
 
 		out := 0
 		for _, ep := range svc.Endpoints {
-			u := urlcache.New(ep)
+			u := urilib.New(ep)
 			if u.IsHTTP() {
 				u = u.WithPortNum(uint16(portnum))
 				if u.IsIP4() {

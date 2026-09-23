@@ -1,2 +1,2 @@
-SUBDIRS = urlcache
+SUBDIRS = urilib
 include ../Rules.mak
