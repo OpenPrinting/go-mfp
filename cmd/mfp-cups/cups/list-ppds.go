@@ -43,6 +43,8 @@ func cmdListPPDsHandler(ctx context.Context, inv *argv.Invocation) error {
 	dest := optCUPSURL(inv)
 
 	sel := &cups.GetPPDsSelection{
+		ExcludeSchemes:     optSchemesExcludeGet(inv),
+		IncludeSchemes:     optSchemesIncludeGet(inv),
 		Limit:              optLimitGet(inv),
 		PPDMake:            optMakeGet(inv),
 		PPDMakeAndModel:    optMakeModelGet(inv),
