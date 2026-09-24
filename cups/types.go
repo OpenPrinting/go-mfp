@@ -91,3 +91,30 @@ type GetDevicesSelection struct {
 	// If not set, CUPS server default is used.
 	Timeout time.Duration
 }
+
+// GetPPDsSelection configures a selection of devices returned by
+// [Client.CUPSGetPPDs].
+type GetPPDsSelection struct {
+	// ExcludeSchemes and IncludeSchemes specifies which schemes
+	// to include into output.
+	ExcludeSchemes []string
+	IncludeSchemes []string
+
+	// If not zero, specifies maximum number of PPDs to be returned.
+	Limit int
+
+	// These parameters, allows to filter returned  PPDs by
+	// make (manufacturer), make and model, model number,
+	// language, PostSript product string, PostScript version
+	// string and PPD type, respectively.
+	//
+	// Use "" for strings and 0 for int to bypass the particular
+	// filtering.
+	PpdMake            string
+	PpdMakeAndModel    string
+	PpdModelNumber     int
+	PpdNaturalLanguage string
+	PpdProduct         string
+	PpdPsVersion       string
+	PpdType            string
+}

@@ -178,17 +178,28 @@ func (c *Client) CUPSGetPPD(ctx context.Context,
 
 // CUPSGetPPDs requests information about PPD files available at the server.
 //
-// If filter is nil, all PPDs will be returned (the response could be
+// If GetPPDsSelection is nil, all PPDs will be returned (the response could be
 // really large at this case).
 func (c *Client) CUPSGetPPDs(ctx context.Context,
-	filter *ipp.PPDFilter) ([]*ipp.PPDAttributes, error) {
+	sel *GetPPDsSelection, attrs []string) ([]*ipp.PPDAttributes, error) {
 
-	rq := &ipp.CUPSGetPPDsRequest{
-		RequestHeader: ipp.DefaultRequestHeader,
+	if sel == nil {
+		sel = &GetPPDsSelection{}
 	}
 
-	if filter != nil {
-		rq.PPDFilter = *filter
+	rq := &ipp.CUPSGetPPDsRequest{
+		RequestHeader:       ipp.DefaultRequestHeader,
+		ExcludeSchemes:      sel.ExcludeSchemes,
+		IncludeSchemes:      sel.IncludeSchemes,
+		Limit:               optional.NotZero(sel.Limit),
+		PpdMake:             optional.NotZero(sel.PpdMake),
+		PpdMakeAndModel:     optional.NotZero(sel.PpdMakeAndModel),
+		PpdModelNumber:      optional.NotZero(sel.PpdModelNumber),
+		PpdNaturalLanguage:  optional.NotZero(sel.PpdNaturalLanguage),
+		PpdProduct:          optional.NotZero(sel.PpdProduct),
+		PpdPsVersion:        optional.NotZero(sel.PpdPsVersion),
+		PpdType:             optional.NotZero(sel.PpdType),
+		RequestedAttributes: attrs,
 	}
 
 	rsp := &ipp.CUPSGetPPDsResponse{}
