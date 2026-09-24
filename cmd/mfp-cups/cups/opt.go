@@ -207,6 +207,21 @@ var optPPDType = argv.Option{
 	HelpArg:  "name",
 	Help:     "Filter by PPD type",
 	Validate: argv.ValidateAny,
+	Complete: argv.CompleteStrings(
+		// Taken from the cups-driverd.cxx sources
+		[]string{
+			"postscript",
+			"pdf",
+			"raster",
+			"fax",
+			"object",
+			"object-direct",
+			"object-storage",
+			"unknown",
+			"drv",
+			"archive",
+		},
+	),
 }
 
 // optPPDTypeGet returns --product value.
