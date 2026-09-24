@@ -47,6 +47,7 @@ var Command = argv.Command{
 		cmdDetectPrinters,
 		cmdGetPPD,
 		cmdListPrinters,
+		cmdListPPDs,
 		argv.HelpCommand,
 	},
 	Handler: cmdCupsHandler,

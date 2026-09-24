@@ -87,11 +87,26 @@ func optIDGet(inv *argv.Invocation) int {
 	return id
 }
 
+// optLanguage describes the --language option.
+// It allows filtering by natural language.
+var optLanguage = argv.Option{
+	Name:     "--language",
+	HelpArg:  "name",
+	Help:     "Filter by natural language",
+	Validate: argv.ValidateAny,
+}
+
+// optLanguageGet --language value.
+func optLanguageGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--language")
+	return opt
+}
+
 // optLimit describes the --limit option.
 // It specifies the maximum number of returned printers
 var optLimit = argv.Option{
 	Name:     "--limit",
-	Help:     "Maximum number of printers",
+	Help:     "Maximum number of returned entries",
 	HelpArg:  "N",
 	Validate: argv.ValidateIntRange(0, 1, math.MaxInt32),
 }
@@ -119,6 +134,99 @@ var optLocation = argv.Option{
 // optLocationGet returns --location option value.
 func optLocationGet(inv *argv.Invocation) string {
 	opt, _ := inv.Get("--location")
+	return opt
+}
+
+// optMake describes the --make option.
+// It allows filtering by make (manufacturer) name.
+var optMake = argv.Option{
+	Name:     "--make",
+	HelpArg:  "name",
+	Help:     "Filter by make (manufacturer) name",
+	Validate: argv.ValidateAny,
+}
+
+// optMakeGet returns --make option value.
+func optMakeGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--make")
+	return opt
+}
+
+// optMakeModel describes the --make-model option.
+// It allows filtering by make and model.
+var optMakeModel = argv.Option{
+	Name:     "--make-model",
+	HelpArg:  "name",
+	Help:     "Filter by make and model",
+	Validate: argv.ValidateAny,
+}
+
+// optMakeGet returns --make option value.
+func optMakeModelGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--make-model")
+	return opt
+}
+
+// optModelNumber describes the --model-number option.
+// It allows filtering by model number.
+var optModelNumber = argv.Option{
+	Name:     "--model-number",
+	HelpArg:  "N",
+	Help:     "Filter by make and model",
+	Validate: argv.ValidateIntRange(0, 1, math.MaxInt32),
+}
+
+// optoptModelNumberGet returns --model-number option value.
+func optoptModelNumberGet(inv *argv.Invocation) int {
+	lim := 0
+	if opt, ok := inv.Get("--model-number"); ok {
+		lim, _ = strconv.Atoi(opt)
+	}
+	return lim
+}
+
+// optProduct describes the --product option.
+// It allows filtering by PS product name.
+var optProduct = argv.Option{
+	Name:     "--product",
+	HelpArg:  "name",
+	Help:     "Filter by PS product name",
+	Validate: argv.ValidateAny,
+}
+
+// optProductGet returns --product value.
+func optProductGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--product")
+	return opt
+}
+
+// optPPDType describes the --ppdtype option.
+// It allows filtering by PPD type.
+var optPPDType = argv.Option{
+	Name:     "--ppdtype",
+	HelpArg:  "name",
+	Help:     "Filter by PPD type",
+	Validate: argv.ValidateAny,
+}
+
+// optPPDTypeGet returns --product value.
+func optPPDTypeGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--ppdtype")
+	return opt
+}
+
+// optPsVersion describes the --psversion option.
+// It allows filtering by PS version string.
+var optPsVersion = argv.Option{
+	Name:     "--psversion",
+	HelpArg:  "name",
+	Help:     "Filter by PS product name",
+	Validate: argv.ValidateAny,
+}
+
+// optPsVersionGet returns --psversionn value.
+func optPsVersionGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--psversion")
 	return opt
 }
 
