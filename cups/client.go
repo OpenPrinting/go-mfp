@@ -180,6 +180,9 @@ func (c *Client) CUPSGetPPD(ctx context.Context,
 //
 // If GetPPDsSelection is nil, all PPDs will be returned (the response could be
 // really large at this case).
+//
+// The attrs attribute allows to specify list of requested attributes
+// ("all" if set to nil).
 func (c *Client) CUPSGetPPDs(ctx context.Context,
 	sel *GetPPDsSelection, attrs []string) ([]*ipp.PPDAttributes, error) {
 
@@ -187,18 +190,22 @@ func (c *Client) CUPSGetPPDs(ctx context.Context,
 		sel = &GetPPDsSelection{}
 	}
 
+	if attrs == nil {
+		attrs = []string{"all"}
+	}
+
 	rq := &ipp.CUPSGetPPDsRequest{
 		RequestHeader:       ipp.DefaultRequestHeader,
 		ExcludeSchemes:      sel.ExcludeSchemes,
 		IncludeSchemes:      sel.IncludeSchemes,
 		Limit:               optional.NotZero(sel.Limit),
-		PpdMake:             optional.NotZero(sel.PpdMake),
-		PpdMakeAndModel:     optional.NotZero(sel.PpdMakeAndModel),
-		PpdModelNumber:      optional.NotZero(sel.PpdModelNumber),
-		PpdNaturalLanguage:  optional.NotZero(sel.PpdNaturalLanguage),
-		PpdProduct:          optional.NotZero(sel.PpdProduct),
-		PpdPsVersion:        optional.NotZero(sel.PpdPsVersion),
-		PpdType:             optional.NotZero(sel.PpdType),
+		PPDMake:             optional.NotZero(sel.PPDMake),
+		PPDMakeAndModel:     optional.NotZero(sel.PPDMakeAndModel),
+		PPDModelNumber:      optional.NotZero(sel.PPDModelNumber),
+		PPDNaturalLanguage:  optional.NotZero(sel.PPDNaturalLanguage),
+		PPDProduct:          optional.NotZero(sel.PPDProduct),
+		PPDPsVersion:        optional.NotZero(sel.PPDPsVersion),
+		PPDType:             optional.NotZero(sel.PPDType),
 		RequestedAttributes: attrs,
 	}
 

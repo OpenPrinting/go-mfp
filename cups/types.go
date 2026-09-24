@@ -110,11 +110,11 @@ type GetPPDsSelection struct {
 	//
 	// Use "" for strings and 0 for int to bypass the particular
 	// filtering.
-	PpdMake            string
-	PpdMakeAndModel    string
-	PpdModelNumber     int
-	PpdNaturalLanguage string
-	PpdProduct         string
-	PpdPsVersion       string
-	PpdType            string
+	PPDMake            string
+	PPDMakeAndModel    string
+	PPDModelNumber     int
+	PPDNaturalLanguage string
+	PPDProduct         string
+	PPDPsVersion       string
+	PPDType            string
 }
