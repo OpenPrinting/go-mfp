@@ -118,11 +118,30 @@ func (pub *Publisher) proc() {
 			avahi.ProtocolUnspec, 0, nil, pub.services)
 
 		log.Verbose(pub.ctx, "publishing interrupted: %s: ", err)
+		if err == avahi.ErrCollision {
+			instance, err := avahi.AlternativeServiceName(pub.instance)
+			if err == nil {
+				log.Verbose(pub.ctx,
+					"using alternative name: %q", instance)
+
+				pub.instance = instance
+				for _, svc := range pub.services {
+					svc.InstanceName = instance
+				}
+			} else {
+				log.Warning(pub.ctx,
+					"using alternative name: %q, %s",
+					instance, err)
+			}
+		}
 
 		select {
 		case <-pub.ctx.Done():
 			return
 		case <-time.After(avahiClientRestartInterval):
+			log.Verbose(pub.ctx,
+				"%q: publishing retried after delay",
+				pub.instance)
 		}
 	}
 }
