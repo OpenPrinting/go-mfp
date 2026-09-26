@@ -27,8 +27,9 @@ import (
 // CUPS may gzip-compress documents before delivery; gzip is transparently
 // decompressed before format-specific conversion.
 func convertToPNG(data []byte, format string, dpi int) ([]byte, error) {
-	// Decompress gzip-wrapped data (magic bytes 1f 8b).
-	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+	// Decompress gzip-wrapped data (magic bytes 1f 8b). Loop to handle
+	// the case where CUPS applies gzip at both the HTTP and IPP levels.
+	for len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
 		r, err := gzip.NewReader(bytes.NewReader(data))
 		if err != nil {
 			return nil, fmt.Errorf("raster: gzip: %w", err)
@@ -53,6 +54,10 @@ func convertToPNG(data []byte, format string, dpi int) ([]byte, error) {
 	case "application/postscript",
 		"application/vnd.cups-postscript":
 		return convertPSToPNG(data, dpi)
+	case "application/octet-stream":
+		// CUPS may deliver any format under the generic octet-stream type.
+		// Detect the actual format from the magic bytes.
+		return detectAndConvert(data, dpi)
 	default:
 		// image/vnd.cups-raster and image/jpeg+gzip are not yet supported
 		// for image evaluation; captured bytes are still saved with --keep.
@@ -115,6 +120,28 @@ func convertPSToPNG(data []byte, dpi int) ([]byte, error) {
 	}
 
 	return os.ReadFile(outPath)
+}
+
+// detectAndConvert detects the actual format of data from its magic bytes
+// and dispatches to the appropriate converter. Used for application/octet-stream
+// where CUPS may send any format.
+func detectAndConvert(data []byte, dpi int) ([]byte, error) {
+	n := len(data)
+	switch {
+	case n >= 4 && string(data[:4]) == "RaS2":
+		return convertRasterToPNG(data)
+	case n >= 8 && string(data[:8]) == "UNIRAST\x00":
+		return convertRasterToPNG(data)
+	case n >= 4 && string(data[:4]) == "%PDF":
+		return convertVipsToPNG(data)
+	case n >= 2 && string(data[:2]) == "%!":
+		return convertPSToPNG(data, dpi)
+	case n >= 2 && data[0] == 0xff && data[1] == 0xd8:
+		return convertVipsToPNG(data) // JPEG
+	case n >= 4 && string(data[:4]) == "\x89PNG":
+		return convertVipsToPNG(data)
+	}
+	return nil, fmt.Errorf("raster: cannot detect format of application/octet-stream data")
 }
 
 // convertRasterToPNG decodes a PWG Raster or Apple URF stream and encodes
