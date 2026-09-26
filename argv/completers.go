@@ -11,6 +11,7 @@ package argv
 import (
 	"io/fs"
 	"os"
+	"os/user"
 	"strings"
 )
 
@@ -55,6 +56,55 @@ func CompleteStrings(s []string) Completer {
 // CompleteOSPath is the [Completer] that completes the operating
 // system file paths.
 func CompleteOSPath(s string) []Completion {
+	if len(s) > 0 && s[0] == '~' {
+		// Need to complete user name itself?
+		i := strings.IndexByte(s, '/')
+		if i < 0 {
+			users := localUsers(s[1:])
+			compl := make([]Completion, len(users))
+			for i := range users {
+				compl[i].String = "~" + users[i]
+				compl[i].NoSpace = true
+			}
+
+			if len(compl) == 1 {
+				compl[0].String += "/"
+			}
+
+			return compl
+		}
+
+		// Resolve tilde prefix into the home directory
+		var usr *user.User
+		var err error
+		if username := s[1:i]; username != "" {
+			usr, err = user.Lookup(username)
+		} else {
+			usr, err = user.Current()
+		}
+		if err != nil {
+			return nil
+		}
+
+		// Replace tilde prefix with home directory
+		// and call completeOSPath
+		home, _ := strings.CutSuffix(usr.HomeDir, "/")
+		compl := completeOSPath(home + s[i:])
+
+		// Restore tilde prefix on every returned path
+		prefix := s[:i]
+		for i := range compl {
+			str, ok := strings.CutPrefix(
+				compl[i].String, home)
+
+			if ok {
+				compl[i].String = prefix + str
+			}
+		}
+
+		return compl
+	}
+
 	return completeOSPath(s)
 }
 
