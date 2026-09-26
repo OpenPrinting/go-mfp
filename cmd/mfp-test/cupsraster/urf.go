@@ -76,13 +76,18 @@ func decodeURFPages(br *bufio.Reader) ([]Page, error) {
 		return nil, fmt.Errorf("not a URF stream: magic % x", head[:len(urfMagic)])
 	}
 	numPages := int(binary.BigEndian.Uint32(head[len(urfMagic):]))
-	if numPages <= 0 || numPages > 65535 {
+	if numPages > 65535 {
 		return nil, fmt.Errorf("invalid URF page count %d", numPages)
 	}
-	pages := make([]Page, 0, numPages)
+	// Some CUPS versions stream URF without updating the page count header,
+	// leaving it as 0. When that happens, read pages until EOF.
+	pages := make([]Page, 0, max(numPages, 1))
 	hdr := make([]byte, urfPageHeaderSize)
-	for page := 1; page <= numPages; page++ {
+	for page := 1; numPages == 0 || page <= numPages; page++ {
 		if _, err := io.ReadFull(br, hdr); err != nil {
+			if numPages == 0 && (err == io.EOF || err == io.ErrUnexpectedEOF) {
+				break // normal end-of-stream when count was 0
+			}
 			return nil, fmt.Errorf("page %d: reading page header: %w", page, err)
 		}
 		h, err := parseURFHeader(hdr)
