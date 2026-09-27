@@ -165,7 +165,9 @@
 //                      (sudo apt install libvips-dev)
 //   - Python 3       — image evaluation subprocess
 //                      with numpy, opencv-python, scikit-image, scipy
-//                      (pip3 install numpy opencv-python scikit-image scipy)
+//                      Ubuntu/Debian: pip3 install numpy opencv-python scikit-image scipy
+//                      Fedora/RHEL:   dnf install python3-numpy python3-opencv \
+//                                                 python3-scikit-image python3-scipy
 //
 // # Output
 //

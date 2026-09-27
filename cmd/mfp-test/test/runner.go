@@ -127,8 +127,21 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 		return nil, fmt.Errorf("close captured PNG: %w", err)
 	}
 
+	// For monochrome printers, compare against a grayscale version of the
+	// original so the evaluator is not penalised for the expected colour→grey
+	// conversion that CUPS performs before delivering the job.
+	refPath := imgPath
+	if cfg.Mono {
+		grayPath, err := toGrayscalePNG(imgPath)
+		if err != nil {
+			return nil, fmt.Errorf("grayscale reference: %w", err)
+		}
+		defer os.Remove(grayPath)
+		refPath = grayPath
+	}
+
 	// Evaluate image similarity.
-	res, err := eval.Compare(imgPath, capturedPNGName, threshold, verbose)
+	res, err := eval.Compare(refPath, capturedPNGName, threshold, verbose)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate: %w", err)
 	}

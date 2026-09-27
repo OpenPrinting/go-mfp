@@ -36,7 +36,8 @@ type testConfig struct {
 	Sides     ipp.KwSides
 	ColorMode string
 	Format    string
-	DPI       int // negotiated print resolution (X DPI); 0 means use default
+	DPI       int  // negotiated print resolution (X DPI); 0 means use default
+	Mono      bool // true when the effective color mode is monochrome
 }
 
 // queryPrinterCaps queries the virtual IPP printer for its supported
@@ -96,6 +97,24 @@ func configName(sides ipp.KwSides, color, format string) string {
 	return fmt.Sprintf("%s/%s/%s", sides, color, format)
 }
 
+// isMonoMode reports whether the effective print color mode is monochrome.
+// It returns true when colorMode is "monochrome", or when colorMode is "auto"
+// and the printer only supports monochrome modes (no "color" or "highlight-color").
+func isMonoMode(caps *printerCaps, colorMode string) bool {
+	if colorMode == "monochrome" {
+		return true
+	}
+	if colorMode == "auto" {
+		for _, m := range caps.ColorModes {
+			if m == "color" || m == "highlight-color" {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
 // defaultDPI returns the first X resolution from the printer's supported
 // resolutions, or 300 if none are advertised.
 func defaultDPI(caps *printerCaps) int {
@@ -119,6 +138,7 @@ func batchMatrix(caps *printerCaps) []testConfig {
 					ColorMode: color,
 					Format:    format,
 					DPI:       dpi,
+					Mono:      isMonoMode(caps, color),
 				})
 			}
 		}
@@ -142,6 +162,7 @@ func quickMatrix(caps *printerCaps) []testConfig {
 				ColorMode: color,
 				Format:    format,
 				DPI:       dpi,
+				Mono:      isMonoMode(caps, color),
 			})
 		}
 	}
@@ -151,7 +172,7 @@ func quickMatrix(caps *printerCaps) []testConfig {
 // singleConfig parses a configuration name of the form
 // "sides/color-mode/format" and returns the corresponding testConfig.
 // This is used with --single to reproduce a specific known bug.
-func singleConfig(spec string) (*testConfig, error) {
+func singleConfig(spec string, caps *printerCaps) (*testConfig, error) {
 	parts := strings.SplitN(spec, "/", 3)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("matrix: --single requires sides/color-mode/format, got %q", spec)
@@ -169,5 +190,7 @@ func singleConfig(spec string) (*testConfig, error) {
 		Sides:     sides,
 		ColorMode: parts[1],
 		Format:    parts[2],
+		DPI:       defaultDPI(caps),
+		Mono:      isMonoMode(caps, parts[1]),
 	}, nil
 }

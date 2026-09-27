@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"image"
 	"image/png"
 	"io"
 	"os"
@@ -161,4 +162,36 @@ func convertRasterToPNG(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("raster: encode PNG: %w", err)
 	}
 	return buf.Bytes(), nil
+}
+
+// toGrayscalePNG reads the PNG at srcPath, converts it to grayscale,
+// writes the result to a new temp file, and returns its path.
+// Used to build a monochrome reference image when comparing against
+// the output of a monochrome printer.
+func toGrayscalePNG(srcPath string) (string, error) {
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return "", fmt.Errorf("raster: read reference PNG: %w", err)
+	}
+	src, err := png.Decode(bytes.NewReader(data))
+	if err != nil {
+		return "", fmt.Errorf("raster: decode reference PNG: %w", err)
+	}
+	bounds := src.Bounds()
+	gray := image.NewGray(bounds)
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			gray.Set(x, y, src.At(x, y))
+		}
+	}
+	f, err := os.CreateTemp("", "mfp-ref-gray-*.png")
+	if err != nil {
+		return "", fmt.Errorf("raster: create gray temp: %w", err)
+	}
+	defer f.Close()
+	if err := png.Encode(f, gray); err != nil {
+		os.Remove(f.Name())
+		return "", fmt.Errorf("raster: encode gray PNG: %w", err)
+	}
+	return f.Name(), nil
 }

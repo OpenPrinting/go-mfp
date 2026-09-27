@@ -240,7 +240,7 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 		configs = quickMatrix(caps)
 	default:
 		if spec, ok := inv.Get("--single"); ok {
-			cfg, err := singleConfig(spec)
+			cfg, err := singleConfig(spec, caps)
 			if err != nil {
 				return err
 			}
