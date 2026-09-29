@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"image"
 	"image/png"
 	"io"
 	"os"
@@ -21,9 +20,63 @@ import (
 	"github.com/h2non/bimg"
 )
 
+// cropCapturedPNG detects the non-white content bounding box of a full-page
+// raster image and crops to that region. CUPS centres the printed image on
+// the paper with white margins; this function removes those margins so the
+// evaluator compares only the printed content against the reference.
+// A full raster scan finds the tightest bounding box of non-white pixels,
+// making detection robust even when the content has a light or white centre.
+// If no non-white pixels are found (blank page), the data is returned unchanged.
+func cropCapturedPNG(data []byte) ([]byte, error) {
+	img, err := png.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("raster: crop: decode: %w", err)
+	}
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+
+	isWhite := func(x, y int) bool {
+		r, g, bv, _ := img.At(x, y).RGBA()
+		// RGBA returns [0, 65535]; threshold ≈ 245/255
+		const t uint32 = 62000
+		return r > t && g > t && bv > t
+	}
+
+	// Full raster scan: find bounding box of all non-white pixels.
+	xMin, xMax, yMin, yMax := w, 0, h, 0
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			if !isWhite(x, y) {
+				if x < xMin {
+					xMin = x
+				}
+				if x > xMax {
+					xMax = x
+				}
+				if y < yMin {
+					yMin = y
+				}
+				if y > yMax {
+					yMax = y
+				}
+			}
+		}
+	}
+
+	if xMax <= xMin || yMax <= yMin {
+		return data, nil // blank page — nothing to crop
+	}
+
+	cropped, err := bimg.NewImage(data).Extract(yMin, xMin, xMax-xMin+1, yMax-yMin+1)
+	if err != nil {
+		return nil, fmt.Errorf("raster: crop: extract: %w", err)
+	}
+	return cropped, nil
+}
+
 // convertToPNG converts captured document bytes to a PNG image.
 // The format argument is the MIME type of the document (e.g. "image/pwg-raster").
-// dpi is used for PostScript rendering; if zero, 300 DPI is used.
+// dpi is used for PostScript and PDF rendering via Ghostscript; if zero, 300 DPI is used.
 // For multi-page documents, the first page is returned.
 // CUPS may gzip-compress documents before delivery; gzip is transparently
 // decompressed before format-specific conversion.
@@ -46,15 +99,18 @@ func convertToPNG(data []byte, format string, dpi int) ([]byte, error) {
 		return convertRasterToPNG(data)
 	case "application/pdf",
 		"application/vnd.cups-pdf",
-		"image/jpeg",
+		"application/postscript",
+		"application/vnd.cups-postscript":
+		// Use Ghostscript so the negotiated DPI is honoured. libvips renders
+		// PDF at 72 DPI by default, producing a thumbnail-sized image that
+		// compares poorly against the 300 DPI reference.
+		return convertGSToPNG(data, dpi)
+	case "image/jpeg",
 		"image/tiff",
 		"image/webp",
 		"image/gif",
 		"image/png":
 		return convertVipsToPNG(data)
-	case "application/postscript",
-		"application/vnd.cups-postscript":
-		return convertPSToPNG(data, dpi)
 	case "application/octet-stream":
 		// CUPS may deliver any format under the generic octet-stream type.
 		// Detect the actual format from the magic bytes.
@@ -76,11 +132,12 @@ func convertVipsToPNG(data []byte) ([]byte, error) {
 	return out, nil
 }
 
-// convertPSToPNG calls Ghostscript directly to convert the first page of a
-// PostScript document to PNG. Using gs avoids the ImageMagick dependency and
-// the Ubuntu policy.xml reconfiguration it requires.
+// convertGSToPNG calls Ghostscript to render the first page of a PostScript
+// or PDF document to PNG at the negotiated printer DPI. Using gs ensures the
+// captured image is the same physical size as the reference (both at dpi pixels
+// per inch), which is required for accurate histogram and SSIM comparison.
 // dpi is the render resolution; if zero, 300 DPI is used as a safe default.
-func convertPSToPNG(data []byte, dpi int) ([]byte, error) {
+func convertGSToPNG(data []byte, dpi int) ([]byte, error) {
 	if dpi <= 0 {
 		dpi = 300
 	}
@@ -134,9 +191,9 @@ func detectAndConvert(data []byte, dpi int) ([]byte, error) {
 	case n >= 8 && string(data[:8]) == "UNIRAST\x00":
 		return convertRasterToPNG(data)
 	case n >= 4 && string(data[:4]) == "%PDF":
-		return convertVipsToPNG(data)
+		return convertGSToPNG(data, dpi)
 	case n >= 2 && string(data[:2]) == "%!":
-		return convertPSToPNG(data, dpi)
+		return convertGSToPNG(data, dpi)
 	case n >= 2 && data[0] == 0xff && data[1] == 0xd8:
 		return convertVipsToPNG(data) // JPEG
 	case n >= 4 && string(data[:4]) == "\x89PNG":
@@ -164,34 +221,3 @@ func convertRasterToPNG(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// toGrayscalePNG reads the PNG at srcPath, converts it to grayscale,
-// writes the result to a new temp file, and returns its path.
-// Used to build a monochrome reference image when comparing against
-// the output of a monochrome printer.
-func toGrayscalePNG(srcPath string) (string, error) {
-	data, err := os.ReadFile(srcPath)
-	if err != nil {
-		return "", fmt.Errorf("raster: read reference PNG: %w", err)
-	}
-	src, err := png.Decode(bytes.NewReader(data))
-	if err != nil {
-		return "", fmt.Errorf("raster: decode reference PNG: %w", err)
-	}
-	bounds := src.Bounds()
-	gray := image.NewGray(bounds)
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			gray.Set(x, y, src.At(x, y))
-		}
-	}
-	f, err := os.CreateTemp("", "mfp-ref-gray-*.png")
-	if err != nil {
-		return "", fmt.Errorf("raster: create gray temp: %w", err)
-	}
-	defer f.Close()
-	if err := png.Encode(f, gray); err != nil {
-		os.Remove(f.Name())
-		return "", fmt.Errorf("raster: encode gray PNG: %w", err)
-	}
-	return f.Name(), nil
-}
