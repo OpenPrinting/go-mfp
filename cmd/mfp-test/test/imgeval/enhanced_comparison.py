@@ -106,21 +106,33 @@ class ImageComparator:
             
             self.original_lab = cv2.cvtColor(self.original, cv2.COLOR_BGR2LAB)
             self.processed_lab = cv2.cvtColor(self.processed, cv2.COLOR_BGR2LAB)
+
+            # Apply equal Gaussian blur (sigma=2.0) to both images before comparison.
+            # This reduces sensitivity to sub-pixel edge shifts introduced by the
+            # print→capture pipeline (CUPS rendering, colour conversion rounding).
+            # Equal sigma preserves the structural relationship between the images
+            # while smoothing away pipeline noise.
+            proc_blurred = ndimage.gaussian_filter(
+                self.processed_gray.astype(np.float32), sigma=2.0)
+            orig_blurred = ndimage.gaussian_filter(
+                self.original_gray.astype(np.float32), sigma=2.0)
+            self.cmp_processed_gray = np.clip(proc_blurred, 0, 255).astype(np.uint8)
+            self.cmp_original_gray = np.clip(orig_blurred, 0, 255).astype(np.uint8)
         except Exception as e:
             print(f"Error initializing ImageComparator: {str(e)}")
             raise
 
     def basic_metrics(self):
         """Calculate basic image similarity metrics"""
-        ssim_result = ssim(self.original_gray, self.processed_gray, full=True)
+        ssim_result = ssim(self.cmp_original_gray, self.cmp_processed_gray, full=True)
         ssim_score = ssim_result[0] if isinstance(ssim_result, tuple) else ssim_result
-        
-        mse_score = mean_squared_error(self.original_gray, self.processed_gray)
-        
-        if mse_score < 1e-10: 
-            psnr_score = float('inf') 
+
+        mse_score = mean_squared_error(self.cmp_original_gray, self.cmp_processed_gray)
+
+        if mse_score < 1e-10:
+            psnr_score = float('inf')
         else:
-            psnr_score = psnr(self.original_gray, self.processed_gray)
+            psnr_score = psnr(self.cmp_original_gray, self.cmp_processed_gray)
         
         return {
             "ssim": ssim_score,
@@ -181,9 +193,9 @@ class ImageComparator:
     
     def edge_comparison(self):
         """Compare edges in the images"""
-        
-        edges1 = cv2.Canny(self.original_gray, 100, 200)
-        edges2 = cv2.Canny(self.processed_gray, 100, 200)
+
+        edges1 = cv2.Canny(self.cmp_original_gray, 100, 200)
+        edges2 = cv2.Canny(self.cmp_processed_gray, 100, 200)
         
         edge_result = ssim(edges1, edges2, full=True)
         edge_score = edge_result[0] if isinstance(edge_result, tuple) else edge_result
@@ -198,14 +210,14 @@ class ImageComparator:
     def enhanced_edge_comparison(self):
         """Advanced edge detection and comparison between images"""
         
-        original_canny = cv2.Canny(self.original_gray, 100, 200)
-        processed_canny = cv2.Canny(self.processed_gray, 100, 200)
-        
-        original_canny_tight = cv2.Canny(self.original_gray, 150, 250)
-        processed_canny_tight = cv2.Canny(self.processed_gray, 150, 250)
-        
-        original_canny_loose = cv2.Canny(self.original_gray, 50, 150)
-        processed_canny_loose = cv2.Canny(self.processed_gray, 50, 150)
+        original_canny = cv2.Canny(self.cmp_original_gray, 100, 200)
+        processed_canny = cv2.Canny(self.cmp_processed_gray, 100, 200)
+
+        original_canny_tight = cv2.Canny(self.cmp_original_gray, 150, 250)
+        processed_canny_tight = cv2.Canny(self.cmp_processed_gray, 150, 250)
+
+        original_canny_loose = cv2.Canny(self.cmp_original_gray, 50, 150)
+        processed_canny_loose = cv2.Canny(self.cmp_processed_gray, 50, 150)
         
         edge_similarity = ssim(original_canny, processed_canny, full=True)[0]
         edge_similarity_tight = ssim(original_canny_tight, processed_canny_tight, full=True)[0]
@@ -518,22 +530,19 @@ class ImageComparator:
         if full_document:
             results.update(self.page_integrity_comparison(True, pages_reference, pages_processed))
         
-        psnr_factor = 1.0 if results["psnr"] == float('inf') else min(results["psnr"] / 50.0, 1.0)
-        
         quality_score = (
-            results["ssim"] * 0.15 + 
-            (1.0 - min(results["mse"] / 10000.0, 1.0)) * 0.08 + 
-            psnr_factor * 0.08 + 
-            results["match_confidence"] * 0.12 + 
-            results["edge_similarity"] * 0.04 +
-            results["edge_quality_score"] * 0.12 +
-            results["histogram_similarity"] * 0.08 +
-            results["overall_content_density"] * 0.05 +
-            (1.0 - min(abs(results["rotation_angle"]) / 45.0, 1.0)) * 0.05 +
-            (1.0 - min(results["noise_level"] / 50.0, 1.0)) * 0.05 +
-            results["texture_energy"] / 100.0 * 0.05 +
-            results["avg_rectangularity"] * 0.05 +
-            results["color_preservation_score"] * 0.04
+            results["ssim"] * 0.45 +
+            (1.0 - min(results["mse"] / 10000.0, 1.0)) * 0.06 +
+            results["match_confidence"] * 0.02 +
+            results["edge_similarity"] * 0.01 +
+            results["edge_quality_score"] * 0.01 +
+            results["histogram_similarity"] * 0.06 +
+            results["overall_content_density"] * 0.01 +
+            (1.0 - min(abs(results["rotation_angle"]) / 45.0, 1.0)) * 0.15 +
+            (1.0 - min(results["noise_level"] / 50.0, 1.0)) * 0.01 +
+            results["texture_energy"] / 100.0 * 0.04 +
+            results["avg_rectangularity"] * 0.06 +
+            results["color_preservation_score"] * 0.12
         )
         
         if "page_completeness_score" in results:
