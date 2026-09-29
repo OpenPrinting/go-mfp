@@ -48,7 +48,15 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 	capture.reset()
 
 	// Generate a fresh test image for this run.
-	imgPath, err := generateTestPNG()
+	// For monochrome printers, use a native greyscale image so the captured
+	// output can be compared directly without colour-conversion formula skew.
+	var imgPath string
+	var err error
+	if cfg.Mono {
+		imgPath, err = generateGrayscaleTestPNG()
+	} else {
+		imgPath, err = generateTestPNG()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("generate test image: %w", err)
 	}
@@ -62,6 +70,10 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 	if cfg.ColorMode != "" {
 		lpArgs = append(lpArgs, "-o", "print-color-mode="+cfg.ColorMode)
 	}
+	// Prevent CUPS from scaling the image to fill the media.
+	// Without this, CUPS stretches the test image to fill the printable area,
+	// introducing a scale-up then scale-down blur that corrupts pixel metrics.
+	lpArgs = append(lpArgs, "-o", "print-scaling=none")
 	lpArgs = append(lpArgs, imgPath)
 
 	log.Info(ctx, "lp %v", lpArgs)
@@ -111,6 +123,20 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 		return nil, fmt.Errorf("convert to PNG: %w", err)
 	}
 
+	// CUPS centres the printed image on the paper with white margins.
+	// Crop the captured image to its non-white content bounding box so the
+	// evaluator compares only the printed content against the reference.
+	// The evaluator handles any remaining size difference internally.
+	pngData, err = cropCapturedPNG(pngData)
+	if err != nil {
+		return nil, fmt.Errorf("crop captured PNG: %w", err)
+	}
+
+	// Diagnostic: save captured PNG when MFP_SAVE_PNG env var is set.
+	if dbgPath := os.Getenv("MFP_SAVE_PNG"); dbgPath != "" {
+		_ = os.WriteFile(dbgPath, pngData, 0644)
+	}
+
 	// Write PNG to a temp file for the evaluator.
 	capturedPNG, err := os.CreateTemp("", "mfp-captured-*.png")
 	if err != nil {
@@ -127,21 +153,8 @@ func runTest(ctx context.Context, cfg testConfig, queueName string,
 		return nil, fmt.Errorf("close captured PNG: %w", err)
 	}
 
-	// For monochrome printers, compare against a grayscale version of the
-	// original so the evaluator is not penalised for the expected colour→grey
-	// conversion that CUPS performs before delivering the job.
-	refPath := imgPath
-	if cfg.Mono {
-		grayPath, err := toGrayscalePNG(imgPath)
-		if err != nil {
-			return nil, fmt.Errorf("grayscale reference: %w", err)
-		}
-		defer os.Remove(grayPath)
-		refPath = grayPath
-	}
-
 	// Evaluate image similarity.
-	res, err := eval.Compare(refPath, capturedPNGName, threshold, verbose)
+	res, err := eval.Compare(imgPath, capturedPNGName, threshold, verbose)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate: %w", err)
 	}
