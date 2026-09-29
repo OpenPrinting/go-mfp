@@ -8,11 +8,15 @@
 package test
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"net"
 	"os"
 	"strconv"
@@ -20,14 +24,17 @@ import (
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/internal/evaluate"
+	"github.com/OpenPrinting/go-mfp/internal/testutils"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/modeling"
 	"github.com/OpenPrinting/go-mfp/transport"
+	"github.com/h2non/bimg"
 )
 
 // defaultTCPPort 0 asks the OS to pick a free port automatically,
 // avoiding conflicts with other services (e.g. ipp-usb uses port 60000).
 const defaultTCPPort = 0
+
 
 // queueNamePrefix is prepended to the sanitised printer model name
 // to form the CUPS queue name (e.g. "mfp-test-xerox-b235").
@@ -322,36 +329,155 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	return nil
 }
 
-// generateTestPNG creates a temporary PNG test image with three
-// horizontal colour bands (red, green, blue) and returns its path.
+// generateTestPNG writes the UEIT RGB test image to a temp file and returns
+// its path. UEIT images have varied content (colour patches, gradients) that
+// provides enough features for the full evaluator metric suite.
 // The caller is responsible for removing the file after use.
 func generateTestPNG() (string, error) {
-	const size = 300
-	img := image.NewRGBA(image.Rect(0, 0, size, size))
+	return writeTempPNG(testutils.Images.PNG100x75rgb8)
+}
 
-	for y := 0; y < size; y++ {
-		for x := 0; x < size; x++ {
-			switch {
-			case y < size/3:
-				img.Set(x, y, color.RGBA{R: 255, A: 255}) // red
-			case y < 2*size/3:
-				img.Set(x, y, color.RGBA{G: 255, A: 255}) // green
-			default:
-				img.Set(x, y, color.RGBA{B: 255, A: 255}) // blue
-			}
-		}
+// generateGrayscaleTestPNG writes the UEIT greyscale test image to a temp
+// file and returns its path. Used when the printer operates in monochrome
+// mode; the native greyscale image avoids dependence on CUPS colour-to-grey
+// conversion formula.
+// The caller is responsible for removing the file after use.
+func generateGrayscaleTestPNG() (string, error) {
+	return writeTempPNG(testutils.Images.PNG100x75gray8)
+}
+
+// writeTempPNG builds a 300×300 test PNG from the given UEIT source and
+// writes it to a temp file. Three post-processing steps maximise evaluator
+// coverage:
+//
+//  1. bimg force-resize to 300×300 gives enough pixels for ORB and texture
+//     metrics (the raw 100×75 UEIT is too small).
+//  2. addTestBorder draws a 1-pixel white margin followed by a 5-pixel black
+//     frame. The white margin guarantees a Canny gradient ≥255 on all four
+//     sides of the frame (white→black, not boundary→black), forming a clean
+//     closed rectangular contour that RETR_EXTERNAL picks up cleanly for
+//     avg_rectangularity. UEIT content is kept for the inner 288×288 (92%).
+//  3. injectPNGDPI embeds 300 DPI so CUPS prints the image at its native
+//     printer resolution (1 inch × 1 inch → 300×300 captured pixels). This
+//     eliminates the 1.5× CUPS upscale / 0.67× evaluator downscale that
+//     otherwise degrades PSNR and edge-similarity scores.
+func writeTempPNG(data []byte) (string, error) {
+	scaled, err := bimg.NewImage(data).Process(bimg.Options{
+		Width: 300, Height: 300, Force: true, Type: bimg.PNG,
+	})
+	if err != nil {
+		return "", fmt.Errorf("mfp-test: scale test image: %w", err)
 	}
-
+	gridded, err := addTestBorder(scaled)
+	if err != nil {
+		return "", fmt.Errorf("mfp-test: add border: %w", err)
+	}
+	final, err := injectPNGDPI(gridded, 300)
+	if err != nil {
+		return "", fmt.Errorf("mfp-test: inject DPI: %w", err)
+	}
 	f, err := os.CreateTemp("", "mfp-test-*.png")
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
-
-	if err := png.Encode(f, img); err != nil {
+	if _, err := f.Write(final); err != nil {
+		f.Close()
 		os.Remove(f.Name())
 		return "", err
 	}
+	return f.Name(), f.Close()
+}
 
-	return f.Name(), nil
+// addTestBorder draws an inset black frame on the 300×300 image, with a
+// 1-pixel white outer margin before the frame.
+//
+// Why the white margin matters for avg_rectangularity:
+// Canny edge detection uses a 3×3 Sobel kernel. For the frame's outer edge to
+// form a CLOSED, STRONGLY-DETECTED rectangular contour, we need the pixels
+// immediately above/left of the frame to be white (255). With no margin, the
+// frame sits at the image boundary where Canny uses reflection padding — the
+// reflected pixel equals the frame pixel (both black), giving gradient ≈ 0 and
+// no edge. With a 1-pixel white margin, the gradient at the frame's outer edge
+// is √2×255 ≈ 360 at corners and 255 along sides, well above the Canny upper
+// threshold of 150 — creating a definite edge on all four sides simultaneously.
+//
+// The UEIT content starts 6 pixels inside the frame edge (1 margin + 5 border),
+// so UEIT texture edges can never connect to the frame contour. RETR_EXTERNAL
+// returns the frame rectangle cleanly as a single external contour with
+// area ≈ (298)² ≈ 88 800 px >> 1000 px threshold, approximated as exactly 4
+// sides, giving avg_rectangularity ≈ 1.0.
+//
+// Compared with thin internal grid lines (previous approach), the thick outer
+// frame avoids the MSE spike caused by printer rasterization of 3-pixel-wide
+// lines. The white margin also reduces content coverage only marginally
+// (288×288 = 92% of image area keeps UEIT texture).
+func addTestBorder(data []byte) ([]byte, error) {
+	img, err := png.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("border: decode: %w", err)
+	}
+	b := img.Bounds()
+	dst := image.NewNRGBA(b)
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			dst.Set(x, y, img.At(x, y))
+		}
+	}
+	const (
+		size   = 300
+		margin = 1 // 1-pixel white strip; ensures Canny sees gradient ≥255 at the frame edge
+		bw     = 5 // frame width in pixels; thick enough for reliable printer reproduction
+	)
+	white := color.NRGBA{R: 255, G: 255, B: 255, A: 255}
+	black := color.NRGBA{R: 0, G: 0, B: 0, A: 255}
+	for y := 0; y < size; y++ {
+		for x := 0; x < size; x++ {
+			if x < margin || x >= size-margin || y < margin || y >= size-margin {
+				dst.Set(x, y, white)
+			} else if x < margin+bw || x >= size-margin-bw ||
+				y < margin+bw || y >= size-margin-bw {
+				dst.Set(x, y, black)
+			}
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, dst); err != nil {
+		return nil, fmt.Errorf("border: encode: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// injectPNGDPI inserts a pHYs chunk with the specified DPI immediately after
+// the IHDR chunk of a PNG byte slice. Because CUPS uses the pHYs chunk to
+// determine the printed physical size, embedding 300 DPI causes a 300×300
+// image to print at exactly 1×1 inch on A4 at 300 DPI, matching the capture
+// resolution and eliminating the evaluator's lossy resize step.
+func injectPNGDPI(data []byte, dpi int) ([]byte, error) {
+	// PNG structure: 8-byte signature + IHDR (4+4+13+4 = 25 bytes) = 33 bytes.
+	const ihdrEnd = 33
+	if len(data) < ihdrEnd {
+		return data, nil
+	}
+	// Compute pixels-per-metre: 1 inch = 0.0254 metres.
+	ppm := uint32(math.Round(float64(dpi) / 0.0254))
+	var physData [9]byte
+	binary.BigEndian.PutUint32(physData[0:4], ppm) // X density
+	binary.BigEndian.PutUint32(physData[4:8], ppm) // Y density
+	physData[8] = 1                                  // unit = metre
+
+	h := crc32.NewIEEE()
+	h.Write([]byte("pHYs"))
+	h.Write(physData[:])
+
+	chunk := make([]byte, 21) // 4 len + 4 type + 9 data + 4 CRC
+	binary.BigEndian.PutUint32(chunk[0:4], 9)
+	copy(chunk[4:8], "pHYs")
+	copy(chunk[8:17], physData[:])
+	binary.BigEndian.PutUint32(chunk[17:21], h.Sum32())
+
+	result := make([]byte, 0, len(data)+21)
+	result = append(result, data[:ihdrEnd]...)
+	result = append(result, chunk...)
+	result = append(result, data[ihdrEnd:]...)
+	return result, nil
 }
