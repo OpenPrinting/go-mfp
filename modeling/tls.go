@@ -93,7 +93,7 @@ func tlsPredictableCert(seed []byte) tls.Certificate {
 	}
 
 	// --- 3. Sign the Certificate ---
-	derBytes, err := x509.CreateCertificate(nil,
+	derBytes, err := x509.CreateCertificate(zeroReader{},
 		&template, &template, &privKey.PublicKey, privKey)
 	assert.NoError(err)
 
@@ -102,4 +102,15 @@ func tlsPredictableCert(seed []byte) tls.Certificate {
 		Certificate: [][]byte{derBytes},
 		PrivateKey:  privKey,
 	}
+}
+
+// zeroReader implements io.Reader interface.
+// It reads as an infinite stream of zero bytes.
+type zeroReader struct{}
+
+func (zeroReader) Read(buf []byte) (int, error) {
+	for i := range buf {
+		buf[i] = 0
+	}
+	return len(buf), nil
 }
