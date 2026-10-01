@@ -8,12 +8,11 @@
 package test
 
 import (
-	"context"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
+	"github.com/OpenPrinting/go-mfp/modeling"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
 	"github.com/OpenPrinting/go-mfp/util/optional"
 	goipp "github.com/OpenPrinting/goipp"
@@ -40,19 +39,12 @@ type testConfig struct {
 	Mono      bool // true when the effective color mode is monochrome
 }
 
-// queryPrinterCaps queries the virtual IPP printer for its supported
-// attribute values and returns them as a printerCaps.
-func queryPrinterCaps(ctx context.Context, printerURL string) (*printerCaps, error) {
-	u, err := url.Parse(printerURL)
-	if err != nil {
-		return nil, fmt.Errorf("matrix: parse printer URL: %w", err)
-	}
-
-	client := ipp.NewClient(u, nil)
-	attrs, err := client.GetPrinterAttributes(ctx,
-		[]string{"job-template", "printer-description"}, "")
-	if err != nil {
-		return nil, fmt.Errorf("matrix: query printer attributes: %w", err)
+// capsFromModel builds a printerCaps directly from the model's IPP printer
+// attributes, avoiding an HTTP round-trip to the virtual printer.
+func capsFromModel(model *modeling.Model) (*printerCaps, error) {
+	attrs := model.GetIPPPrinterAttrs()
+	if attrs == nil {
+		return nil, fmt.Errorf("matrix: model has no IPP printer attributes")
 	}
 
 	caps := &printerCaps{
@@ -98,10 +90,11 @@ func configName(sides ipp.KwSides, color, format string) string {
 }
 
 // isMonoMode reports whether the effective print color mode is monochrome.
-// It returns true when colorMode is "monochrome", or when colorMode is "auto"
-// and the printer only supports monochrome modes (no "color" or "highlight-color").
+// It returns true when colorMode is "monochrome" or "auto-monochrome", or
+// when colorMode is "auto" and the printer only supports monochrome modes
+// (no "color" or "highlight-color" in its capability list).
 func isMonoMode(caps *printerCaps, colorMode string) bool {
-	if colorMode == "monochrome" {
+	if colorMode == "monochrome" || colorMode == "auto-monochrome" {
 		return true
 	}
 	if colorMode == "auto" {
