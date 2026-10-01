@@ -198,11 +198,11 @@ func cmdTestHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Build the IPP URL with the actual assigned port.
 	ippURL := fmt.Sprintf("ipp://localhost:%d/ipp/print", actualPort)
 
-	// Query printer capabilities now so we can derive the queue name from
-	// the printer's model string before registering the CUPS queue.
-	caps, err := queryPrinterCaps(ctx, ippURL)
+	// Read printer capabilities directly from the model, avoiding an
+	// HTTP round-trip to the virtual printer.
+	caps, err := capsFromModel(model)
 	if err != nil {
-		return fmt.Errorf("query printer capabilities: %w", err)
+		return fmt.Errorf("read printer capabilities: %w", err)
 	}
 
 	// Determine CUPS queue name: use -n override or derive from printer model.
