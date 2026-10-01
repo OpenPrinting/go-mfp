@@ -107,6 +107,34 @@ as `OpenPrinting Virtual MFP`) and can be driven by the usual Linux
 printing and scanning stack, including
 [ipp-usb](https://github.com/OpenPrinting/ipp-usb).
 
+### Building and running on ROSA Linux / Fedora
+
+The project builds and runs on RPM-based distributions.The
+instructions below were tested on ROSA Fresh 13.
+
+Install the build dependencies:
+
+    sudo dnf install -y \
+        golang gcc gcc-c++ pkgconf make \
+        lib64avahi-client-devel lib64jpeg-devel lib64png-devel \
+        lib64usb1.0-devel lib64ppd-devel python3-devel vips-devel
+
+To build and run `mfp-test`, additional runtime dependencies are
+required for CUPS queue management, document conversion, and image
+evaluation:
+
+    sudo dnf install -y \
+        vips ghostscript cups cups-filters \
+        python3-numpy python3-scipy python3-scikit-image \
+        python3-opencv python3-pillow
+
+Run the test suite against a bundled printer model:
+
+    sudo ./mfp-test -m modeling/examples/Kyocera-ECOSYS-M2040dn.py --batch
+
+`mfp-test` requires root privileges because it creates and removes
+CUPS printer queues via `lpadmin`. 
+
 ## Source tree organization
 
 ### import github.com/OpenPrinting/go-mfp/abstract"
