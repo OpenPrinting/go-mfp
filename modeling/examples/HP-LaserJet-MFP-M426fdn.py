@@ -19780,3 +19780,224 @@ dnssd.device = dnssd.Device(
 )
 
 
+# USB device descriptor
+usb.device = usb.DeviceDescriptor(
+    bcdUSB = '2.0',
+    Speed = 3,
+    bDeviceClass = 0,
+    bDeviceSubClass = 0,
+    bDeviceProtocol = 0,
+    bMaxPacketSize = 64,
+    idVendor = 1008,
+    idProduct = 23082,
+    bcdDevice = '1.0',
+    iManufacturer = 'Hewlett-Packard',
+    iProduct = 'HP LaserJet MFP M426fdn',
+    iSerialNumber = 'PHBLL6F5GB',
+    Configurations = [
+        usb.ConfigurationDescriptor(
+            bConfigurationValue = 1,
+            iConfiguration = '',
+            bmAttributes = 224,
+            bMaxPower = 1,
+            Interfaces = [
+                usb.Interface(
+                    bInterfaceNumber = 0,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 2,
+                            bInterfaceProtocol = 1,
+                            bAlternateSetting = 0,
+                            iInterface = 'HP SCAN',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 3,
+                                    wMaxPacketSize = 8,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 1,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 7,
+                            bInterfaceSubClass = 1,
+                            bInterfaceProtocol = 2,
+                            bAlternateSetting = 0,
+                            iInterface = 'Printer',
+                            IEEE1284DeviceID = 'MFG:Hewlett-Packard;CMD:PJL,PML,PCLXL,URP,PCL,PDF,POSTSCRIPT;MDL:HP LaserJet MFP M426fdn;CLS:PRINTER;DES:Hewlett-Packard LaserJet MFP M426fdn;MEM:MEM=214MB;COMMENT:RES=1200x1;LEDMDIS:USB#ff#04#01;CID:HPLJPDLV1;IPP-E:FF-04-01,FF-04-01,FF-09-01,FF-09-01;eSCL:FF-04-01,FF-04-01,FF-09-01,FF-09-01;MCT:MF;MCL:DL;MCV:2.3;',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 2,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 3,
+                            bInterfaceProtocol = 1,
+                            bAlternateSetting = 0,
+                            iInterface = 'HP FAX',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 3,
+                                    wMaxPacketSize = 8,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 3,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 4,
+                            bInterfaceProtocol = 1,
+                            bAlternateSetting = 0,
+                            iInterface = 'HP LEDM',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 3,
+                                    wMaxPacketSize = 8,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 4,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 4,
+                            bInterfaceProtocol = 1,
+                            bAlternateSetting = 0,
+                            iInterface = 'HP LEDM',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 3,
+                                    wMaxPacketSize = 8,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 5,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 9,
+                            bInterfaceProtocol = 1,
+                            bAlternateSetting = 0,
+                            iInterface = 'IPP Printer',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                usb.Interface(
+                    bInterfaceNumber = 6,
+                    AltSettings = [
+                        usb.InterfaceDescriptor(
+                            bInterfaceClass = 255,
+                            bInterfaceSubClass = 9,
+                            bInterfaceProtocol = 1,
+                            bAlternateSetting = 0,
+                            iInterface = 'IPP Printer',
+                            IEEE1284DeviceID = '',
+                            Endpoints = [
+                                usb.EndpointDescriptor(
+                                    Type = usb.OUT,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                                usb.EndpointDescriptor(
+                                    Type = usb.IN,
+                                    bmAttributes = 2,
+                                    wMaxPacketSize = 512,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    ],
+)
+
