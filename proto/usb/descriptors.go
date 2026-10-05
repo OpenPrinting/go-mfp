@@ -28,12 +28,12 @@ const (
 
 	// MaxInterfaces defines the maximum number of interfaces
 	// per configuration.
-	MaxInterfaces = 16
+	MaxInterfaces = 256
 
 	// MaxEndpoints defines the maximum number of endpoints
 	// per configuration. Note, this limit includes the reserved
 	// zero endpoint.
-	MaxEndpoints = 16
+	MaxEndpoints = 32
 
 	// MaxStringLength defines the length limit for the strings
 	// used in the configuration descriptors.
@@ -174,8 +174,8 @@ type EndpointType int
 
 // Endpoint types:
 const (
-	EndpointIn    EndpointType = iota // Input (host->device)
-	EndpointOut                       // Output (device->host)
+	EndpointIn  EndpointType = iota // Input (host->device)
+	EndpointOut                     // Output (device->host)
 )
 
 // EndpointAttributes defines [EndpointDescriptor.BMAttributes] bits.
