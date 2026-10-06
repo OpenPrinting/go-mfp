@@ -95,7 +95,7 @@ func simulate(ctx context.Context, model *modeling.Model,
 
 	// Check that we have added at least something
 	if mux.Empty() {
-		return errors.New("model is emoty")
+		return errors.New("model is empty")
 	}
 
 	// Create server for incoming connections.
