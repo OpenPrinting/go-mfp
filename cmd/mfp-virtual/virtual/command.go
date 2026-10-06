@@ -12,15 +12,21 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/log/trace"
 	"github.com/OpenPrinting/go-mfp/modeling"
+	"github.com/OpenPrinting/go-mfp/transport"
 )
 
-// DefaultTCPPort is the default TCP port for the MFP simulator
-const DefaultTCPPort = 50000
+// DefaultTCPPortMin and DefaultTCPPortMax define the
+// default TCP port range for the MFP simulator
+const (
+	DefaultTCPPortMin = 50000
+	DefaultTCPPortMax = 59999
+)
 
 // description is printed as a command description text
 const description = "" +
@@ -44,10 +50,10 @@ var Command = argv.Command{
 		argv.Option{
 			Name:    "-P",
 			Aliases: []string{"--port"},
-			HelpArg: "port",
-			Help: fmt.Sprintf("TCP port. Default: %d",
-				DefaultTCPPort),
-			Validate: argv.ValidateUint16,
+			HelpArg: "N or MIN-MAX",
+			Help: fmt.Sprintf("TCP port range. Default: %d-%d",
+				DefaultTCPPortMin, DefaultTCPPortMax),
+			Validate: transport.ArgvValidatePortRange,
 		},
 		argv.Option{
 			Name:      "-U",
@@ -144,11 +150,18 @@ func cmdVirtualHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Obtain remaining parameters
-	port := DefaultTCPPort
-	if portname, ok := inv.Get("-P"); ok {
-		port, err = strconv.Atoi(portname)
-		if err != nil {
-			return err
+	portmin := DefaultTCPPortMin
+	portmax := DefaultTCPPortMax
+	if portrange, ok := inv.Get("-P"); ok {
+		if n := strings.IndexByte(portrange, '-'); n < 0 {
+			portmin, _ = strconv.Atoi(portrange)
+			portmax = portmin
+		} else {
+			min := portrange[:n]
+			max := portrange[n+1:]
+
+			portmin, _ = strconv.Atoi(min)
+			portmax, _ = strconv.Atoi(max)
 		}
 	}
 
@@ -160,5 +173,6 @@ func cmdVirtualHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	// Run the simulator
 	usbip := inv.Flag("-U")
-	return simulate(ctx, model, port, usbip, argv)
+	return simulate(ctx, model,
+		uint16(portmin), uint16(portmax), usbip, argv)
 }
