@@ -20,6 +20,10 @@ func ListenTCPRange(addr netip.Addr, min, max uint16) (net.Listener, error) {
 	addr = addr.Unmap()
 	tcpaddr := net.TCPAddr{}
 
+	if min == 0 {
+		min = 1 // TCP port 0 doesn't exist
+	}
+
 	if min >= max {
 		return nil, syscall.EADDRINUSE
 	}
@@ -59,6 +63,10 @@ func ListenTCPRangeN(addr netip.Addr, N int, min, max uint16) (
 	[]net.Listener, error) {
 
 	// Handle trivial cases
+	if min == 0 {
+		min = 1 // TCP port 0 doesn't exist
+	}
+
 	switch {
 	case N <= 0:
 		return []net.Listener{}, nil
