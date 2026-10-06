@@ -14,9 +14,11 @@ import (
 	"syscall"
 )
 
-// ListenTCPRange attempts to allocate TCP port in range,
-// and returns [net.Listener] on success.
-func ListenTCPRange(addr netip.Addr, min, max uint16) (net.Listener, error) {
+// ListenTCPRange attempts to allocate TCP port in range, and returns
+// the allocated port number and [net.Listener] on success.
+func ListenTCPRange(addr netip.Addr, min, max uint16) (
+	uint16, net.Listener, error) {
+
 	addr = addr.Unmap()
 	tcpaddr := net.TCPAddr{}
 
@@ -24,8 +26,8 @@ func ListenTCPRange(addr netip.Addr, min, max uint16) (net.Listener, error) {
 		min = 1 // TCP port 0 doesn't exist
 	}
 
-	if min >= max {
-		return nil, syscall.EADDRINUSE
+	if min > max {
+		return 0, nil, syscall.EADDRINUSE
 	}
 
 	if addr.IsValid() {
@@ -43,7 +45,7 @@ func ListenTCPRange(addr netip.Addr, min, max uint16) (net.Listener, error) {
 		ln, err2 := net.ListenTCP("tcp", &tcpaddr)
 		switch {
 		case ln != nil:
-			return ln, nil
+			return p, ln, nil
 		case err == nil:
 			// Save the first occurred error
 			err = err2
@@ -54,13 +56,14 @@ func ListenTCPRange(addr netip.Addr, min, max uint16) (net.Listener, error) {
 		}
 	}
 
-	return nil, err
+	return 0, nil, err
 }
 
 // ListenTCPRangeN allocates N consecutive TCP ports within the range from min
-// to max and, on success, returns a slice of [net.Listener]s.
+// to max and, on success, returns the number of the first allocated
+// port in sequence and a slice of [net.Listener]s.
 func ListenTCPRangeN(addr netip.Addr, N int, min, max uint16) (
-	[]net.Listener, error) {
+	uint16, []net.Listener, error) {
 
 	// Handle trivial cases
 	if min == 0 {
@@ -69,11 +72,11 @@ func ListenTCPRangeN(addr netip.Addr, N int, min, max uint16) (
 
 	switch {
 	case N <= 0:
-		return []net.Listener{}, nil
+		return 0, []net.Listener{}, nil
 	case min > max:
-		return nil, syscall.EADDRINUSE
+		return 0, nil, syscall.EADDRINUSE
 	case N > int(max-min)+1:
-		return nil, syscall.EADDRINUSE
+		return 0, nil, syscall.EADDRINUSE
 	}
 
 	// Try to allocate N consecutive ports
@@ -83,11 +86,11 @@ func ListenTCPRangeN(addr netip.Addr, N int, min, max uint16) (
 	for beg := min; ; beg++ {
 		end := beg + uint16(N-1)
 		for p := beg; p <= end; p++ {
-			ln, err2 := ListenTCPRange(addr, p, p)
+			_, ln, err2 := ListenTCPRange(addr, p, p)
 			if ln != nil {
 				ports = append(ports, ln)
 				if len(ports) == N {
-					return ports, nil
+					return beg, ports, nil
 				}
 			} else {
 				// Save the first occurred error
@@ -110,5 +113,5 @@ func ListenTCPRangeN(addr netip.Addr, N int, min, max uint16) (
 		}
 	}
 
-	return nil, err
+	return 0, nil, err
 }
