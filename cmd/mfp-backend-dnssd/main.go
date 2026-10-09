@@ -210,7 +210,7 @@ func svcURI(svc *avahi.Service) string {
 
 	name = hostNameEncode(avahi.DomainServiceNameUnescape(name))
 
-	return scheme + "://" + name
+	return scheme + "://" + name + "/"
 }
 
 // svcMakeModel returns the service's device-make-and-model string.
@@ -346,9 +346,9 @@ func svcCMD(svc *avahi.Service) string {
 		case "image/jpeg":
 			fmt = "JPEG"
 		case "image/pwg-raster":
-			fmt = "PWGRaster"
+			fmt = "PWGRaster,PWG"
 		case "image/urf":
-			fmt = "URF"
+			fmt = "AppleRaster,URF"
 		case "image/tiff":
 			fmt = "TIFF"
 		case "image/png":
