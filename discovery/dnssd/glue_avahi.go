@@ -390,8 +390,9 @@ type avahiServiceKey struct {
 // FQDN returns the full-qualified domain name for the
 // service instance.
 func (key avahiServiceKey) FQDN() string {
-	return avahi.DomainServiceNameJoin(key.InstanceName,
+	fqdn, _ := avahi.DomainServiceNameJoin(key.InstanceName,
 		key.SvcType, key.Domain)
+	return fqdn
 }
 
 // String returns string representation of the avahiServiceKey,
@@ -521,7 +522,7 @@ func avahiServiceKeyFromResolverEvent(
 func avahiServiceKeyFromRecordBrowserEvent(
 	evnt *avahi.RecordBrowserEvent) avahiServiceKey {
 
-	instance, svctype, domain := avahi.DomainServiceNameSplit(evnt.Name)
+	instance, svctype, domain, _ := avahi.DomainServiceNameSplit(evnt.Name)
 
 	return avahiServiceKey{
 		IfIdx:        evnt.IfIdx,
