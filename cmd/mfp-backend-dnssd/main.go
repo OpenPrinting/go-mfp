@@ -47,14 +47,14 @@ func main() {
 	}
 
 	// Group services by instance name
-	instances := groupInstances(services)
+	devices := servicesClassify(services)
 
 	// Generate output
 	destList := []string{}
 	destSeen := make(map[string]struct{})
 
-	for _, inst := range instances {
-		for _, svc := range inst.Services {
+	for _, dev := range devices {
+		for _, svc := range dev.Services {
 			uri := svcURI(svc)
 			if uri == "" {
 				continue
@@ -112,6 +112,43 @@ func servicesDropType(services []*avahi.Service, t string) []*avahi.Service {
 	}
 
 	return services[:cnt]
+}
+
+// servicesClassify group services by instance name
+// and returns a slice of devices.
+func servicesClassify(services []*avahi.Service) []device {
+	byname := make(map[string][]*avahi.Service)
+
+	// Classify services by instance names.
+	// Skip inactive services.
+	for _, svc := range services {
+		name := svc.InstanceName
+		if len(svc.Endpoints) > 0 {
+			byname[name] = append(byname[name], svc)
+		}
+	}
+
+	// Convert map into the slice of devices
+	//
+	// Inactive services are removed and devices without
+	// active services are ignored.
+	devices := make([]device, 0, len(byname))
+	for name, services := range byname {
+		dev := device{name, services}
+		if servicesContainsType(dev.Services, "_ipps._tcp") {
+			dev.Services = servicesDropType(dev.Services,
+				"_ipp._tcp")
+		}
+
+		devices = append(devices, dev)
+	}
+
+	// Sort devices by name
+	sort.Slice(devices, func(i, j int) bool {
+		return devices[i].Name < devices[j].Name
+	})
+
+	return devices
 }
 
 // svcURL returns an device-uri string, pointing to the service.
@@ -314,46 +351,10 @@ func svcTXT(svc *avahi.Service, key string) string {
 	return ""
 }
 
-// instance represents services, grouped by DNS-SD Instance name.
-type instance struct {
+// device represents services, grouped by DNS-SD Instance name.
+type device struct {
 	Name     string           // Instance name
 	Services []*avahi.Service // Available services
-}
-
-// groupInstances group services by instance name.
-func groupInstances(services []*avahi.Service) []instance {
-	byname := make(map[string][]*avahi.Service)
-
-	// Classify services by instance names.
-	// Skip inactive services.
-	for _, svc := range services {
-		name := svc.InstanceName
-		if len(svc.Endpoints) > 0 {
-			byname[name] = append(byname[name], svc)
-		}
-	}
-
-	// Convert map into the slice of instances
-	//
-	// Inactive services are removed and instances without
-	// active services are ignored.
-	instances := make([]instance, 0, len(byname))
-	for name, services := range byname {
-		inst := instance{name, services}
-		if servicesContainsType(inst.Services, "_ipps._tcp") {
-			inst.Services = servicesDropType(inst.Services,
-				"_ipp._tcp")
-		}
-
-		instances = append(instances, inst)
-	}
-
-	// Sort instances by name
-	sort.Slice(instances, func(i, j int) bool {
-		return instances[i].Name < instances[j].Name
-	})
-
-	return instances
 }
 
 // reportDestination formats a destination report string.
