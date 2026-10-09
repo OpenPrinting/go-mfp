@@ -3,7 +3,7 @@ module github.com/OpenPrinting/go-mfp
 go 1.21
 
 require (
-	github.com/OpenPrinting/go-avahi v0.0.0-20261008174603-0147c2b7d15a
+	github.com/OpenPrinting/go-avahi v0.0.0-20261009174626-d8652ee09ee5
 	github.com/OpenPrinting/goipp v1.2.1-0.20260630192304-61012e2ae9bf
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/google/go-cmp v0.6.0

@@ -208,6 +208,8 @@ func svcURI(svc *avahi.Service) string {
 		return ""
 	}
 
+	name = hostNameEncode(avahi.DomainServiceNameUnescape(name))
+
 	return scheme + "://" + name
 }
 
@@ -478,6 +480,30 @@ func quote(s string) string {
 	}
 
 	buf.WriteByte('"')
+	return buf.String()
+}
+
+// hostNameEncode encodes a hostname string by replacing reserved characters
+// with their percent-encoded equivalents.
+func hostNameEncode(s string) string {
+	buf := strings.Builder{}
+
+	for _, c := range []byte(s) {
+		escape := false
+		switch c {
+		case '%', ' ', '/', '?', '#', '[', ']', '@':
+			escape = true
+		default:
+			escape = c >= 128
+		}
+
+		if escape {
+			buf.WriteString(fmt.Sprintf("%%%2.2X", c))
+		} else {
+			buf.WriteByte(c)
+		}
+	}
+
 	return buf.String()
 }
 
