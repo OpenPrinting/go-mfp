@@ -178,7 +178,7 @@ func svcRank(svc *avahi.Service) int {
 	return 1000
 }
 
-// svcURL returns an device-uri string, pointing to the service.
+// svcURI returns an device-uri string, pointing to the service.
 // If URI cannot be generated for some reason, it returns an empty string.
 func svcURI(svc *avahi.Service) string {
 	// Skip inactive services (i.e., services without endpoints)
@@ -258,11 +258,10 @@ func svcInfo(svc *avahi.Service) string {
 	return svc.InstanceName
 }
 
-// svcDeviceID retyrbs the service's device-id string.
+// svcDeviceID returns the service's IEEE 1284 device ID.
 //
-// If service itself defines manufacturer and model, these
-// values are used. Otherwise, it falls back to the provides
-// defaults, if any.
+// The mfg and mdl parameters provide fallback values for services
+// that do not advertise their own manufacturer and model.
 func svcDeviceID(svc *avahi.Service, mfg, mdl string) string {
 	attrs := []string{}
 
@@ -270,23 +269,23 @@ func svcDeviceID(svc *avahi.Service, mfg, mdl string) string {
 		mfg = s
 	}
 
-	if s := svcTXT(svc, "usb_MFG"); s != "" {
+	if s := svcTXT(svc, "usb_MDL"); s != "" {
 		mdl = s
 	}
 
-	if mfg != "" {
-		attrs = append(attrs, "MFG:"+mfg)
+	if mfg := sanitizeDeviceIDValue(mfg); mfg != "" {
+		attrs = append(attrs, "MFG:"+mfg+";")
 	}
 
-	if mdl != "" {
-		attrs = append(attrs, "MLD:"+mdl)
+	if mdl := sanitizeDeviceIDValue(mdl); mdl != "" {
+		attrs = append(attrs, "MDL:"+mdl+";")
 	}
 
 	if cmd := svcCMD(svc); cmd != "" {
-		attrs = append(attrs, "CMD:"+cmd)
+		attrs = append(attrs, "CMD:"+cmd+";")
 	}
 
-	return strings.Join(attrs, ";")
+	return strings.Join(attrs, "")
 }
 
 // svcCMD returns the CMD value of the IEEE-1284 device ID
@@ -305,8 +304,6 @@ func svcCMD(svc *avahi.Service) string {
 
 	formats := []string{}
 	formatsSeen := make(map[string]struct{})
-
-	formatsSeen[""] = struct{}{}
 
 	for _, mime := range strings.Split(pdl, ",") {
 		fmt := ""
@@ -359,6 +356,11 @@ func svcCMD(svc *avahi.Service) string {
 			fmt = "TEXT"
 		}
 
+		if fmt == "" {
+			// Skip unknown format
+			continue
+		}
+
 		if _, seen := formatsSeen[fmt]; !seen {
 			formatsSeen[fmt] = struct{}{}
 			formats = append(formats, fmt)
@@ -409,7 +411,7 @@ func (dev device) Mfg() string {
 	return ""
 }
 
-// Mfg returns device's model, trying to look to all
+// Mdl returns device's model, trying to look to all
 // available services.
 func (dev device) Mdl() string {
 	for _, svc := range dev.Services {
@@ -476,6 +478,27 @@ func quote(s string) string {
 	}
 
 	buf.WriteByte('"')
+	return buf.String()
+}
+
+// sanitizeDeviceIDValue sanitizes a string value for use in
+// an IEEE 1284 Device ID.
+func sanitizeDeviceIDValue(s string) string {
+	buf := strings.Builder{}
+
+	for _, c := range []byte(s) {
+		switch {
+		case c == ':' || c == ',' || c == ';':
+			// Delimiter characters are not allowed in values.
+
+		case c < ' ' || c == 0x7f:
+			// Control characters are not allowed.
+
+		default:
+			buf.WriteByte(c)
+		}
+	}
+
 	return buf.String()
 }
 
