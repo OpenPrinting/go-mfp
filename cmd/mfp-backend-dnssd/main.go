@@ -60,11 +60,14 @@ func main() {
 				continue
 			}
 
+			mfg := dev.Mfg()
+			mdl := dev.Mdl()
+
 			dest := reportDestination(
 				uri,
 				svcMakeModel(svc),
 				svcInfo(svc),
-				svcDeviceID(svc),
+				svcDeviceID(svc, mfg, mdl),
 				svcLocation(svc),
 			)
 
@@ -74,11 +77,6 @@ func main() {
 			}
 		}
 	}
-
-	// Sort destinations, to make output deterministic
-	sort.Slice(destList, func(i, j int) bool {
-		return destList[i] < destList[j]
-	})
 
 	// Write to Stdout
 	for _, dest := range destList {
@@ -148,7 +146,36 @@ func servicesClassify(services []*avahi.Service) []device {
 		return devices[i].Name < devices[j].Name
 	})
 
+	// Sort services of each device by rank
+	for i := range devices {
+		dev := &devices[i]
+		sort.Slice(dev.Services, func(i, j int) bool {
+			svc1 := dev.Services[i]
+			svc2 := dev.Services[j]
+			return svcRank(svc1) < svcRank(svc2)
+		})
+	}
+
 	return devices
+}
+
+// placing the most preferred services first.
+//
+// It returns an integer rank—the lower the number, the
+// more preferred the service is.
+func svcRank(svc *avahi.Service) int {
+	switch svc.SvcType {
+	case "_ipps._tcp":
+		return 0
+	case "_ipp._tcp":
+		return 1
+	case "_pdl-datastream._tcp":
+		return 2
+	case "_printer._tcp":
+		return 3
+	}
+
+	return 1000
 }
 
 // svcURL returns an device-uri string, pointing to the service.
@@ -231,15 +258,27 @@ func svcInfo(svc *avahi.Service) string {
 	return svc.InstanceName
 }
 
-// svcDeviceID retyrbs the service's device-id string
-func svcDeviceID(svc *avahi.Service) string {
+// svcDeviceID retyrbs the service's device-id string.
+//
+// If service itself defines manufacturer and model, these
+// values are used. Otherwise, it falls back to the provides
+// defaults, if any.
+func svcDeviceID(svc *avahi.Service, mfg, mdl string) string {
 	attrs := []string{}
 
-	if mfg := svcTXT(svc, "usb_MFG"); mfg != "" {
+	if s := svcTXT(svc, "usb_MFG"); s != "" {
+		mfg = s
+	}
+
+	if s := svcTXT(svc, "usb_MFG"); s != "" {
+		mdl = s
+	}
+
+	if mfg != "" {
 		attrs = append(attrs, "MFG:"+mfg)
 	}
 
-	if mdl := svcTXT(svc, "usb_MDL"); mdl != "" {
+	if mdl != "" {
 		attrs = append(attrs, "MLD:"+mdl)
 	}
 
@@ -355,6 +394,32 @@ func svcTXT(svc *avahi.Service, key string) string {
 type device struct {
 	Name     string           // Instance name
 	Services []*avahi.Service // Available services
+}
+
+// Mfg returns device's manufacturer, trying to look to all
+// available services.
+func (dev device) Mfg() string {
+	for _, svc := range dev.Services {
+		mfg := svcTXT(svc, "usb_MFG")
+		if mfg != "" {
+			return mfg
+		}
+	}
+
+	return ""
+}
+
+// Mfg returns device's model, trying to look to all
+// available services.
+func (dev device) Mdl() string {
+	for _, svc := range dev.Services {
+		mdl := svcTXT(svc, "usb_MDL")
+		if mdl != "" {
+			return mdl
+		}
+	}
+
+	return ""
 }
 
 // reportDestination formats a destination report string.
