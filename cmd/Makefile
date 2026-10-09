@@ -1,5 +1,6 @@
 SUBDIRS = \
 	mfp \
+	mfp-backend-dnssd \
 	mfp-cups \
 	mfp-discover \
 	mfp-model \

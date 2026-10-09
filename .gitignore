@@ -4,15 +4,16 @@ tags
 *.orig
 coverage.out
 
-cmd/mfp/mfp
+cmd/mfp-backend-dnssd/mfp-backend-dnssd
 cmd/mfp-cups/mfp-cups
 cmd/mfp-discover/mfp-discover
+cmd/mfp/mfp
 cmd/mfp-model/mfp-model
 cmd/mfp-ppd/mfp-ppd
 cmd/mfp-proxy/mfp-proxy
+cmd/mfp-test/mfp-test
 cmd/mfp-usb/mfp-usb
 cmd/mfp-virtual/mfp-virtual
-cmd/mfp-test/mfp-test
 
 internal/evaluate/*.png
 
