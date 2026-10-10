@@ -308,64 +308,61 @@ func svcCMD(svc *avahi.Service) string {
 	formatsSeen := make(map[string]struct{})
 
 	for _, mime := range strings.Split(pdl, ",") {
-		fmt := ""
+		var add []string
 		switch strings.ToLower(strings.TrimSpace(mime)) {
 		case "application/pdf":
-			fmt = "PDF"
+			add = []string{"PDF"}
 		case "application/postscript":
-			fmt = "PS"
+			add = []string{"PS"}
 
 		case "application/vnd.epson.esc_p":
-			fmt = "ESCP"
+			add = []string{"ESCP"}
 		case "application/vnd.epson.esc_p-r":
-			fmt = "ESCPR"
+			add = []string{"ESCPR"}
 
 		case "application/vnd.hp-pcl":
-			fmt = "PCL"
+			add = []string{"PCL"}
 		case "application/vnd.hp-pclxl":
-			fmt = "PCLXL"
+			add = []string{"PCLXL"}
 		case "application/vnd.hp-xqx":
-			fmt = "XQX"
+			add = []string{"XQX"}
 
 		case "application/vnd.canon-bj":
-			fmt = "BJ"
+			add = []string{"BJ"}
 		case "application/vnd.canon-capt":
-			fmt = "CAPT"
+			add = []string{"CAPT"}
 		case "application/vnd.canon-cpdl":
-			fmt = "CPDL"
+			add = []string{"CPDL"}
 		case "application/vnd.canon-lips":
-			fmt = "LIPS"
+			add = []string{"LIPS"}
 
 		case "application/vnd.ms-xpsdocument":
-			fmt = "XPS"
+			add = []string{"XPS"}
 		case "application/oxps":
-			fmt = "XPS"
+			add = []string{"XPS"}
 		case "application/pclm":
-			fmt = "PCLM"
+			add = []string{"PCLM"}
 
 		case "image/jpeg":
-			fmt = "JPEG"
+			add = []string{"JPEG"}
 		case "image/pwg-raster":
-			fmt = "PWGRaster,PWG"
+			add = []string{"PWGRaster", "PWG"}
 		case "image/urf":
-			fmt = "AppleRaster,URF"
+			add = []string{"AppleRaster", "URF"}
 		case "image/tiff":
-			fmt = "TIFF"
+			add = []string{"TIFF"}
 		case "image/png":
-			fmt = "PNG"
+			add = []string{"PNG"}
 
 		case "text/plain":
-			fmt = "TEXT"
+			add = []string{"TEXT"}
 		}
 
-		if fmt == "" {
-			// Skip unknown format
-			continue
-		}
-
-		if _, seen := formatsSeen[fmt]; !seen {
-			formatsSeen[fmt] = struct{}{}
-			formats = append(formats, fmt)
+		for _, fmt := range add {
+			if _, seen := formatsSeen[fmt]; !seen {
+				formatsSeen[fmt] = struct{}{}
+				formats = append(formats, fmt)
+			}
 		}
 	}
 
