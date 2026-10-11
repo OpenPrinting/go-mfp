@@ -10,6 +10,8 @@ package discovery
 
 import (
 	"context"
+	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -279,5 +281,100 @@ func TestClient_MissingFields(t *testing.T) {
 		if devices[0].MakeModel != "" {
 			t.Errorf("Expected empty MakeModel, got '%s'", devices[0].MakeModel)
 		}
+	}
+}
+
+// okBackend119 is a Backend that opens successfully, returning a
+// mockSource bound to the discovery queue.
+type okBackend119 struct{}
+
+func (okBackend119) Name() string              { return "ok119" }
+func (okBackend119) DeviceID(id UnitID) UnitID { return id }
+func (okBackend119) Open(ctx context.Context, queue *Eventqueue) (Source, error) {
+	return &mockSource{queue: queue}, nil
+}
+
+// failBackend119 is a Backend whose Open always fails.
+type failBackend119 struct{}
+
+func (failBackend119) Name() string              { return "fail119" }
+func (failBackend119) DeviceID(id UnitID) UnitID { return id }
+func (failBackend119) Open(ctx context.Context, queue *Eventqueue) (Source, error) {
+	return nil, errors.New("boom119")
+}
+
+// countSource119 counts Close calls, so tests can observe cleanup.
+// (mockSource.Close is a no-op and cannot be observed.)
+type countSource119 struct{ closed *atomic.Int32 }
+
+func (s *countSource119) Close() { s.closed.Add(1) }
+
+// countBackend119 opens successfully, returning an observable source.
+type countBackend119 struct{ closed *atomic.Int32 }
+
+func (countBackend119) Name() string                { return "count119" }
+func (b countBackend119) DeviceID(id UnitID) UnitID { return id }
+func (b countBackend119) Open(ctx context.Context, queue *Eventqueue) (Source, error) {
+	return &countSource119{closed: b.closed}, nil
+}
+
+// TestNewClientTmAttachesSources verifies that successfully opened
+// sources are retained for later Close (see issue #119).
+func TestNewClientTmAttachesSources(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientTm(ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		okBackend119{})
+	if err != nil {
+		t.Fatalf("NewClientTm failed: %v", err)
+	}
+	defer client.Close()
+
+	if len(client.sources) != 1 {
+		t.Errorf("len(sources) = %d, want 1", len(client.sources))
+	}
+}
+
+// TestNewClientTmPropagatesOpenError verifies that a failing first
+// backend surfaces its error instead of a healthy client (see #119).
+func TestNewClientTmPropagatesOpenError(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientTm(ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		failBackend119{})
+	if err == nil {
+		if client != nil {
+			client.Close()
+		}
+		t.Fatalf("expected error, got nil")
+	}
+	if client != nil {
+		t.Errorf("expected nil client on failure")
+	}
+}
+
+// TestNewClientTmClosesPriorSources verifies that a later backend
+// failure closes already-opened sources (see issue #119).
+func TestNewClientTmClosesPriorSources(t *testing.T) {
+	var closed atomic.Int32
+
+	ctx := context.Background()
+	client, err := NewClientTm(ctx,
+		100*time.Millisecond,
+		100*time.Millisecond,
+		countBackend119{closed: &closed}, failBackend119{})
+	if err == nil {
+		if client != nil {
+			client.Close()
+		}
+		t.Fatalf("expected error, got nil")
+	}
+	if client != nil {
+		t.Errorf("expected nil client on failure")
+	}
+	if got := closed.Load(); got != 1 {
+		t.Errorf("prior source closed %d times, want 1", got)
 	}
 }

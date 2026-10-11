@@ -77,13 +77,14 @@ func NewClientTm(ctx context.Context,
 		// Open the source
 		src, err := bk.Open(ctx, clnt.queue)
 		if err != nil {
-			for _, src := range clnt.sources {
-				src.Close()
-				return nil, err
+			for _, s := range clnt.sources {
+				s.Close()
 			}
-
-			clnt.sources = append(clnt.sources, src)
+			cancel()
+			return nil, err
 		}
+
+		clnt.sources = append(clnt.sources, src)
 	}
 
 	// Start work thread
