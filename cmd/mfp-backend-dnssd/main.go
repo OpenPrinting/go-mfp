@@ -529,26 +529,21 @@ func sanitizeDeviceIDValue(s string) string {
 func usage() {
 	const text = `usage: mfp-backend-dnssd
 
-mfp-backend-dnssd is a drop-in replacement for the
-/usr/lib/cups/backend/dnssd discovery backend.
+mfp-backend-dnssd is an alternative DNS-SD discovery backend for CUPS,
+intended to replace the native driverless and dnssd backends.
 
-It supports DNS-SD discovery of printers implementing one of the
-following protocols:
+It discovers printers advertising any of the following protocols:
 
-    * IPP (_ipp._tcp or _ipps._tcp)
+    * IPP and IPP over TLS (_ipp._tcp, _ipps._tcp)
     * LPD (_printer._tcp)
     * AppSocket (_pdl-datastream._tcp)
 
-Compared to the native dnssd backend, it provides the following
-improvements:
+Unlike the native backends, it:
 
-    * Services announced on the localhost are not ignored, allowing
-      locally running printer applications and simulated hardware to
-      be discovered.
-    * All supported protocols are returned for each device, allowing
-      printer configuration utilities to choose between them. The
-      standard dnssd backend prioritizes the available protocols and
-      returns only a single endpoint for each printer.
+    * Discovers services announced on localhost, including local printer
+      applications and simulated printers.
+    * Reports all discovered connection methods for each device, leaving
+      the choice of protocol to the printer configuration software.
 `
 
 	os.Stdout.Write([]byte(text))
