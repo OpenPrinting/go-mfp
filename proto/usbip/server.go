@@ -71,7 +71,7 @@ func (srv *Server) AddDevice(dev *Device) error {
 		next := (srv.nextslot + i) % len(srv.devices)
 		if next != 0 && srv.devices[next].dev == nil {
 			srv.devices[next].dev = dev
-			srv.nextslot = (next + 1) & len(srv.devices)
+			srv.nextslot = (next + 1) % len(srv.devices)
 			return nil
 		}
 	}
