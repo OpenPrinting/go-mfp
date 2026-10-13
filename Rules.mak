@@ -56,9 +56,9 @@ do_vet:
 ifneq   ($(GOFILES),)
 
 do_all:
-	$(GO) build
+	GOPROXY=off $(GO) build
 ifneq	($(GOTESTS),)
-	$(GO) test -c
+	GOPROXY=off $(GO) test -c
 	rm -f $(PACKAGE).test
 endif
 
@@ -76,11 +76,11 @@ endif
 
 do_test:
 ifneq	($(GOTESTS),)
-	$(GO) test
+	GOPROXY=off $(GO) test
 endif
 
 do_vet:
-	$(GO) vet
+	GOPROXY=off $(GO) vet
 
 endif
 
