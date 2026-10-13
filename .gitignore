@@ -7,6 +7,7 @@ coverage.out
 cmd/mfp-backend-dnssd/mfp-backend-dnssd
 cmd/mfp-cups/mfp-cups
 cmd/mfp-discover/mfp-discover
+cmd/mfp-ipp-usb/mfp-ipp-usb
 cmd/mfp/mfp
 cmd/mfp-model/mfp-model
 cmd/mfp-ppd/mfp-ppd

@@ -3,6 +3,7 @@ SUBDIRS = \
 	mfp-backend-dnssd \
 	mfp-cups \
 	mfp-discover \
+	mfp-ipp-usb \
 	mfp-model \
 	mfp-ppd \
 	mfp-proxy \
