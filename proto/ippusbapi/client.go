@@ -10,7 +10,6 @@ package ippusbapi
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -41,11 +40,11 @@ func NewClient(ctx context.Context) *Client {
 		connection: http.Client{},
 	}
 
-	dial := func(networt, addr string) (net.Conn, error) {
+	dial := func(ctx context.Context, networt, addr string) (net.Conn, error) {
 		return net.Dial("unix", IPPUSBControlSocket)
 	}
 
-	client.transport.Dial = dial
+	client.transport.DialContext = dial
 	client.connection.Transport = &client.transport
 
 	return client
@@ -59,30 +58,40 @@ func (client *Client) Status() ([]byte, error) {
 // Version returns the ipp-usb API version string
 func (client *Client) Version() (string, error) {
 	version, err := client.get("/version")
+	if err == ErrHTTP(http.StatusNotFound) {
+		// Assume 0.9.22
+		return "0.9.22", nil
+	}
 	return strings.TrimSpace(string(version)), err
 }
 
 // get performs a GET request to the ipp-usb
-func (client *Client) get(path string) ([]byte, error) {
+func (client *Client) get(path string) (data []byte, err error) {
+	defer func() {
+		if err != nil {
+			err = errDecode(err)
+			log.Trace(client.ctx, "GET %s -- %s", path, err)
+		}
+	}()
+
 	dest := "http://localhost/" + strings.TrimLeft(path, "/")
 	rq, err := http.NewRequestWithContext(client.ctx, "GET", dest, nil)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	rsp, err := client.connection.Do(rq)
 	if err != nil {
-		log.Trace(client.ctx, "GET %s -- %s", path, err)
-		return nil, err
+		return
 	}
 	defer rsp.Body.Close()
 
-	log.Trace(client.ctx, "GET %s -- %s", path, rsp.Status)
 	if rsp.StatusCode/100 != 2 {
-		err := errors.New("HTTP: " + rsp.Status)
-		return nil, err
+		err = ErrHTTP(rsp.StatusCode)
+		return
 	}
 
-	data, err := io.ReadAll(rsp.Body)
-	return data, err
+	log.Trace(client.ctx, "GET %s -- %s", path, rsp.Status)
+	data, err = io.ReadAll(rsp.Body)
+	return
 }
