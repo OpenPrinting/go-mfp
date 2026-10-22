@@ -10,10 +10,10 @@ package ieee1284
 
 import "strings"
 
-// DeviceID contains the parsed IEEE 1284 device id.
+// DeviceID contains the parsed IEEE-1284 device id.
 //
-// Essentially, the Device ID is the case-sensitive string of ASCII
-// characters deﬁning peripheral characteristics and/or capabilities.
+// Essentially, the Device ID is the case-insensitive string of ASCII
+// characters defining peripheral characteristics and/or capabilities.
 //
 // Example:
 //
