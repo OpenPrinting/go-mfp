@@ -7,7 +7,7 @@
 escl.scanner = escl.ScannerCapabilities(
     Version = '2.9',
     MakeAndModel = 'OpenPrinting eSCL Scanner',
-    SerialNumber = 'SN-6DBE4765527C',
+    SerialNumber = 'SN-314159265359',
     Uuid = UUID('4a6e56ce-b372-4fe0-bdd3-7d939b67bc03'),
     Platen = escl.Platen(
         PlatenInputCaps = escl.InputSourceCaps(
@@ -369,7 +369,7 @@ usb.device = usb.DeviceDescriptor(
     bcdDevice = '0.0',
     iManufacturer = 'OpenPrinting',
     iProduct = 'eSCL Scanner',
-    iSerialNumber = 'SN-6DBE4765527C',
+    iSerialNumber = 'SN-314159265359',
     Configurations = [
         usb.ConfigurationDescriptor(
             bConfigurationValue = 1,
