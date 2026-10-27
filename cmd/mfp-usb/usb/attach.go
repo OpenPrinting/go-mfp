@@ -24,10 +24,8 @@ const (
 	defaultIP = "localhost:3240"
 	// defaultBUSID is the default USB bus ID for the virtual device.
 	defaultBUSID = "1-1"
-	// timeout is the maximum duration allowed for a single TCP connection attempt.
-	timeout = 500 * time.Millisecond
 	// frequency is the duration between consecutive server availability checks.
-	frequency = 500 * time.Millisecond
+	frequency = 2 * time.Second
 )
 
 // cmdAttach defines the "attach" command that automatically attaches
@@ -76,13 +74,9 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Check if device is already attached
-	isAvailable := false
-	cmd := exec.Command("usbip", "port")
-	if output, err := cmd.CombinedOutput(); err == nil {
-		if strings.Contains(string(output), "Port 00:") {
-			log.Debug(ctx, "Device already attached")
-			isAvailable = true
-		}
+	isAvailable := isAttached()
+	if isAvailable {
+		log.Debug(ctx, "Device already attached")
 	}
 
 	sm, err := newSleepMonitor(ctx)
@@ -91,12 +85,12 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 	defer sm.Close()
 
-	return runMonitor(ctx, sm.Chan(), ip, host, busid, isAvailable)
+	return runMonitor(ctx, sm.Chan(), host, busid, isAvailable)
 }
 
 // runMonitor executes the main monitoring cycle for server availability
 // and sleep events, automatically attaching or detaching the device as needed.
-func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, busid string, isAvailable bool) error {
+func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, host, busid string, isAvailable bool) error {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -129,35 +123,57 @@ func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, busid
 			}
 
 		case <-ticker.C:
-			// Skip attach attempts if system is sleeping
 			if isSleeping {
 				continue
 			}
 
-			// Check if server is available
-			serverUp := false
-			if conn, err := net.DialTimeout("tcp", ip, timeout); err == nil {
-				conn.Close()
-				serverUp = true
+			currentlyAttached := isAttached()
+
+			if currentlyAttached {
+				if !isAvailable {
+					isAvailable = true
+				}
+				continue
 			}
 
-			if serverUp && !isAvailable {
-				log.Debug(ctx, "Server is up. Attempting to attach device...")
+			if isAvailable {
+				log.Debug(ctx, "Connection lost. Detaching...")
+				if err := detach(ctx); err != nil {
+					log.Debug(ctx, "Warning: detach failed: %v", err)
+				}
+				isAvailable = false
+			}
+
+			serverUp := false
+			cmd := exec.CommandContext(ctx, "usbip", "list", "-r", host)
+			if out, err := cmd.CombinedOutput(); err == nil {
+				if strings.Contains(string(out), busid) {
+					serverUp = true
+				}
+			}
+
+			if serverUp {
+				log.Debug(ctx, "Server is up. Attaching...")
 				if err := attach(host, busid); err != nil {
 					log.Debug(ctx, "Attach failed: %v", err)
 				} else {
 					isAvailable = true
 					log.Debug(ctx, "attached")
 				}
-			} else if !serverUp && isAvailable {
-				log.Debug(ctx, "Server is down. Detaching...")
-				if err := detach(ctx); err != nil {
-					log.Debug(ctx, "Warning: failed to detach: %v", err)
-				}
-				isAvailable = false
 			}
 		}
 	}
+}
+
+// isAttached checks if the USB device is currently attached to a virtual port
+func isAttached() bool {
+	cmd := exec.Command("usbip", "port")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(output), "Port 00:") &&
+		strings.Contains(string(output), "-> usbip://")
 }
 
 // attach loads the vhci_hcd kernel module and attaches the virtual USB device
