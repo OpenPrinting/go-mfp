@@ -131,6 +131,11 @@ func (lgr *Logger) Dump(prefix string, level Level, data []byte) {
 	lgr.Begin(prefix).Dump(level, data).Commit()
 }
 
+// Indent writes indented text to the logger.
+func (lgr *Logger) Indent(prefix string, level Level, indent int, text []byte) *Logger {
+	return lgr.Begin(prefix).Indent(level, indent, text).Commit()
+}
+
 // Object writes any object that implements [Marshaler]
 // interface to the Logger.
 func (lgr *Logger) Object(prefix string, level Level, indent int, obj Marshaler) *Logger {

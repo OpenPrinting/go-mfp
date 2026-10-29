@@ -132,6 +132,11 @@ func (rec *Record) Dump(level Level, data []byte) *Record {
 	return rec.text(level, 0, generic.CopySlice(buf.Bytes()))
 }
 
+// Indent writes indented text to the Record.
+func (rec *Record) Indent(level Level, indent int, text []byte) *Record {
+	return rec.text(level, indent, text)
+}
+
 // Object writes any object that implements [Marshaler]
 // interface to the Record.
 func (rec *Record) Object(level Level, indent int, obj Marshaler) *Record {
