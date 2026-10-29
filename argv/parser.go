@@ -735,6 +735,12 @@ func (prs *parser) appendOptVal(opt *Option, name, value string,
 		return err
 	}
 
+	if !novalue && !opt.withValue() {
+		err := fmt.Errorf("unrecognized option argument: %q",
+			name+"="+value)
+		return err
+	}
+
 	if !novalue {
 		err := opt.Validate(value)
 		if err != nil {
