@@ -114,6 +114,15 @@ func (inv *Invocation) Get(name string) (val string, found bool) {
 	return
 }
 
+// GetString is a simplified form of [Invocation.Get].
+//
+// It returns the first value of option or parameter by its name
+// or "" if parameter is not found.
+func (inv *Invocation) GetString(name string) string {
+	s, _ := inv.Get(name)
+	return s
+}
+
 // Flag returns true if option is present in the command line.
 func (inv *Invocation) Flag(name string) bool {
 	_, found := inv.Get(name)
