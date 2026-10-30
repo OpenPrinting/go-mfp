@@ -272,5 +272,8 @@ func (client *Client) post(path string, in any) (out any, err error) {
 		out = env.Data
 	}
 
+	// Log the successful transaction
+	log.Verbose(client.ctx, "POST %s -- %s", path, rsp.Status)
+
 	return
 }
