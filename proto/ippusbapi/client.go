@@ -80,7 +80,7 @@ func (client *Client) Status() ([]byte, error) {
 // Version returns the ipp-usb API version string
 func (client *Client) Version() (string, error) {
 	version, err := client.get("/version")
-	if err == ErrHTTP(http.StatusNotFound) {
+	if err == ErrNotSupported {
 		// Assume 0.9.22
 		return "0.9.22", nil
 	}
