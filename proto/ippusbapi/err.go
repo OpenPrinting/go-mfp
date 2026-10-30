@@ -21,6 +21,10 @@ var (
 
 	// ErrAccess indicates an access error
 	ErrAccess = errors.New("access denied")
+
+	// ErrNotSupported indicates that operation is not
+	// supported by the running ipp-usb daemon
+	ErrNotSupported = errors.New("operation not supported")
 )
 
 // ErrHTTP represents an error, caused by non-successful HTTP status
@@ -42,6 +46,8 @@ func errDecode(err error) error {
 		err = ErrAccess
 	case errors.Is(err, syscall.EPERM):
 		err = ErrAccess
+	case errors.Is(err, ErrHTTP(http.StatusNotFound)):
+		err = ErrNotSupported
 	}
 
 	return err
