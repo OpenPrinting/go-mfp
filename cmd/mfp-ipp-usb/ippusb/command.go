@@ -16,6 +16,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/proto/ippusbapi"
+	"github.com/OpenPrinting/go-mfp/util/optional"
 )
 
 // Command is the 'mfp-ipp-usb' command description
@@ -49,6 +50,44 @@ var Command = argv.Command{
 			Name:    "version",
 			Help:    "Print ipp-usb API version",
 			Handler: cmdVersionHandler,
+		},
+		argv.Command{
+			Name:    "getconf",
+			Help:    "Get devices configuration",
+			Handler: cmdGetConfHandler,
+			Options: []argv.Option{
+				argv.Option{
+					Name:     "--mfg",
+					Help:     "Manufacturer name",
+					HelpArg:  "name",
+					Validate: argv.ValidateAny,
+				},
+				argv.Option{
+					Name:     "--mdl",
+					Help:     "Model name",
+					HelpArg:  "name",
+					Validate: argv.ValidateAny,
+				},
+				argv.Option{
+					Name:     "--sn",
+					Help:     "Serial number",
+					HelpArg:  "sn",
+					Validate: argv.ValidateAny,
+				},
+				argv.Option{
+					Name:     "--hwid",
+					Help:     "USB hardware ID, vendor&product, hex",
+					HelpArg:  "vvvv&pppp",
+					Validate: argv.ValidateAny,
+				},
+				argv.Option{
+					Name:     "--uri",
+					Help:     "Device URI",
+					HelpArg:  "usb://...",
+					Validate: argv.ValidateAny,
+				},
+				argv.HelpOption,
+			},
 		},
 	},
 }
@@ -94,5 +133,51 @@ func cmdVersionHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	fmt.Println(version)
+	return nil
+}
+
+// cmdGetConfHandler is the "getconf" sub-command handler
+func cmdGetConfHandler(ctx context.Context, inv *argv.Invocation) error {
+	dn := ippusbapi.DeviceName{
+		MFG:  optional.NotZero(inv.GetString("--mfg")),
+		MDL:  optional.NotZero(inv.GetString("--mdl")),
+		SN:   optional.NotZero(inv.GetString("--sn")),
+		HWID: optional.NotZero(inv.GetString("--hwid")),
+		URI:  optional.NotZero(inv.GetString("--uri")),
+	}
+
+	clnt := ippusbapi.NewClient(ctx)
+	devices, err := clnt.GetConf(dn)
+	if err != nil {
+		return err
+	}
+
+	for i, dev := range devices {
+		if i != 0 {
+			fmt.Println("")
+		}
+
+		fmt.Println("Device identification:")
+
+		if dev.MFG != nil {
+			fmt.Printf("  usb_MFG:   %q\n", *dev.MFG)
+		}
+		if dev.MDL != nil {
+			fmt.Printf("  usb_MDL:   %q\n", *dev.MDL)
+		}
+		if dev.SN != nil {
+			fmt.Printf("  usb_SN:    %q\n", *dev.SN)
+		}
+		if dev.HWID != nil {
+			fmt.Printf("  usb_HWID:  %q\n", *dev.HWID)
+		}
+		if dev.URI != nil {
+			fmt.Printf("  usb_URI:   %q\n", *dev.URI)
+		}
+
+		fmt.Println("Configuration:")
+		fmt.Printf("  disabled:  %v\n", dev.Disabled)
+	}
+
 	return nil
 }
