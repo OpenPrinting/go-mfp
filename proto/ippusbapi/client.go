@@ -115,6 +115,12 @@ func (client *Client) GetConf(name DeviceName) ([]DeviceConf, error) {
 	return configs, nil
 }
 
+// SetConf changes device configuration.
+func (client *Client) SetConf(conf DeviceConf) error {
+	_, err := client.post("/set/conf", conf)
+	return err
+}
+
 // get performs a GET request to the ipp-usb
 func (client *Client) get(path string) (data []byte, err error) {
 	// Ensure uniform error handling
