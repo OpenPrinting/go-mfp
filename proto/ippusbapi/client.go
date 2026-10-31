@@ -48,8 +48,8 @@ type DeviceName struct {
 
 // DeviceConf represents a device configuration.
 type DeviceConf struct {
-	DeviceName      // Device name
-	Disabled   bool `json:"disabled"` // True if device is disabled
+	DeviceName                    // Device name
+	Disabled   optional.Val[bool] `json:"disabled"` // True if device is disabled
 }
 
 // NewClient returns the new client.

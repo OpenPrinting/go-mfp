@@ -176,7 +176,9 @@ func cmdGetConfHandler(ctx context.Context, inv *argv.Invocation) error {
 		}
 
 		fmt.Println("Configuration:")
-		fmt.Printf("  disabled:  %v\n", dev.Disabled)
+		if dev.Disabled != nil {
+			fmt.Printf("  disabled:  %v\n", *dev.Disabled)
+		}
 	}
 
 	return nil
