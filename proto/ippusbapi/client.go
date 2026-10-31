@@ -39,17 +39,17 @@ type Client struct {
 // DeviceName represents set of parameters to identify
 // a particular device.
 type DeviceName struct {
-	MFG  optional.Val[string] `json:"usb_MFG"`  // Manufacturer name
-	MDL  optional.Val[string] `json:"usb_MDL"`  // Model name
-	SN   optional.Val[string] `json:"usb_SN"`   // Serial number
-	HWID optional.Val[string] `json:"usb_HWID"` // Vendor:Product, hex
-	URI  optional.Val[string] `json:"usb_URI"`  // CUPS-compatible URI
+	MFG  optional.Val[string] `json:"usb_MFG,omitempty"`  // Manufacturer name
+	MDL  optional.Val[string] `json:"usb_MDL,omitempty"`  // Model name
+	SN   optional.Val[string] `json:"usb_SN,omitempty"`   // Serial number
+	HWID optional.Val[string] `json:"usb_HWID,omitempty"` // Vendor:Product, hex
+	URI  optional.Val[string] `json:"usb_URI,omitempty"`  // CUPS-compatible URI
 }
 
 // DeviceConf represents a device configuration.
 type DeviceConf struct {
 	DeviceName                    // Device name
-	Disabled   optional.Val[bool] `json:"disabled"` // True if device is disabled
+	Disabled   optional.Val[bool] `json:"disabled,omitempty"` // True if device is disabled
 }
 
 // NewClient returns the new client.
