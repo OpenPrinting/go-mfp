@@ -55,40 +55,61 @@ var Command = argv.Command{
 			Name:    "getconf",
 			Help:    "Get devices configuration",
 			Handler: cmdGetConfHandler,
-			Options: []argv.Option{
+			Options: append(
+				cmdCommonGetSetConfOptions,
+				argv.HelpOption,
+			),
+		},
+		argv.Command{
+			Name:    "setconf",
+			Help:    "Set device configuration",
+			Handler: cmdSetConfHandler,
+			Options: append(
+				cmdCommonGetSetConfOptions,
 				argv.Option{
-					Name:     "--mfg",
+					Name:     "--disabled",
 					Help:     "Manufacturer name",
-					HelpArg:  "name",
-					Validate: argv.ValidateAny,
-				},
-				argv.Option{
-					Name:     "--mdl",
-					Help:     "Model name",
-					HelpArg:  "name",
-					Validate: argv.ValidateAny,
-				},
-				argv.Option{
-					Name:     "--sn",
-					Help:     "Serial number",
-					HelpArg:  "sn",
-					Validate: argv.ValidateAny,
-				},
-				argv.Option{
-					Name:     "--hwid",
-					Help:     "USB hardware ID, vendor&product, hex",
-					HelpArg:  "vvvv&pppp",
-					Validate: argv.ValidateAny,
-				},
-				argv.Option{
-					Name:     "--uri",
-					Help:     "Device URI",
-					HelpArg:  "usb://...",
-					Validate: argv.ValidateAny,
+					HelpArg:  "bool",
+					Validate: argv.ValidateBool,
 				},
 				argv.HelpOption,
-			},
+			),
 		},
+	},
+}
+
+// cmdCommonGetSetConfOptions is the common options for
+// the getconf and setconf subcommands.
+var cmdCommonGetSetConfOptions = []argv.Option{
+	argv.Option{
+		Name:     "--mfg",
+		Help:     "Manufacturer name",
+		HelpArg:  "name",
+		Validate: argv.ValidateAny,
+	},
+	argv.Option{
+		Name:     "--mdl",
+		Help:     "Model name",
+		HelpArg:  "name",
+		Validate: argv.ValidateAny,
+	},
+	argv.Option{
+		Name:     "--sn",
+		Help:     "Serial number",
+		HelpArg:  "sn",
+		Validate: argv.ValidateAny,
+	},
+	argv.Option{
+		Name:     "--hwid",
+		Help:     "USB hardware ID, vendor&product, hex",
+		HelpArg:  "vvvv&pppp",
+		Validate: argv.ValidateAny,
+	},
+	argv.Option{
+		Name:     "--uri",
+		Help:     "Device URI",
+		HelpArg:  "usb://...",
+		Validate: argv.ValidateAny,
 	},
 }
 
@@ -182,4 +203,32 @@ func cmdGetConfHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	return nil
+}
+
+// cmdSetConfHandler is the "setconf" sub-command handler
+func cmdSetConfHandler(ctx context.Context, inv *argv.Invocation) error {
+	name := ippusbapi.DeviceName{
+		MFG:  optional.NotZero(inv.GetString("--mfg")),
+		MDL:  optional.NotZero(inv.GetString("--mdl")),
+		SN:   optional.NotZero(inv.GetString("--sn")),
+		HWID: optional.NotZero(inv.GetString("--hwid")),
+		URI:  optional.NotZero(inv.GetString("--uri")),
+	}
+
+	conf := ippusbapi.DeviceConf{
+		DeviceName: name,
+	}
+
+	if opt, found := inv.Get("--disabled"); found {
+		conf.Disabled = optional.New(argv.DecodeBool(opt))
+	}
+
+	clnt := ippusbapi.NewClient(ctx)
+	err := clnt.SetConf(conf)
+
+	if err == nil {
+		fmt.Println("OK")
+	}
+
+	return err
 }
