@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 )
 
 // ValidateAny is the Option.Validate and Parameter.Validate callback.
@@ -76,6 +77,39 @@ func ValidateUint32(in string) error {
 // It accepts unsigned 64-bit integers.
 func ValidateUint64(in string) error {
 	return validateUint64(in)
+}
+
+// ValidateBool is the Option.Validate and Parameter.Validate callback.
+//
+// It assepts boolean values.
+//
+// Valid boolean values are (case-insensetive):
+//   - t, true  - for true
+//   - f, false - for false
+//   - any unsigned integer. 0 is false, everything else is true.
+func ValidateBool(in string) error {
+	switch strings.ToLower(in) {
+	case "t", "true":
+		return nil
+	case "f", "false":
+		return nil
+	}
+
+	return ValidateUint64(in)
+}
+
+// DecodeBool decodes boolean value of the option.
+// This is assumed that value has passed the [ValidateBool] validation.
+func DecodeBool(in string) bool {
+	switch strings.ToLower(in) {
+	case "t", "true":
+		return true
+	case "f", "false":
+		return false
+	}
+
+	v, _ := strconv.ParseUint(in, 0, 64)
+	return v != 0
 }
 
 // ValidateStrings creates the Option.Validate and Parameter.Validate callback.
