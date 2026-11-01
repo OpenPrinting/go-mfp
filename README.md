@@ -107,12 +107,21 @@ as `OpenPrinting Virtual MFP`) and can be driven by the usual Linux
 printing and scanning stack, including
 [ipp-usb](https://github.com/OpenPrinting/ipp-usb).
 
-### Building and running on ROSA Linux / Fedora
+### Building and running on RPM-based distros (Fedora, ROSA Linux, ...)
 
 The project builds and runs on RPM-based distributions.The
 instructions below were tested on ROSA Fresh 13.
 
 Install the build dependencies:
+
+Fedora:
+
+    sudo dnf install -y \
+        golang gcc gcc-c++ pkgconf make \
+        avahi-devel libjpeg-devel libpng-devel \
+        libusb1-devel libppd-devel python3-devel vips-devel
+
+ROSA:
 
     sudo dnf install -y \
         golang gcc gcc-c++ pkgconf make \
