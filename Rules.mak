@@ -56,9 +56,9 @@ do_vet:
 ifneq   ($(GOFILES),)
 
 do_all:
-	$(GO) build -mod=readonly
+	$(GO) build -buildvcs=false
 ifneq	($(GOTESTS),)
-	$(GO) test -c -mod=readonly
+	$(GO) test -c -buildvcs=false
 	rm -f $(PACKAGE).test
 endif
 
@@ -76,11 +76,11 @@ endif
 
 do_test:
 ifneq	($(GOTESTS),)
-	$(GO) test -mod=readonly
+	$(GO) test -buildvcs=false
 endif
 
 do_vet:
-	$(GO) vet -mod=readonly
+	$(GO) vet -buildvcs=false
 
 endif
 
