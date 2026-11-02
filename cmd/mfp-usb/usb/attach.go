@@ -74,9 +74,9 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Check if device is already attached
-	isAvailable := isAttached()
-	if isAvailable {
-		log.Debug(ctx, "Device already attached")
+	attached := isAttached()
+	if attached {
+		return fmt.Errorf("Device already attached")
 	}
 
 	sm, err := newSleepMonitor(ctx)
@@ -85,15 +85,17 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 	defer sm.Close()
 
-	return runMonitor(ctx, sm.Chan(), host, busid, isAvailable)
+	return runMonitor(ctx, sm.Chan(), ip, host, busid)
 }
 
 // runMonitor executes the main monitoring cycle for server availability
 // and sleep events, automatically attaching or detaching the device as needed.
-func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, host, busid string, isAvailable bool) error {
+func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, busid string) error {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
+	deathCh := make(chan struct{}, 1)
+	deviceAvailable := false
 	isSleeping := false
 
 	for {
@@ -115,53 +117,70 @@ func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, host, busid str
 				if err := detach(ctx); err != nil {
 					log.Debug(ctx, "Warning: failed to detach: %v", err)
 				}
-				isAvailable = false
+				deviceAvailable = false
 				isSleeping = true
 			} else {
 				log.Debug(ctx, "System woke up.")
 				isSleeping = false
 			}
 
+		case <-deathCh:
+			log.Info(ctx, "Server connection lost. Detaching...")
+			if err := detach(ctx); err != nil {
+				log.Debug(ctx, "Warning: failed to detach: %v", err)
+			}
+			deviceAvailable = false
+
 		case <-ticker.C:
-			if isSleeping {
+			if isSleeping || deviceAvailable {
 				continue
 			}
 
-			currentlyAttached := isAttached()
-
-			if currentlyAttached {
-				if !isAvailable {
-					isAvailable = true
-				}
+			conn, err := net.DialTimeout("tcp", ip, 500*time.Millisecond)
+			if err != nil {
 				continue
 			}
+			conn.Close()
 
-			if isAvailable {
-				log.Debug(ctx, "Connection lost. Detaching...")
-				if err := detach(ctx); err != nil {
-					log.Debug(ctx, "Warning: detach failed: %v", err)
-				}
-				isAvailable = false
-			}
-
-			serverUp := false
-			cmd := exec.CommandContext(ctx, "usbip", "list", "-r", host)
-			if out, err := cmd.CombinedOutput(); err == nil {
-				if strings.Contains(string(out), busid) {
-					serverUp = true
-				}
-			}
-
-			if serverUp {
-				log.Debug(ctx, "Server is up. Attaching...")
-				if err := attach(host, busid); err != nil {
-					log.Debug(ctx, "Attach failed: %v", err)
-				} else {
-					isAvailable = true
-					log.Debug(ctx, "attached")
-				}
+			log.Debug(ctx, "Server is up. Attaching...")
+			if err := attach(host, busid); err != nil {
+				log.Debug(ctx, "Attach failed: %v", err)
+			} else {
+				deviceAvailable = true
+				log.Debug(ctx, "attached")
+				go waitServerDeath(ctx, deathCh, ip)
 			}
 		}
+	}
+}
+
+// waitServerDeath monitors server liveness via a blocking TCP "canary" connection.
+// It avoids periodic polling and exec overhead, signaling the channel immediately
+// when the server terminates (connection closed) or the context is cancelled.
+func waitServerDeath(ctx context.Context, ch chan struct{}, ip string) {
+	conn, err := net.DialTimeout("tcp", ip, time.Second)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	done := make(chan error, 1)
+	go func() {
+		buf := make([]byte, 1)
+		// blocking while server is alive
+		_, err := conn.Read(buf)
+		done <- err
+	}()
+
+	select {
+	case <-done:
+		//server died
+		select {
+		case ch <- struct{}{}:
+		default:
+		}
+	case <-ctx.Done():
+		return
 	}
 }
 
