@@ -345,3 +345,23 @@ func (model *Model) Load(file string) error {
 
 	return model.Read(file, fp)
 }
+
+// IsEmptyNetwork reports whether the model lacks any component that can
+// be served over the network
+func (model *Model) IsEmptyNetwork() bool {
+	return model.ippPrinterAttrs == nil &&
+		model.ippScannerAttrs == nil &&
+		model.esclScanCaps == nil &&
+		model.wsdScanCaps == nil
+}
+
+// IsEmptyUSB reports whether the model lacks a USB device descriptor
+func (model *Model) IsEmptyUSB() bool {
+	return model.usbDevice == nil
+}
+
+// IsEmpty reports whether the model carries no content at all
+// Such a model is unusable in any mode.
+func (model *Model) IsEmpty() bool {
+	return model.IsEmptyNetwork() && model.IsEmptyUSB()
+}
