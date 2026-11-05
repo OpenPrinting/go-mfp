@@ -88,9 +88,14 @@ func simulate(ctx context.Context, model *modeling.Model,
 		mux.Add("/ipp/print", handler)
 	}
 
-	// Check that we have added at least something
-	if mux.Empty() {
-		return errors.New("model is empty")
+	if usbip {
+		if model.IsEmptyUSB() {
+			return errors.New("model lacks USB support: no USB device descriptor")
+		}
+	} else if model.IsEmptyNetwork() {
+		return errors.New(
+			"model has no network services (IPP printer or scanner): " +
+				"unusable in network mode")
 	}
 
 	// Create server for incoming connections.
@@ -164,9 +169,6 @@ func simulate(ctx context.Context, model *modeling.Model,
 		}
 	} else {
 		desc := model.GetUSBDeviceDescriptor()
-		if desc == nil {
-			return errors.New("model lack USB support")
-		}
 
 		addr := &net.TCPAddr{
 			IP:   net.IPv4(127, 0, 0, 1),
