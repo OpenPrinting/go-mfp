@@ -184,6 +184,11 @@ func cmdModelHandler(ctx context.Context, inv *argv.Invocation) error {
 			return err
 		}
 
+		if model.IsEmpty() {
+			return fmt.Errorf(
+				"model %q is empty: no USB device and no network services", file)
+		}
+
 		caps := model.GetIPPPrinterAttrs()
 		if caps != nil {
 			errors := caps.Errors()
