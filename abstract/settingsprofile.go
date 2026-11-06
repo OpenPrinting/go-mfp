@@ -64,7 +64,16 @@ func (prof SettingsProfile) AllowsResolution(res Resolution) bool {
 		}
 	}
 
-	// FIXME -- check ResolutionRange
+	if !prof.ResolutionRange.IsZero() {
+		rr := prof.ResolutionRange
+		if res.XResolution >= rr.XMin && res.XResolution <= rr.XMax &&
+			res.YResolution >= rr.YMin && res.YResolution <= rr.YMax {
+			if (rr.XStep == 0 || (res.XResolution-rr.XMin)%rr.XStep == 0) &&
+				(rr.YStep == 0 || (res.YResolution-rr.YMin)%rr.YStep == 0) {
+				return true
+			}
+		}
+	}
 
 	return false
 }
