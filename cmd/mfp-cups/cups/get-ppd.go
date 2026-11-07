@@ -12,10 +12,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
-	"github.com/OpenPrinting/go-mfp/internal/env"
 )
 
 // cmdGetPPD defines the "get-ppd" sub-command.
@@ -46,25 +46,22 @@ func cmdGetPPDHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Perform the query
-	dest := optCUPSURL(inv)
-	clnt := cups.NewClient(dest, nil)
+	clnt := cups.NewClient(optCUPSURL, nil)
 	body, uri, err := clnt.CUPSGetPPD(ctx, printerURI, ppdName)
 	if err != nil {
 		return err
 	}
 
 	// Format output
-	pager := env.NewPager()
-
 	if body == nil {
-		pager.Printf("Use printer-uri: %q", uri)
+		fmt.Printf("Use printer-uri: %q\n", uri)
 	} else {
-		_, err = io.Copy(pager, body)
+		_, err = io.Copy(os.Stdout, body)
 		body.Close()
 		if err != nil {
-			pager.Printf("\n%s\n", err)
+			fmt.Printf("\n%s\n", err)
 		}
 	}
 
-	return pager.Display()
+	return nil
 }

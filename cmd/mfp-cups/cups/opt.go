@@ -10,7 +10,6 @@ package cups
 
 import (
 	"math"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -387,14 +386,6 @@ func optPPDNameGet(inv *argv.Invocation) string {
 	return opt
 }
 
-// optCUPSURL returns CUPS URL (-u/--cups option).
+// optCUPSURL contains CUPS URL (-u/--cups option).
 // If option is not set, it uses default destination.
-func optCUPSURL(inv *argv.Invocation) *url.URL {
-	dest := cups.DefaultUNIXURL
-
-	if addr, ok := inv.Parent().Get("-u"); ok {
-		dest = transport.MustParseAddr(addr, "ipp://localhost/")
-	}
-
-	return dest
-}
+var optCUPSURL = cups.DefaultUNIXURL

@@ -14,6 +14,7 @@ import (
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
+	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/log"
 	"github.com/OpenPrinting/go-mfp/transport"
 )
@@ -68,6 +69,18 @@ func cmdCupsHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	logger := log.NewLogger(level, log.Console)
 	ctx = log.NewContext(ctx, logger)
+
+	// Setup pager
+	pager := env.NewPager()
+	pager.Redirect()
+	defer pager.Close()
+
+	// Save CUPS URL
+	if addr, ok := inv.Get("-u"); ok {
+		optCUPSURL = transport.MustParseAddr(addr, "ipp://localhost/")
+	}
+
+	log.Info(ctx, "CUPS: %s", optCUPSURL)
 
 	// Execute subcommand
 	return argv.DefaultHandler(ctx, inv)

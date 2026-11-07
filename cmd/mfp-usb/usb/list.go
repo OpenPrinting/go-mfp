@@ -40,7 +40,10 @@ func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	all := inv.Flag("--all")
+
 	pager := env.NewPager()
+	defer pager.Close()
+
 	for _, info := range list {
 		if !all && !info.IsPrinter() {
 			continue
@@ -132,5 +135,5 @@ func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
 		pager.Printf("")
 	}
 
-	return pager.Display()
+	return nil
 }

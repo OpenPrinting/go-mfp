@@ -12,6 +12,7 @@ import (
 	"context"
 
 	"github.com/OpenPrinting/go-mfp/argv"
+	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
@@ -54,6 +55,11 @@ func cmdPpdHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	logger := log.NewLogger(level, log.Console)
 	ctx = log.NewContext(ctx, logger)
+
+	// Setup pager
+	pager := env.NewPager()
+	pager.Redirect()
+	defer pager.Close()
 
 	// Execute subcommand
 	return argv.DefaultHandler(ctx, inv)

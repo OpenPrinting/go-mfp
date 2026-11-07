@@ -13,7 +13,6 @@ import (
 	"os"
 
 	"github.com/OpenPrinting/go-mfp/argv"
-	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/proto/ppd"
 	"github.com/OpenPrinting/goipp"
 )
@@ -46,18 +45,16 @@ func cmdDumpHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Format output
-	pager := env.NewPager()
-
 	f := goipp.NewFormatter()
 	f.FmtGroup(goipp.Group{
 		Tag:   goipp.TagPrinterGroup,
 		Attrs: attrs,
 	})
 
-	_, err = f.WriteTo(pager)
+	_, err = f.WriteTo(os.Stdout)
 	if err != nil {
 		return err
 	}
 
-	return pager.Display()
+	return nil
 }

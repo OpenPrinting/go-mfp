@@ -10,6 +10,7 @@ package discover
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/OpenPrinting/go-mfp/abstract"
@@ -67,6 +68,11 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 	logger := log.NewLogger(level, log.Console)
 	ctx = log.NewContext(ctx, logger)
 
+	// Setup pager
+	pager := env.NewPager()
+	pager.Redirect()
+	defer pager.Close()
+
 	// Prepare discovery.Client
 	clnt, err := discovery.NewClient(ctx, dnssd.Backend, wsdd.Backend)
 	if err != nil {
@@ -81,93 +87,90 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Format output
-	pager := env.NewPager()
-	defer pager.Display()
-
 	if len(devices) == 0 {
-		pager.Printf("No devices found.")
+		fmt.Printf("No devices found.\n")
 	}
 
 	for _, dev := range devices {
-		pager.Printf("================================")
+		fmt.Printf("================================\n")
 
-		pager.Printf("  MakeModel:        %q", dev.MakeModel)
-		pager.Printf("  Location:         %q", dev.Location)
-		pager.Printf("  DNS-SD name:      %q", dev.DNSSDName)
-		pager.Printf("  DNS-SD UUID:      %q", dev.DNSSDUUID)
-		pager.Printf("  WSD UUID:         %q", dev.WSDUUID)
-		pager.Printf("  Print Admin URL:  %s", dev.PrintAdminURL)
-		pager.Printf("  Scan Admin URL:   %s", dev.ScanAdminURL)
-		pager.Printf("  Faxout Admin URL: %s", dev.FaxoutAdminURL)
-		pager.Printf("  Icon URL:         %s", dev.IconURL)
-		pager.Printf("  PPD Manufacturer: %q", dev.PPDManufacturer)
-		pager.Printf("  PPD Model:        %q", dev.PPDModel)
-		pager.Printf("  USB Serial:       %q", dev.USBSerial)
-		pager.Printf("  USB HWID:         %q", dev.USBHWID)
+		fmt.Printf("  MakeModel:        %q\n", dev.MakeModel)
+		fmt.Printf("  Location:         %q\n", dev.Location)
+		fmt.Printf("  DNS-SD name:      %q\n", dev.DNSSDName)
+		fmt.Printf("  DNS-SD UUID:      %q\n", dev.DNSSDUUID)
+		fmt.Printf("  WSD UUID:         %q\n", dev.WSDUUID)
+		fmt.Printf("  Print Admin URL:  %s\n", dev.PrintAdminURL)
+		fmt.Printf("  Scan Admin URL:   %s\n", dev.ScanAdminURL)
+		fmt.Printf("  Faxout Admin URL: %s\n", dev.FaxoutAdminURL)
+		fmt.Printf("  Icon URL:         %s\n", dev.IconURL)
+		fmt.Printf("  PPD Manufacturer: %q\n", dev.PPDManufacturer)
+		fmt.Printf("  PPD Model:        %q\n", dev.PPDModel)
+		fmt.Printf("  USB Serial:       %q\n", dev.USBSerial)
+		fmt.Printf("  USB HWID:         %q\n", dev.USBHWID)
 
 		s := []string{}
 		for _, addr := range dev.Addrs {
 			s = append(s, addr.String())
 		}
-		pager.Printf("  IP addresses:     %s", strings.Join(s, ", "))
-		pager.Printf("")
+		fmt.Printf("  IP addresses:     %s\n", strings.Join(s, ", "))
+		fmt.Printf("\n")
 
 		if len(dev.PrintUnits) != 0 {
-			pager.Printf("  Print units:")
+			fmt.Printf("  Print units:\n")
 			for i, un := range dev.PrintUnits {
 				if i != 0 {
-					pager.Printf("")
+					fmt.Printf("\n")
 				}
 
 				p := un.Params
 
-				pager.Printf("    Type:       %s printer", un.Proto)
-				pager.Printf("    Auth:       %s", p.Auth)
+				fmt.Printf("    Type:       %s printer\n", un.Proto)
+				fmt.Printf("    Auth:       %s\n", p.Auth)
 
 				if p.Paper != discovery.PaperUnknown {
-					pager.Printf("    Paper Size: %s",
+					fmt.Printf("    Paper Size: %s\n",
 						p.Paper)
 				}
 
 				if p.Media != 0 {
-					pager.Printf("    Media Type: %s",
+					fmt.Printf("    Media Type: %s\n",
 						p.Media)
 				}
 
-				pager.Printf("    Flags:      %s", p.Flags())
+				fmt.Printf("    Flags:      %s\n", p.Flags())
 
-				pager.Printf("    PSProduct:  %q", p.PSProduct)
-				pager.Printf("    PDL:        %s",
+				fmt.Printf("    PSProduct:  %q\n", p.PSProduct)
+				fmt.Printf("    PDL:        %s\n",
 					strings.Join(p.PDL, ","))
-				pager.Printf("    Queue:      %s", p.Queue)
-				pager.Printf("    Priority:   %d", p.Priority)
+				fmt.Printf("    Queue:      %s\n", p.Queue)
+				fmt.Printf("    Priority:   %d\n", p.Priority)
 
-				pager.Printf("    Endpoints:")
+				fmt.Printf("    Endpoints:\n")
 				for _, ep := range un.Endpoints {
-					pager.Printf("      %s", ep)
+					fmt.Printf("      %s\n", ep)
 				}
 
-				pager.Printf("    TXT:        %q", un.TXT)
+				fmt.Printf("    TXT:        %q\n", un.TXT)
 			}
-			pager.Printf("")
+			fmt.Printf("\n")
 		}
 
 		if len(dev.ScanUnits) != 0 {
-			pager.Printf("  Scan units:")
+			fmt.Printf("  Scan units:\n")
 			for i, un := range dev.ScanUnits {
 				if i != 0 {
-					pager.Printf("")
+					fmt.Printf("\n")
 				}
 
 				p := un.Params
-				pager.Printf("    Type:       %s scanner",
+				fmt.Printf("    Type:       %s scanner\n",
 					un.Proto)
 				if p.Duplex != nil {
-					pager.Printf("    Duplex:     %v",
+					fmt.Printf("    Duplex:     %v\n",
 						*p.Duplex)
 				}
 				if !p.Inputs.IsEmpty() {
-					pager.Printf("    Inputs:     %s",
+					fmt.Printf("    Inputs:     %s\n",
 						p.Inputs)
 				}
 				if !p.Colors.IsEmpty() {
@@ -184,55 +187,55 @@ func cmdDiscoverHandler(ctx context.Context, inv *argv.Invocation) error {
 						abstract.ColorModeBinary) {
 						modes = append(modes, "bin")
 					}
-					pager.Printf("    ColorModes: %s",
+					fmt.Printf("    ColorModes: %s\n",
 						strings.Join(modes, ","))
 				}
 				if len(p.PDL) != 0 {
-					pager.Printf("    PDL:        %s",
+					fmt.Printf("    PDL:        %s\n",
 						strings.Join(p.PDL, ","))
 				}
 
-				pager.Printf("    Endpoints:")
+				fmt.Printf("    Endpoints:\n")
 				for _, ep := range un.Endpoints {
-					pager.Printf("      %s", ep)
+					fmt.Printf("      %s\n", ep)
 				}
 
-				pager.Printf("    TXT:        %q", un.TXT)
+				fmt.Printf("    TXT:        %q\n", un.TXT)
 			}
-			pager.Printf("")
+			fmt.Printf("\n")
 		}
 
 		if len(dev.FaxoutUnits) != 0 {
-			pager.Printf("  Faxout units:")
+			fmt.Printf("  Faxout units:\n")
 			for i, un := range dev.FaxoutUnits {
 				if i != 0 {
-					pager.Printf("")
+					fmt.Printf("\n")
 				}
 
 				p := un.Params
 
-				pager.Printf("    Type:       %s fax",
+				fmt.Printf("    Type:       %s fax\n",
 					un.Proto)
-				pager.Printf("    Auth:       %s", p.Auth)
-				pager.Printf("    Paper Size: %s", p.Paper)
-				pager.Printf("    Media Type: %s", p.Media)
+				fmt.Printf("    Auth:       %s\n", p.Auth)
+				fmt.Printf("    Paper Size: %s\n", p.Paper)
+				fmt.Printf("    Media Type: %s\n", p.Media)
 
-				pager.Printf("    Flags:      %s", p.Flags())
+				fmt.Printf("    Flags:      %s\n", p.Flags())
 
-				pager.Printf("    PSProduct:  %q", p.PSProduct)
-				pager.Printf("    PDL:        %s",
+				fmt.Printf("    PSProduct:  %q\n", p.PSProduct)
+				fmt.Printf("    PDL:        %s\n",
 					strings.Join(p.PDL, ","))
-				pager.Printf("    Queue:      %s", p.Queue)
-				pager.Printf("    Priority:   %d", p.Priority)
+				fmt.Printf("    Queue:      %s\n", p.Queue)
+				fmt.Printf("    Priority:   %d\n", p.Priority)
 
-				pager.Printf("    Endpoints:")
+				fmt.Printf("    Endpoints:\n")
 				for _, ep := range un.Endpoints {
-					pager.Printf("      %s", ep)
+					fmt.Printf("      %s\n", ep)
 				}
 
-				pager.Printf("    TXT:        %q", un.TXT)
+				fmt.Printf("    TXT:        %q\n", un.TXT)
 			}
-			pager.Printf("")
+			fmt.Printf("\n")
 		}
 	}
 

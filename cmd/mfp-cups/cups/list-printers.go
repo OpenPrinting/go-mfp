@@ -10,10 +10,11 @@ package cups
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
-	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
 )
 
@@ -35,8 +36,6 @@ var cmdListPrinters = argv.Command{
 // cmdListPrintersHandler is the "list-printers" command handler
 func cmdListPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Prepare arguments
-	dest := optCUPSURL(inv)
-
 	sel := &cups.GetPrintersSelection{
 		PrinterID:       optIDGet(inv),
 		Limit:           optLimitGet(inv),
@@ -48,7 +47,7 @@ func cmdListPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 	attrList = append(attrList, prnAttrsRequested...)
 
 	// Perform the query
-	clnt := cups.NewClient(dest, nil)
+	clnt := cups.NewClient(optCUPSURL, nil)
 	clnt.SetDecoderOptions(&ipp.DecoderOptions{KeepTrying: true})
 
 	printers, err := clnt.CUPSGetPrinters(ctx, sel, attrList)
@@ -57,13 +56,10 @@ func cmdListPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Format output
-	pager := env.NewPager()
-
-	pager.Printf("CUPS: %s", dest)
 	for _, prn := range printers {
-		pager.Printf("")
-		prnAttrsFormat(pager, prn)
+		fmt.Println("")
+		prnAttrsFormat(os.Stdout, prn)
 	}
 
-	return pager.Display()
+	return nil
 }

@@ -10,10 +10,11 @@ package cups
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
-	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
 )
 
@@ -34,8 +35,6 @@ var cmdDetectPrinters = argv.Command{
 // cmdDetectPrintersHandler is the "detect-printers" command handler
 func cmdDetectPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Prepare arguments
-	dest := optCUPSURL(inv)
-
 	sel := &cups.GetDevicesSelection{
 		Limit:          optLimitGet(inv),
 		Timeout:        optTimeoutGet(inv),
@@ -44,7 +43,7 @@ func cmdDetectPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Perform the query
-	clnt := cups.NewClient(dest, nil)
+	clnt := cups.NewClient(optCUPSURL, nil)
 	clnt.SetDecoderOptions(&ipp.DecoderOptions{KeepTrying: true})
 
 	devices, err := clnt.CUPSGetDevices(ctx, sel, []string{"all"})
@@ -53,13 +52,10 @@ func cmdDetectPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Format output
-	pager := env.NewPager()
-
-	pager.Printf("CUPS: %s", dest)
 	for _, dev := range devices {
-		pager.Printf("")
-		devAttrsFormat(pager, dev)
+		fmt.Println("")
+		devAttrsFormat(os.Stdout, dev)
 	}
 
-	return pager.Display()
+	return nil
 }

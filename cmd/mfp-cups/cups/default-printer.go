@@ -10,10 +10,11 @@ package cups
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
-	"github.com/OpenPrinting/go-mfp/internal/env"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
 )
 
@@ -30,13 +31,11 @@ var cmdDefaultPrinter = argv.Command{
 
 // cmdDefaultPrinterHandler is the "default-printer" command handler
 func cmdDefaultPrinterHandler(ctx context.Context, inv *argv.Invocation) error {
-	dest := optCUPSURL(inv)
-
 	attrList := optAttrsGet(inv)
 	attrList = append(attrList, prnAttrsRequested...)
 
 	// Perform the query
-	clnt := cups.NewClient(dest, nil)
+	clnt := cups.NewClient(optCUPSURL, nil)
 	clnt.SetDecoderOptions(&ipp.DecoderOptions{KeepTrying: true})
 
 	prn, err := clnt.CUPSGetDefault(ctx, attrList)
@@ -45,10 +44,8 @@ func cmdDefaultPrinterHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	// Format output
-	pager := env.NewPager()
+	fmt.Printf("CUPS: %s\n", optCUPSURL)
+	prnAttrsFormat(os.Stdout, prn)
 
-	pager.Printf("CUPS: %s", dest)
-	prnAttrsFormat(pager, prn)
-
-	return pager.Display()
+	return nil
 }
