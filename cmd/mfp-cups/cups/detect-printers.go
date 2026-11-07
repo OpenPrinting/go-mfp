@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
@@ -53,8 +54,16 @@ func cmdDetectPrintersHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	// Format output
 	for _, dev := range devices {
-		fmt.Println("")
-		devAttrsFormat(os.Stdout, dev)
+		switch {
+		// Skip devices with missed or incomplete URIs
+		case dev.DeviceURI == nil:
+		case !strings.Contains(*dev.DeviceURI, "://"):
+
+		// Dump others
+		default:
+			fmt.Println("")
+			devAttrsFormat(os.Stdout, dev)
+		}
 	}
 
 	return nil
