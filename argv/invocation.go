@@ -21,7 +21,7 @@ import "context"
 //   - root Invocation, that represents top-level Command invocation
 //     with its own parameters
 //   - child Invocation, that represents invocation of the sub-command
-//   - and so-on, if sub-command has its own nested subcommands
+//   - and so on, if sub-command has its own nested subcommands
 //
 // The [Invocation.Parent] method allows to access parent of current
 // Invocation. For the top-level Invocation it returns nil.
@@ -58,12 +58,12 @@ type Invocation struct {
 }
 
 // Parent returns Invocation's parent, which is the upper-level
-// Invocation in a case of sun-command execution, nil otherwise.
+// Invocation in a case of sub-command execution, nil otherwise.
 func (inv *Invocation) Parent() *Invocation {
 	return inv.parent
 }
 
-// Root returns the roo Invocation, which is the top-level
+// Root returns the root Invocation, which is the top-level
 // Invocation in a case of sun-command execution. For the
 // root Invocation this function returns pointer to self.
 func (inv *Invocation) Root() *Invocation {
