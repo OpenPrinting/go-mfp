@@ -11,27 +11,25 @@ package log
 import (
 	"os"
 	"sync"
-	"sync/atomic"
+	"syscall"
 
 	"golang.org/x/term"
 )
 
 // backendConsole is the Backend that writes logs to console
 type backendConsole struct {
-	color int32      // No: -1, Yes: +1, Unknown: 0
 	mutex sync.Mutex // Send lock
 }
 
+// isTerminal keeps information if program's stdout was connected
+// to the terminal.
+//
+// It is initialized early, to allow further os.Stdout redirection
+// to the pager program.
+var isTerminal = term.IsTerminal(int(syscall.Stdout))
+
 // Line implements [Backend.Send] method
 func (bk *backendConsole) Send(levels []Level, lines [][]byte) {
-	// Color auto-detection
-	if atomic.LoadInt32(&bk.color) == 0 {
-		isatty := term.IsTerminal(int(os.Stdout.Fd()))
-		if isatty {
-			atomic.CompareAndSwapInt32(&bk.color, 0, +1)
-		}
-	}
-
 	// Build the entire message in the buffer
 	buf := bufAlloc()
 	defer bufFree(buf)
@@ -42,7 +40,7 @@ func (bk *backendConsole) Send(levels []Level, lines [][]byte) {
 
 		var color string
 		var restore string
-		if atomic.LoadInt32(&bk.color) > 0 {
+		if isTerminal {
 			switch level {
 			case LevelTrace:
 				color = "\033[2m" // Dark Gray
