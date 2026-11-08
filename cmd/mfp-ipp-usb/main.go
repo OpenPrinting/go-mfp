@@ -8,9 +8,9 @@
 
 package main
 
-import "github.com/OpenPrinting/go-mfp/cmd/mfp-ipp-usb/ippusb"
+import "github.com/OpenPrinting/go-mfp/cmd/mfp-ipp-usb/command"
 
 // main function for the mfp-cups command
 func main() {
-	ippusb.Command.Main(nil)
+	command.Command.Main(nil)
 }

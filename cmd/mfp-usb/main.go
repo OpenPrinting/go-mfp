@@ -8,9 +8,9 @@
 
 package main
 
-import "github.com/OpenPrinting/go-mfp/cmd/mfp-usb/usb"
+import "github.com/OpenPrinting/go-mfp/cmd/mfp-usb/command"
 
 // main function for the mfp-usb command
 func main() {
-	usb.Command.Main(nil)
+	command.Command.Main(nil)
 }

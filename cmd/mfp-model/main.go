@@ -8,9 +8,9 @@
 
 package main
 
-import "github.com/OpenPrinting/go-mfp/cmd/mfp-model/model"
+import "github.com/OpenPrinting/go-mfp/cmd/mfp-model/command"
 
 // main function for the mfp-cups command
 func main() {
-	model.Command.Main(nil)
+	command.Command.Main(nil)
 }

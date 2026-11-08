@@ -8,9 +8,9 @@
 
 package main
 
-import "github.com/OpenPrinting/go-mfp/cmd/mfp-ppd/ppd"
+import "github.com/OpenPrinting/go-mfp/cmd/mfp-ppd/command"
 
 // main function for the mfp-ppd command
 func main() {
-	ppd.Command.Main(nil)
+	command.Command.Main(nil)
 }

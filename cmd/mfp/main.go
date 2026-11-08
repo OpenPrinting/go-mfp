@@ -14,14 +14,14 @@ import (
 	"path/filepath"
 
 	"github.com/OpenPrinting/go-mfp/argv"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-cups/cups"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-discover/discover"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-ipp-usb/ippusb"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-model/model"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-ppd/ppd"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-proxy/proxy"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-usb/usb"
-	"github.com/OpenPrinting/go-mfp/cmd/mfp-virtual/virtual"
+	cups "github.com/OpenPrinting/go-mfp/cmd/mfp-cups/command"
+	discover "github.com/OpenPrinting/go-mfp/cmd/mfp-discover/command"
+	ippusb "github.com/OpenPrinting/go-mfp/cmd/mfp-ipp-usb/command"
+	model "github.com/OpenPrinting/go-mfp/cmd/mfp-model/command"
+	ppd "github.com/OpenPrinting/go-mfp/cmd/mfp-ppd/command"
+	proxy "github.com/OpenPrinting/go-mfp/cmd/mfp-proxy/command"
+	usb "github.com/OpenPrinting/go-mfp/cmd/mfp-usb/command"
+	virtual "github.com/OpenPrinting/go-mfp/cmd/mfp-virtual/command"
 )
 
 var allCommands = []argv.Command{

@@ -1,5 +1,5 @@
-SUBDIRS	= ippusb
-CLEAN	= mfp-cups
+SUBDIRS	= command
+CLEAN	= mfp-ipp-usb
 
 include ../../Rules.mak
 

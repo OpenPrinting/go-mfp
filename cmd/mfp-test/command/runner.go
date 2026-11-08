@@ -1,0 +1,197 @@
+// MFP - Multi-Function Printers and scanners toolkit
+//
+// Copyright (C) 2026 Mohammad Arman (officialmdarman@gmail.com)
+// See LICENSE for license terms and conditions
+//
+// Test runner for mfp-test
+
+package command
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/OpenPrinting/go-mfp/internal/evaluate"
+	"github.com/OpenPrinting/go-mfp/log"
+)
+
+// defaultThreshold is the minimum similarity score required to pass a test.
+const defaultThreshold = 0.95
+
+// defaultTimeout is the default time to wait for a captured document.
+const defaultTimeout = 30 * time.Second
+
+// testResult holds the outcome of a single test run.
+type testResult struct {
+	Config  testConfig
+	Score   float64
+	Passed  bool
+	Details map[string]float64
+}
+
+// runTest runs a single print test using the given configuration:
+// generates a test PNG, sends it to the CUPS queue with the specified
+// job attributes, waits for capture, converts the captured document to
+// PNG, and evaluates image similarity.
+//
+// If eval is nil, image evaluation is skipped and capture success is
+// reported as a pass with score 1.0.
+func runTest(ctx context.Context, cfg testConfig, queueName string,
+	capture *documentCapture, eval *evaluate.Evaluator,
+	threshold float64, timeout time.Duration, keep, verbose bool) (*testResult, error) {
+
+	// Reset capture so we get only this job's document.
+	capture.reset()
+
+	// Generate a fresh test image for this run.
+	// For monochrome printers, use a native greyscale image so the captured
+	// output can be compared directly without colour-conversion formula skew.
+	var imgPath string
+	var err error
+	if cfg.Mono {
+		imgPath, err = generateGrayscaleTestPNG()
+	} else {
+		imgPath, err = generateTestPNG()
+	}
+	if err != nil {
+		return nil, fmt.Errorf("generate test image: %w", err)
+	}
+	defer os.Remove(imgPath)
+
+	// Build lp options for the test configuration.
+	lpArgs := []string{"-d", queueName, "-t", "mfp-test/" + cfg.Name}
+	if cfg.Sides != "" {
+		lpArgs = append(lpArgs, "-o", "sides="+string(cfg.Sides))
+	}
+	if cfg.ColorMode != "" {
+		lpArgs = append(lpArgs, "-o", "print-color-mode="+cfg.ColorMode)
+	}
+	// Prevent CUPS from scaling the image to fill the media.
+	// Without this, CUPS stretches the test image to fill the printable area,
+	// introducing a scale-up then scale-down blur that corrupts pixel metrics.
+	lpArgs = append(lpArgs, "-o", "print-scaling=none")
+	lpArgs = append(lpArgs, imgPath)
+
+	log.Info(ctx, "lp %v", lpArgs)
+	lpCmd := exec.CommandContext(ctx, "lp", lpArgs...)
+	if out, err := lpCmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("lp: %w: %s", err, out)
+	}
+
+	// Wait for the document to arrive.
+	select {
+	case <-capture.onDocument():
+	case <-time.After(timeout):
+		return nil, fmt.Errorf("timeout: no document received after %s", timeout)
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	captured := capture.docs()
+	if len(captured) == 0 {
+		return nil, fmt.Errorf("capture returned no documents")
+	}
+
+	d := captured[len(captured)-1]
+	if verbose {
+		log.Info(ctx, "captured %d bytes format=%q job=%q",
+			len(d.Data), d.Params.Format, d.Params.JobName)
+	}
+
+	if keep {
+		safeName := strings.ReplaceAll(cfg.Name, "/", "-")
+		outPath := safeName + mimeToExt(d.Params.Format)
+		if err := os.WriteFile(outPath, d.Data, 0644); err != nil {
+			log.Info(ctx, "keep: failed to save %s: %v", outPath, err)
+		} else {
+			log.Info(ctx, "keep: saved captured document to %s", outPath)
+		}
+	}
+
+	// Skip image evaluation if no evaluator is configured.
+	if eval == nil {
+		return &testResult{Config: cfg, Score: 1.0, Passed: true}, nil
+	}
+
+	// Convert captured document to PNG for evaluation.
+	pngData, err := convertToPNG(d.Data, d.Params.Format, cfg.DPI)
+	if err != nil {
+		return nil, fmt.Errorf("convert to PNG: %w", err)
+	}
+
+	// CUPS centres the printed image on the paper with white margins.
+	// Crop the captured image to its non-white content bounding box so the
+	// evaluator compares only the printed content against the reference.
+	// The evaluator handles any remaining size difference internally.
+	pngData, err = cropCapturedPNG(pngData)
+	if err != nil {
+		return nil, fmt.Errorf("crop captured PNG: %w", err)
+	}
+
+	// Diagnostic: save captured PNG when MFP_SAVE_PNG env var is set.
+	if dbgPath := os.Getenv("MFP_SAVE_PNG"); dbgPath != "" {
+		_ = os.WriteFile(dbgPath, pngData, 0644)
+	}
+
+	// Write PNG to a temp file for the evaluator.
+	capturedPNG, err := os.CreateTemp("", "mfp-captured-*.png")
+	if err != nil {
+		return nil, fmt.Errorf("create temp PNG: %w", err)
+	}
+	capturedPNGName := capturedPNG.Name()
+	defer os.Remove(capturedPNGName)
+
+	if _, err := capturedPNG.Write(pngData); err != nil {
+		capturedPNG.Close()
+		return nil, fmt.Errorf("write captured PNG: %w", err)
+	}
+	if err := capturedPNG.Close(); err != nil {
+		return nil, fmt.Errorf("close captured PNG: %w", err)
+	}
+
+	// Evaluate image similarity.
+	res, err := eval.Compare(imgPath, capturedPNGName, threshold, verbose)
+	if err != nil {
+		return nil, fmt.Errorf("evaluate: %w", err)
+	}
+
+	return &testResult{
+		Config:  cfg,
+		Score:   res.Score,
+		Passed:  res.Passed,
+		Details: res.Details,
+	}, nil
+}
+
+// mimeToExt returns a file extension for a MIME type.
+// Gzip-compressed variants get a double extension (e.g. .jpg.gz).
+func mimeToExt(mime string) string {
+	switch mime {
+	case "application/pdf":
+		return ".pdf"
+	case "application/postscript":
+		return ".ps"
+	case "image/jpeg":
+		return ".jpg"
+	case "image/jpeg+gzip":
+		return ".jpg.gz"
+	case "image/png":
+		return ".png"
+	case "image/pwg-raster":
+		return ".pwg"
+	case "image/urf":
+		return ".urf"
+	case "image/vnd.cups-raster":
+		return ".ras"
+	case "application/vnd.cups-pdf":
+		return ".cups.pdf"
+	case "application/vnd.cups-postscript":
+		return ".cups.ps"
+	default:
+		return ".bin"
+	}
+}

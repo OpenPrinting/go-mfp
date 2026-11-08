@@ -8,9 +8,9 @@
 
 package main
 
-import "github.com/OpenPrinting/go-mfp/cmd/mfp-discover/discover"
+import "github.com/OpenPrinting/go-mfp/cmd/mfp-discover/command"
 
 // main function for the mfp-discover command
 func main() {
-	discover.Command.Main(nil)
+	command.Command.Main(nil)
 }
