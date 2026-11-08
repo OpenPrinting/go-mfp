@@ -40,9 +40,9 @@ const description = "" +
 	"Without that the simulator will run until termination signal\n" +
 	"is received.\n"
 
-// Command is the 'virtual' command description
+// Command is the 'mfp-virtual' command description
 var Command = argv.Command{
-	Name:                     "virtual",
+	Name:                     "mfp-virtual",
 	Help:                     "Virtual MFP simulator",
 	Description:              description,
 	NoOptionsAfterParameters: true,

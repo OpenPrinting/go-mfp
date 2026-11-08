@@ -19,9 +19,9 @@ import (
 	"github.com/OpenPrinting/go-mfp/transport"
 )
 
-// Command is the 'cups' command description
+// Command is the 'mfp-cups' command description
 var Command = argv.Command{
-	Name: "cups",
+	Name: "mfp-cups",
 	Help: "CUPS client",
 	Options: []argv.Option{
 		argv.Option{

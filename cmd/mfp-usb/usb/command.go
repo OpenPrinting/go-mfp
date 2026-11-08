@@ -15,9 +15,9 @@ import (
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
-// Command is the 'usb' command description
+// Command is the 'mfp-usb' command description
 var Command = argv.Command{
-	Name: "usb",
+	Name: "mfp-usb",
 	Help: "Troubleshooting tool for the USB-connected MFPs",
 	Options: []argv.Option{
 		argv.Option{

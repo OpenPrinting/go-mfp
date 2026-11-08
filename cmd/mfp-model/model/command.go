@@ -31,9 +31,9 @@ const description = "" +
 	"This command generates and validates models for the MFP simulator\n" +
 	""
 
-// Command is the 'model' command description
+// Command is the 'mfp-model' command description
 var Command = argv.Command{
-	Name:                     "model",
+	Name:                     "mfp-model",
 	Help:                     "Model generator for MFP simulator",
 	Description:              description,
 	NoOptionsAfterParameters: true,

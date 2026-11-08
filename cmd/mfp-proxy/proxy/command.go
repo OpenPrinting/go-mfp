@@ -45,9 +45,9 @@ const description = "" +
 	"Without that the proxy  will run until termination signal\n" +
 	"is received.\n"
 
-// Command is the 'proxy' command description
+// Command is the 'mfp-proxy' command description
 var Command = argv.Command{
-	Name:                     "proxy",
+	Name:                     "mfp-proxy",
 	Help:                     "IPP/eSCL/WSD masquerading proxy",
 	Description:              description,
 	NoOptionsAfterParameters: true,

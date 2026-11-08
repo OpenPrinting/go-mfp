@@ -22,9 +22,9 @@ import (
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
-// Command is the 'cups' command description
+// Command is the 'mfp-discover' command description
 var Command = argv.Command{
-	Name: "discover",
+	Name: "mfp-discover",
 	Help: "search for printers and scanners",
 	Options: []argv.Option{
 		argv.Option{

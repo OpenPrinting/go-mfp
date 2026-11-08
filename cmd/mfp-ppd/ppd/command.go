@@ -16,9 +16,9 @@ import (
 	"github.com/OpenPrinting/go-mfp/log"
 )
 
-// Command is the 'ppd' command description
+// Command is the 'mfp-ppd' command description
 var Command = argv.Command{
-	Name: "ppd",
+	Name: "mfp-ppd",
 	Help: "Utility for PPD files",
 	Options: []argv.Option{
 		argv.Option{
