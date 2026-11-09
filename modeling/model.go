@@ -346,13 +346,47 @@ func (model *Model) Load(file string) error {
 	return model.Read(file, fp)
 }
 
+// HasDNSSDServiceType reports if model defines DNS-SD
+// service of the particular type or subtype (e.g.,
+// "_ipp._tcp", "_universal._sub._ipp._tcp" etc).
+func (model *Model) HasDNSSDServiceType(svctype string) bool {
+	if model.dnssd == nil {
+		return false
+	}
+
+	for _, svc := range model.dnssd.Services {
+		if len(svc.Endpoints) == 0 {
+			continue
+		}
+
+		for _, t := range svc.Types {
+			if strings.EqualFold(t, svctype) {
+				return true
+			}
+		}
+
+		for _, t := range svc.SubTypes {
+			if strings.EqualFold(t, svctype) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // IsEmptyNetwork reports whether the model lacks any component that can
 // be served over the network
 func (model *Model) IsEmptyNetwork() bool {
 	return model.ippPrinterAttrs == nil &&
 		model.ippScannerAttrs == nil &&
 		model.esclScanCaps == nil &&
-		model.wsdScanCaps == nil
+		model.wsdScanCaps == nil &&
+		// Note, AppSocket and LPD support currently
+		// enabled if mentioned in the DNS-SD parameters,
+		// without any extra protocol-specific parameters.
+		!model.HasDNSSDServiceType("_printer._tcp") &&
+		!model.HasDNSSDServiceType("_pdl-datastream._tcp")
 }
 
 // IsEmptyUSB reports whether the model lacks a USB device descriptor
