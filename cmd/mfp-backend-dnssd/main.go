@@ -225,12 +225,12 @@ func svcURI(svc *avahi.Service) string {
 // svcMakeModel returns the service's device-make-and-model string.
 func svcMakeModel(svc *avahi.Service) string {
 	// Try "ty" record
-	if ty := svcTXT(svc, "ty"); ty != "" {
+	if ty := svc.TXTGet("ty"); ty != "" {
 		return ty
 	}
 
 	// Try "product" record
-	if product := svcTXT(svc, "product"); product != "" {
+	if product := svc.TXTGet("product"); product != "" {
 		if len(product) > 0 && product[0] == '(' {
 			product = product[1:]
 		}
@@ -245,8 +245,8 @@ func svcMakeModel(svc *avahi.Service) string {
 	}
 
 	// Try usb_MFG + usb_MDL
-	mfg := svcTXT(svc, "usb_MFG")
-	mdl := svcTXT(svc, "usb_MDL")
+	mfg := svc.TXTGet("usb_MFG")
+	mdl := svc.TXTGet("usb_MDL")
 	switch {
 	case mfg != "" && mdl != "":
 		if strings.HasPrefix(mdl, mfg) {
@@ -276,11 +276,11 @@ func svcInfo(svc *avahi.Service) string {
 func svcDeviceID(svc *avahi.Service, mfg, mdl string) string {
 	attrs := []string{}
 
-	if s := svcTXT(svc, "usb_MFG"); s != "" {
+	if s := svc.TXTGet("usb_MFG"); s != "" {
 		mfg = s
 	}
 
-	if s := svcTXT(svc, "usb_MDL"); s != "" {
+	if s := svc.TXTGet("usb_MDL"); s != "" {
 		mdl = s
 	}
 
@@ -302,13 +302,13 @@ func svcDeviceID(svc *avahi.Service, mfg, mdl string) string {
 // svcCMD returns the CMD value of the IEEE-1284 device ID
 func svcCMD(svc *avahi.Service) string {
 	// Try usb_CMD
-	cmd := svcTXT(svc, "usb_CMD")
+	cmd := svc.TXTGet("usb_CMD")
 	if cmd != "" {
 		return cmd
 	}
 
 	// Try to generate cmd from PDL
-	pdl := svcTXT(svc, "pdl")
+	pdl := svc.TXTGet("pdl")
 	if pdl == "" {
 		return ""
 	}
@@ -385,19 +385,7 @@ func svcCMD(svc *avahi.Service) string {
 
 // svcLocation returns the service's device-location string.
 func svcLocation(svc *avahi.Service) string {
-	return svcTXT(svc, "note")
-}
-
-// svcTXT returns the service's TXT record's value by key name.
-func svcTXT(svc *avahi.Service, key string) string {
-	key = strings.ToLower(key) + "="
-	for _, txt := range svc.Txt {
-		if strings.HasPrefix(strings.ToLower(txt), key) {
-			return txt[len(key):]
-		}
-	}
-
-	return ""
+	return svc.TXTGet("note")
 }
 
 // svcUUID returns the service's UUID, if present.
@@ -444,7 +432,7 @@ type device struct {
 // available services.
 func (dev device) Mfg() string {
 	for _, svc := range dev.Services {
-		mfg := svcTXT(svc, "usb_MFG")
+		mfg := svc.TXTGet("usb_MFG")
 		if mfg != "" {
 			return mfg
 		}
@@ -457,7 +445,7 @@ func (dev device) Mfg() string {
 // available services.
 func (dev device) Mdl() string {
 	for _, svc := range dev.Services {
-		mdl := svcTXT(svc, "usb_MDL")
+		mdl := svc.TXTGet("usb_MDL")
 		if mdl != "" {
 			return mdl
 		}
