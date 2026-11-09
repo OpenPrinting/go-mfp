@@ -208,9 +208,18 @@ func svcURI(svc *avahi.Service) string {
 		return ""
 	}
 
+	// Build service URL
 	name = hostNameEncode(avahi.DomainServiceNameUnescape(name))
+	name = scheme + "://" + name + "/"
 
-	return scheme + "://" + name + "/"
+	// Append UUID for "dnssd" scheme
+	if scheme == "dnssd" {
+		if uuid := svcUUID(svc); uuid != "" {
+			name += "?uuid=" + uuid
+		}
+	}
+
+	return name
 }
 
 // svcMakeModel returns the service's device-make-and-model string.
@@ -389,6 +398,40 @@ func svcTXT(svc *avahi.Service, key string) string {
 	}
 
 	return ""
+}
+
+// svcUUID returns the service's UUID, if present.
+func svcUUID(svc *avahi.Service) string {
+	// Get the UUID
+	uuid := svc.TXTGet("uuid")
+
+	// Perform sanity check
+	const template = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+	if len(uuid) != len(template) {
+		return ""
+	}
+
+	for i := range template {
+		t := template[i]
+		c := uuid[i]
+
+		switch t {
+		case 'x':
+			switch {
+			case '0' <= c && c <= '9':
+			case 'a' <= c && c <= 'f':
+			case 'A' <= c && c <= 'F':
+			default:
+				return ""
+			}
+		default:
+			if c != t {
+				return ""
+			}
+		}
+	}
+
+	return uuid
 }
 
 // device represents services, grouped by DNS-SD Instance name.
