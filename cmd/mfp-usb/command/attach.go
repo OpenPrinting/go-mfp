@@ -10,13 +10,17 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
+	"github.com/OpenPrinting/go-mfp/proto/usbip"
 )
 
 const (
@@ -26,7 +30,22 @@ const (
 	defaultBUSID = "1-1"
 	// frequency is the duration between consecutive server availability checks.
 	frequency = 2 * time.Second
+	// lockDir is the absolute path to the directory where process lock files are stored.
+	lockDir = "/var/run/mfp-usb"
 )
+
+// AttachLock represents an exclusive advisory lock for a specific server address (host:port).
+type AttachLock struct {
+	file *os.File
+}
+
+// unlockFile releases the advisory lock and closes the underlying file descriptor.
+func (l *AttachLock) unlockFile() {
+	if l.file != nil {
+		_ = syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
+		_ = l.file.Close()
+	}
+}
 
 // cmdAttach defines the "attach" command that automatically attaches
 // mfp-virtual in USB mode with sleep/wake event handling.
@@ -66,18 +85,18 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	if inputIP, ok := inv.Get("-i"); ok {
 		ip = inputIP
 	}
-	host, _, _ := net.SplitHostPort(ip)
+	host, port, _ := net.SplitHostPort(ip)
 
 	busid := defaultBUSID
 	if inputBUSID, ok := inv.Get("-b"); ok {
 		busid = inputBUSID
 	}
 
-	// Check if device is already attached
-	attached := isAttached()
-	if attached {
-		return fmt.Errorf("Device already attached")
+	lock, err := isAttached(ip)
+	if err != nil {
+		return err
 	}
+	defer lock.unlockFile()
 
 	sm, err := newSleepMonitor(ctx)
 	if err != nil {
@@ -85,12 +104,12 @@ func cmdAttachHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 	defer sm.Close()
 
-	return runMonitor(ctx, sm.Chan(), ip, host, busid)
+	return runMonitor(ctx, sm.Chan(), ip, host, port, busid)
 }
 
 // runMonitor executes the main monitoring cycle for server availability
 // and sleep events, automatically attaching or detaching the device as needed.
-func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, busid string) error {
+func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, port, busid string) error {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -142,13 +161,21 @@ func runMonitor(ctx context.Context, sleepCh <-chan sleepSignal, ip, host, busid
 			}
 			conn.Close()
 
-			log.Debug(ctx, "Server is up. Attaching...")
-			if err := attach(host, busid); err != nil {
-				log.Debug(ctx, "Attach failed: %v", err)
-			} else {
-				deviceAvailable = true
-				log.Debug(ctx, "attached")
-				go waitServerDeath(ctx, deathCh, ip)
+			available, err := isDeviceAvailable(ctx, ip, busid)
+			if err != nil {
+				log.Debug(ctx, "Device availability check failed: %v", err)
+				continue
+			}
+
+			if available {
+				log.Info(ctx, "Server is up and device is available. Attaching...")
+				if err := attach(host, busid); err != nil {
+					log.Debug(ctx, "Attach failed: %v", err)
+				} else {
+					deviceAvailable = true
+					log.Info(ctx, "Attached successfully")
+					go waitServerDeath(ctx, deathCh, ip)
+				}
 			}
 		}
 	}
@@ -184,15 +211,73 @@ func waitServerDeath(ctx context.Context, ch chan struct{}, ip string) {
 	}
 }
 
-// isAttached checks if the USB device is currently attached to a virtual port
-func isAttached() bool {
-	cmd := exec.Command("usbip", "port")
-	output, err := cmd.CombinedOutput()
+// isDeviceAvailable checks if the specified busid is exported on the remote USB/IP server.
+// It resolves the host to an IP to satisfy the client's netip.AddrPort requirement.
+func isDeviceAvailable(ctx context.Context, ip, busid string) (bool, error) {
+	// Resolve host to a valid TCP address.
+	tcpAddr, err := net.ResolveTCPAddr("tcp", ip)
 	if err != nil {
-		return false
+		return false, fmt.Errorf("resolve failed: %w", err)
 	}
-	return strings.Contains(string(output), "Port 00:") &&
-		strings.Contains(string(output), "-> usbip://")
+
+	// Parse the resolved address to satisfy netip.AddrPort.
+	addr, err := netip.ParseAddrPort(tcpAddr.String())
+	if err != nil {
+		return false, fmt.Errorf("parse failed: %w", err)
+	}
+
+	// Dial the server and request the device list.
+	clnt, err := usbip.Dial(ctx, addr)
+	if err != nil {
+		return false, fmt.Errorf("dial failed: %w", err)
+	}
+	defer clnt.Close()
+
+	entries, err := clnt.List()
+	if err != nil {
+		return false, fmt.Errorf("List() failed: %w", err)
+	}
+
+	// Return true if the target busid is found in the list.
+	for _, entry := range entries {
+		if entry.Busid == busid {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// isAttached acquires an exclusive, non-blocking file lock for the given IP to prevent concurrent management.
+// The caller must invoke lock.unlockFile() (via defer) to release the lock upon exit.
+func isAttached(ip string) (*AttachLock, error) {
+	// Ensure the lock directory exists.
+	if err := os.MkdirAll(lockDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create lock directory %s: %w", lockDir, err)
+	}
+
+	// Sanitize the IP string to create a safe filename.
+	safeName := strings.ReplaceAll(ip, ":", "_") + ".lock"
+	lockPath := filepath.Join(lockDir, safeName)
+
+	// Open or create the lock file.
+	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open lock file %s: %w", lockPath, err)
+	}
+
+	// Attempt to acquire an exclusive, non-blocking lock.
+	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+	if err == syscall.EWOULDBLOCK {
+		file.Close()
+		return nil, fmt.Errorf("another mfp-usb instance is already managing %s", ip)
+	}
+	if err != nil {
+		file.Close()
+		return nil, fmt.Errorf("failed to lock file %s: %w", lockPath, err)
+	}
+
+	return &AttachLock{file: file}, nil
 }
 
 // attach loads the vhci_hcd kernel module and attaches the virtual USB device
