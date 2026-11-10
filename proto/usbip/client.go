@@ -10,6 +10,7 @@ package usbip
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -140,23 +141,81 @@ func (clnt *Client) List() ([]ListEntry, error) {
 	}
 
 	// Read device descriptors, one by one
-	devlist := make([]ListEntry, ndevices)
+	devlist := make([]ListEntry, 0, ndevices)
 	for i := uint32(0); i < ndevices; i++ {
 		var path devPath
 		var busid devBusID
-		var busnum uint32
-		var devnum uint32
 
-		_, err = io.ReadFull(&clnt.rw, path[:])
-		if err == nil {
-			_, err = io.ReadFull(&clnt.rw, busid[:])
+		var busnum, devnum, speed uint32
+		var idVendor, idProduct uint16
+		var bcdDevice usb.Version
+		var bDeviceClass, bDeviceSubClass, bDeviceProtocol uint8
+		var bConfigurationValue, bNumConfigurations, bNumInterfaces uint8
+
+		if _, err = io.ReadFull(&clnt.rw, path[:]); err != nil {
+			return nil, err
 		}
-		if err == nil {
-			err = binary.Read(&clnt.rw, binary.BigEndian, &busnum)
+		if _, err = io.ReadFull(&clnt.rw, busid[:]); err != nil {
+			return nil, err
 		}
-		if err == nil {
-			err = binary.Read(&clnt.rw, binary.BigEndian, &devnum)
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &busnum); err != nil {
+			return nil, err
 		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &devnum); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &speed); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &idVendor); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &idProduct); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bcdDevice); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bDeviceClass); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bDeviceSubClass); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bDeviceProtocol); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bConfigurationValue); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bNumConfigurations); err != nil {
+			return nil, err
+		}
+		if err = binary.Read(&clnt.rw, binary.BigEndian, &bNumInterfaces); err != nil {
+			return nil, err
+		}
+
+		pathStr := string(bytes.TrimRight(path[:], "\x00"))
+		busidStr := string(bytes.TrimRight(busid[:], "\x00"))
+
+		desc := &usb.DeviceDescriptor{
+			BCDUSB:          usb.USB20,
+			BDeviceClass:    bDeviceClass,
+			BDeviceSubClass: bDeviceSubClass,
+			BDeviceProtocol: bDeviceProtocol,
+			IDVendor:        idVendor,
+			IDProduct:       idProduct,
+			BCDDevice:       bcdDevice,
+			Configurations:  make([]usb.ConfigurationDescriptor, bNumConfigurations),
+		}
+
+		devlist = append(devlist, ListEntry{
+			Path:       pathStr,
+			Busid:      busidStr,
+			Bus:        int(busnum),
+			Dev:        int(devnum),
+			Descriptor: desc,
+		})
 	}
 
 	return devlist, nil
