@@ -193,9 +193,9 @@ func svcURI(svc *avahi.Service) string {
 	case "_ipps._tcp":
 		scheme = "ipps"
 	case "_printer._tcp":
-		scheme = "dnssd"
+		scheme = "lpd"
 	case "_pdl-datastream._tcp":
-		scheme = "dnssd"
+		scheme = "socket"
 	}
 
 	if scheme == "" {
