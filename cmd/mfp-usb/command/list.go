@@ -10,6 +10,8 @@ package command
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/OpenPrinting/go-mfp/argv"
@@ -34,6 +36,11 @@ var cmdList = argv.Command{
 
 // cmdListHandler is the "list" command handler.
 func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
+
+	if os.Geteuid() != 0 {
+		return fmt.Errorf("this command requires root privileges, please run with sudo")
+	}
+
 	list, err := usbhost.ListDevices(true)
 	if err != nil {
 		return err
