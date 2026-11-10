@@ -18,6 +18,8 @@ dnssd.device = dnssd.Device(
                 'product=(OpenPrinting AppSocket Printer)',
                 'qtotal=1',
                 'priority=50',
+                'usb_MFG=OpenPrinting',
+                'usb_MDL=AppSocket Printer',
             ],
             endpoints = [
                 'socket://192.168.1.100',

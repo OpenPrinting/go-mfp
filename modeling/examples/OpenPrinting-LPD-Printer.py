@@ -18,6 +18,8 @@ dnssd.device = dnssd.Device(
                 'product=(OpenPrinting LPD Printer)',
                 'qtotal=1',
                 'priority=50',
+                'usb_MFG=OpenPrinting',
+                'usb_MDL=LPD Printer',
             ],
             endpoints = [
                 'lpd://192.168.1.100',
