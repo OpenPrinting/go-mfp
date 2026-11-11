@@ -251,9 +251,14 @@ func isDeviceAvailable(ctx context.Context, ip, busid string) (bool, error) {
 // isAttached acquires an exclusive, non-blocking file lock for the given IP to prevent concurrent management.
 // The caller must invoke lock.unlockFile() (via defer) to release the lock upon exit.
 func isAttached(ip string) (*AttachLock, error) {
+	// Validate IP string to prevent special filenames
+	if ip == "" || ip == "." || ip == ".." || strings.Contains(ip, "/") {
+		return nil, fmt.Errorf("invalid address: %s", ip)
+	}
+
 	// Ensure the lock directory exists.
 	if err := os.MkdirAll(lockDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create lock directory %s: %w", lockDir, err)
+		return nil, fmt.Errorf("%s: %w", lockDir, err)
 	}
 
 	// Sanitize the IP string to create a safe filename.
@@ -263,12 +268,12 @@ func isAttached(ip string) (*AttachLock, error) {
 	// Open or create the lock file.
 	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open lock file %s: %w", lockPath, err)
+		return nil, fmt.Errorf("%s: %w", lockPath, err)
 	}
 
 	// Attempt to acquire an exclusive, non-blocking lock.
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
-	if err == syscall.EWOULDBLOCK {
+	if err == syscall.EWOULDBLOCK || err == syscall.EAGAIN {
 		file.Close()
 		return nil, fmt.Errorf("another mfp-usb instance is already managing %s", ip)
 	}
