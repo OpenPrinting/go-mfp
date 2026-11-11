@@ -38,7 +38,7 @@ var cmdList = argv.Command{
 func cmdListHandler(ctx context.Context, inv *argv.Invocation) error {
 
 	if os.Geteuid() != 0 {
-		return fmt.Errorf("this command requires root privileges, please run with sudo")
+		return fmt.Errorf("this command requires root privileges")
 	}
 
 	list, err := usbhost.ListDevices(true)
