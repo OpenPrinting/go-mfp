@@ -199,6 +199,8 @@ func (clnt *Client) List() ([]ListEntry, error) {
 		busidStr := string(bytes.TrimRight(busid[:], "\x00"))
 
 		desc := &usb.DeviceDescriptor{
+			// Note: The USB/IP protocol does not transmit the device's USB version.
+			// We use USB 2.0 as a safe approximation for compatibility.
 			BCDUSB:          usb.USB20,
 			BDeviceClass:    bDeviceClass,
 			BDeviceSubClass: bDeviceSubClass,
