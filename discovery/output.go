@@ -30,7 +30,7 @@ type output struct {
 // Cached returns the cached output data (created by latest output.Generate)
 // It may return nil, if this information is not available.
 func (out *output) Cached() []*Device {
-	if out.devices != nil && !out.ttl.After(time.Now()) {
+	if out.devices != nil && out.ttl.After(time.Now()) {
 		return out.devices
 	}
 	return nil
