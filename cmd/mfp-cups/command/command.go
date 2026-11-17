@@ -49,6 +49,7 @@ var Command = argv.Command{
 		cmdGetPPD,
 		cmdListPrinters,
 		cmdListPPDs,
+		cmdDeletePrinter,
 		argv.HelpCommand,
 	},
 	Handler: cmdCupsHandler,
