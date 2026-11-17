@@ -222,3 +222,29 @@ func (c *Client) CUPSGetPPDs(ctx context.Context,
 
 	return nil, fmt.Errorf("IPP: %s", rsp.Status)
 }
+
+// printerURI returns the IPP URI of the print queue with the given name.
+func printerURI(name string) string {
+	return "ipp://localhost/printers/" + name
+}
+
+// CUPSDeletePrinter removes the specified print queue.
+func (c *Client) CUPSDeletePrinter(ctx context.Context, name string) error {
+	rq := &ipp.CUPSDeletePrinterRequest{
+		RequestHeader: ipp.DefaultRequestHeader,
+		PrinterURI:    printerURI(name),
+	}
+
+	rsp := &ipp.CUPSDeletePrinterResponse{}
+
+	err := c.IPPClient.Do(ctx, rq, rsp)
+	if err != nil {
+		return err
+	}
+
+	if rsp.Status != goipp.StatusOk {
+		return fmt.Errorf("IPP: %s", rsp.Status)
+	}
+
+	return nil
+}
