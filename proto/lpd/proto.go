@@ -21,6 +21,7 @@ import (
 // Command is the LPD top-level command code (RFC 1179, section 5).
 type Command byte
 
+// Command codes.
 const (
 	CmdPrintWaiting    Command = 0x01 // Print any waiting jobs
 	CmdReceiveJob      Command = 0x02 // Receive a printer job
@@ -50,6 +51,7 @@ func (cmd Command) String() string {
 // (RFC 1179, section 6).
 type Subcommand byte
 
+// Subcommand codes
 const (
 	SubcmdAbortJob    Subcommand = 0x01 // Abort job
 	SubcmdControlFile Subcommand = 0x02 // Receive control file
@@ -81,6 +83,7 @@ const (
 // terminating LF.
 const MaxLineLen = 4096
 
+// Common errors.
 var (
 	ErrLineTooLong   = errors.New("lpd: command line too long")
 	ErrEmptyLine     = errors.New("lpd: empty command line")

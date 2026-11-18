@@ -189,8 +189,8 @@ ERROR:
 // The attrs attribute allows to specify list of requested attributes.
 //
 // Note, certain printer attributes may depend on the format being
-// printer, so second argument, if not "", allows to specify the
-// desired document format.
+// printed, so second argument, if not "", allows to specify the
+// desired document format (e.g. "application/pdf").
 //
 // According to the RFC8011, only the following attributes may depend
 // on the document format:
