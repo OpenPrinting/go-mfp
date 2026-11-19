@@ -50,6 +50,9 @@ func (q *Eventqueue) Push(e Event) {
 
 // Count returns the current queue length.
 func (q *Eventqueue) Count() int {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
 	return len(q.events)
 }
 
