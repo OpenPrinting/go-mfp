@@ -248,11 +248,20 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 	//
 	// We need it, because protoIOUnlinkRequest lacks some
 	// important information (endpoint number, for example).
+	//
+	// The map is written by this goroutine (submit/unlink) and by
+	// completion, which runs on Endpoint consumer goroutines with
+	// ep.lock held. submitsLock is a leaf lock: it is never held
+	// across dev.submit()/dev.unlink(), so the only order is
+	// ep.lock -> submitsLock.
 	submitsBySeqnum := make(map[uint32]*protoIOSubmitRequest)
+	var submitsLock sync.Mutex
 
 	// Completion callback for protoIOSubmitRequest
 	completion := func(rq *protoIOSubmitRequest, err syscall.Errno) {
+		submitsLock.Lock()
 		delete(submitsBySeqnum, rq.Seqnum)
+		submitsLock.Unlock()
 
 		rsp := rq.Response(err)
 		log.Debug(srv.ctx, "IO:   > %s", rsp)
@@ -292,11 +301,17 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 				break
 			}
 
+			submitsLock.Lock()
 			submitsBySeqnum[rq.Seqnum] = rq
+			submitsLock.Unlock()
 
 			rq.completion = completion
 			err := dev.submit(rq)
 			if err != 0 {
+				submitsLock.Lock()
+				delete(submitsBySeqnum, rq.Seqnum)
+				submitsLock.Unlock()
+
 				rsp := rq.Response(err)
 				pconn.SendIO(rsp)
 			}
@@ -304,13 +319,22 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 		case *protoIOUnlinkRequest:
 			err := syscall.Errno(0)
 
-			submit := submitsBySeqnum[rq.Seqnum]
+			submitsLock.Lock()
+			submit := submitsBySeqnum[rq.UnlinkSeqnum]
+			submitsLock.Unlock()
+
 			if submit != nil {
 				// This information is missed in
-				// the USBIP_CMD_SUBMIT.
+				// the USBIP_CMD_UNLINK.
 				rq.Endpoint = submit.Endpoint
+				rq.Input = submit.Input
 
 				err = dev.unlink(rq)
+				if err == syscall.ECONNRESET {
+					submitsLock.Lock()
+					delete(submitsBySeqnum, rq.UnlinkSeqnum)
+					submitsLock.Unlock()
+				}
 			}
 
 			rsp := rq.Response(err)
