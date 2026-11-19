@@ -414,7 +414,7 @@ func (dev *Device) setConfiguration(n int) ([]byte, syscall.Errno) {
 func (dev *Device) submit(rq *protoIOSubmitRequest) syscall.Errno {
 	// Lookup the endpoint
 	var ep *Endpoint
-	if int(rq.Endpoint) <= len(dev.endpoints) {
+	if int(rq.Endpoint) < len(dev.endpoints) {
 		ep = dev.endpoints[rq.Endpoint]
 	}
 
@@ -436,7 +436,7 @@ func (dev *Device) submit(rq *protoIOSubmitRequest) syscall.Errno {
 func (dev *Device) unlink(rq *protoIOUnlinkRequest) syscall.Errno {
 	// Lookup the endpoint
 	var ep *Endpoint
-	if int(rq.Endpoint) <= len(dev.endpoints) {
+	if int(rq.Endpoint) < len(dev.endpoints) {
 		ep = dev.endpoints[rq.Endpoint]
 	}
 

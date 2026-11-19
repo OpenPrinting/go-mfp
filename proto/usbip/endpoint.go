@@ -142,6 +142,7 @@ func (ep *Endpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 		select {
 		case <-ep.outchan:
 		case <-ctx.Done():
+			ep.lock.Lock() // Re-acquire for the deferred Unlock
 			return 0, ctx.Err()
 		}
 		ep.lock.Lock()
@@ -189,6 +190,7 @@ func (ep *Endpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
 		select {
 		case <-ep.inchan:
 		case <-ctx.Done():
+			ep.lock.Lock() // Re-acquire for the deferred Unlock
 			return 0, ctx.Err()
 		}
 		ep.lock.Lock()
