@@ -135,19 +135,20 @@ func (ep *Endpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 
 	// Wait for the data to arrive
 	ep.lock.Lock()
-	defer ep.lock.Unlock()
 
 	for len(ep.outqueue) == 0 {
 		ep.lock.Unlock()
 		select {
 		case <-ep.outchan:
 		case <-ctx.Done():
-			ep.lock.Lock() // Re-acquire for the deferred Unlock
 			return 0, ctx.Err()
 		}
 		ep.lock.Lock()
 	}
 
+	defer ep.lock.Unlock()
+
+	// Handle the request
 	rq := ep.outqueue[0]
 	n := copy(buf, rq.Buffer[rq.actualLength:])
 	rq.actualLength += n
@@ -183,19 +184,20 @@ func (ep *Endpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
 
 	// Wait for the opportunity to write the data
 	ep.lock.Lock()
-	defer ep.lock.Unlock()
 
 	for len(ep.inqueue) == 0 {
 		ep.lock.Unlock()
 		select {
 		case <-ep.inchan:
 		case <-ctx.Done():
-			ep.lock.Lock() // Re-acquire for the deferred Unlock
 			return 0, ctx.Err()
 		}
 		ep.lock.Lock()
 	}
 
+	defer ep.lock.Unlock()
+
+	// Handle the request
 	rq := ep.inqueue[0]
 	n := copy(rq.Buffer[rq.actualLength:], buf)
 	rq.actualLength += n
