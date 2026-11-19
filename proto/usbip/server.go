@@ -250,18 +250,12 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 	// important information (endpoint number, for example).
 	//
 	// The map is written by this goroutine (submit/unlink) and by
-	// completion, which runs on Endpoint consumer goroutines with
-	// ep.lock held. submitsLock is a leaf lock: it is never held
-	// across dev.submit()/dev.unlink(), so the only order is
-	// ep.lock -> submitsLock.
-	submitsBySeqnum := make(map[uint32]*protoIOSubmitRequest)
-	var submitsLock sync.Mutex
+	// completion, so we need the LockedMap here.
+	submitsBySeqnum := generic.NewLockedMap[uint32, *protoIOSubmitRequest]()
 
 	// Completion callback for protoIOSubmitRequest
 	completion := func(rq *protoIOSubmitRequest, err syscall.Errno) {
-		submitsLock.Lock()
-		delete(submitsBySeqnum, rq.Seqnum)
-		submitsLock.Unlock()
+		submitsBySeqnum.Delete(rq.Seqnum)
 
 		rsp := rq.Response(err)
 		log.Debug(srv.ctx, "IO:   > %s", rsp)
@@ -301,16 +295,12 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 				break
 			}
 
-			submitsLock.Lock()
-			submitsBySeqnum[rq.Seqnum] = rq
-			submitsLock.Unlock()
+			submitsBySeqnum.Store(rq.Seqnum, rq)
 
 			rq.completion = completion
 			err := dev.submit(rq)
 			if err != 0 {
-				submitsLock.Lock()
-				delete(submitsBySeqnum, rq.Seqnum)
-				submitsLock.Unlock()
+				submitsBySeqnum.Delete(rq.Seqnum)
 
 				rsp := rq.Response(err)
 				pconn.SendIO(rsp)
@@ -319,9 +309,7 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 		case *protoIOUnlinkRequest:
 			err := syscall.Errno(0)
 
-			submitsLock.Lock()
-			submit := submitsBySeqnum[rq.UnlinkSeqnum]
-			submitsLock.Unlock()
+			submit, _ := submitsBySeqnum.Load(rq.UnlinkSeqnum)
 
 			if submit != nil {
 				// This information is missed in
@@ -331,9 +319,7 @@ func (srv *Server) io(pconn *protoConn, devinfo *devInfo) {
 
 				err = dev.unlink(rq)
 				if err == syscall.ECONNRESET {
-					submitsLock.Lock()
-					delete(submitsBySeqnum, rq.UnlinkSeqnum)
-					submitsLock.Unlock()
+					submitsBySeqnum.Delete(rq.UnlinkSeqnum)
 				}
 			}
 
