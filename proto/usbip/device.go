@@ -30,6 +30,7 @@ type Device struct {
 
 	// User-defined callbacks
 	OnConfigurationChange func() // Called when configuration changes
+	OnDisconnect          func() // Called when USB/IP client disconnects
 
 	// Device state
 	configuration  int               // Current configuration
@@ -452,6 +453,11 @@ func (dev *Device) unlink(rq *protoIOUnlinkRequest) syscall.Errno {
 func (dev *Device) shutdown() {
 	for _, ep := range dev.endpoints[1:] {
 		ep.shutdown()
+	}
+
+	// Call user callback
+	if dev.OnDisconnect != nil {
+		dev.OnDisconnect()
 	}
 }
 

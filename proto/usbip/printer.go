@@ -87,6 +87,7 @@ func NewPrinter(ctx context.Context,
 		}
 
 		listener := NewEndpointListener(pairs)
+		dev.OnDisconnect = listener.CloseConns
 
 		go srv.Serve(listener)
 	}
