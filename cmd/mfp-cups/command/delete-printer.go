@@ -10,6 +10,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
@@ -21,18 +22,18 @@ var cmdDeletePrinter = argv.Command{
 	Help:    "Delete a print queue",
 	Handler: cmdDeletePrinterHandler,
 	Options: []argv.Option{
+		optPrinterURI,
 		argv.HelpOption,
-	},
-	Parameters: []argv.Parameter{
-		{
-			Name: "printer",
-			Help: "Queue name",
-		},
 	},
 }
 
 // cmdDeletePrinterHandler is the "delete-printer" command handler.
 func cmdDeletePrinterHandler(ctx context.Context, inv *argv.Invocation) error {
+	printerURI := optPrinterURIGet(inv)
+	if printerURI == "" {
+		return fmt.Errorf("%s option required", optPrinterURI.Name)
+	}
+
 	clnt := cups.NewClient(optCUPSURL, nil)
-	return clnt.CUPSDeletePrinter(ctx, inv.GetString("printer"))
+	return clnt.CUPSDeletePrinter(ctx, printerURI)
 }
