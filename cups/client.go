@@ -42,6 +42,31 @@ func (c *Client) SetDecoderOptions(opt *ipp.DecoderOptions) {
 	c.IPPClient.SetDecoderOptions(opt)
 }
 
+func (c *Client) PrinterURI(name string) string {
+	return "ipp://localhost/printers/" + name
+}
+
+// CUPSDeletePrinter removes the print queue specified by printerURI.
+func (c *Client) CUPSDeletePrinter(ctx context.Context, printerURI string) error {
+	rq := &ipp.CUPSDeletePrinterRequest{
+		RequestHeader: ipp.DefaultRequestHeader,
+		PrinterURI:    printerURI,
+	}
+
+	rsp := &ipp.CUPSDeletePrinterResponse{}
+
+	err := c.IPPClient.Do(ctx, rq, rsp)
+	if err != nil {
+		return err
+	}
+
+	if rsp.Status != goipp.StatusOk {
+		return fmt.Errorf("IPP: %s", rsp.Status)
+	}
+
+	return nil
+}
+
 // CUPSGetDefault returns information on default printer.
 // The attrs attribute allows to specify list of requested attributes.
 func (c *Client) CUPSGetDefault(ctx context.Context,
@@ -221,4 +246,46 @@ func (c *Client) CUPSGetPPDs(ctx context.Context,
 	}
 
 	return nil, fmt.Errorf("IPP: %s", rsp.Status)
+}
+
+// EnablePrinter makes the printer accept new print jobs.
+func (c *Client) EnablePrinter(ctx context.Context, printerURI string) error {
+	rq := &ipp.EnablePrinterRequest{
+		RequestHeader: ipp.DefaultRequestHeader,
+		PrinterURI:    printerURI,
+	}
+
+	rsp := &ipp.EnablePrinterResponse{}
+
+	err := c.IPPClient.Do(ctx, rq, rsp)
+	if err != nil {
+		return err
+	}
+
+	if rsp.Status != goipp.StatusOk {
+		return fmt.Errorf("IPP: %s", rsp.Status)
+	}
+
+	return nil
+}
+
+// DisablePrinter makes the printer reject new print jobs.
+func (c *Client) DisablePrinter(ctx context.Context, printerURI string) error {
+	rq := &ipp.DisablePrinterRequest{
+		RequestHeader: ipp.DefaultRequestHeader,
+		PrinterURI:    printerURI,
+	}
+
+	rsp := &ipp.DisablePrinterResponse{}
+
+	err := c.IPPClient.Do(ctx, rq, rsp)
+	if err != nil {
+		return err
+	}
+
+	if rsp.Status != goipp.StatusOk {
+		return fmt.Errorf("IPP: %s", rsp.Status)
+	}
+
+	return nil
 }

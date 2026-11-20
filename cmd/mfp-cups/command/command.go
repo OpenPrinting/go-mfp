@@ -45,7 +45,10 @@ var Command = argv.Command{
 	},
 	SubCommands: []argv.Command{
 		cmdDefaultPrinter,
+		cmdDeletePrinter,
 		cmdDetectPrinters,
+		cmdDisablePrinter,
+		cmdEnablePrinter,
 		cmdGetPPD,
 		cmdListPrinters,
 		cmdListPPDs,
