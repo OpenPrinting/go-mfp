@@ -34,5 +34,5 @@ func (epp EndpointPair) Write(buf []byte) (int, error) {
 
 // WriteContext is [EndpointPair.Write] with [context.Context].
 func (epp EndpointPair) WriteContext(ctx context.Context, buf []byte) (int, error) {
-	return epp.In.Write(buf)
+	return epp.In.WriteContext(ctx, buf)
 }
