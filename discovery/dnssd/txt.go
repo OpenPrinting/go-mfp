@@ -111,14 +111,18 @@ func decodeTxtPrinter(svcType, svcInstance string,
 			continue
 		}
 
-		// Update found/missed sets and check for duplicates
+		// Update found/missed sets and check for duplicates.
+		// Keys are case-insensitive and only the first
+		// occurrence is used (RFC 6763, 6.4).
+		key = txToLower(key)
 		if _, dup := found[key]; dup {
 			continue
 		}
+		found[key] = struct{}{}
 
 		// Decode the value
 		var err error
-		switch txToLower(key) {
+		switch key {
 		case "adminurl":
 			p.adminURL = value
 		case "air":
@@ -240,14 +244,18 @@ func decodeTxtScanner(svcType, svcInstance string,
 			continue
 		}
 
-		// Update found/missed sets and check for duplicates
+		// Update found/missed sets and check for duplicates.
+		// Keys are case-insensitive and only the first
+		// occurrence is used (RFC 6763, 6.4).
+		key = txToLower(key)
 		if _, dup := found[key]; dup {
 			continue
 		}
+		found[key] = struct{}{}
 
 		// Decode the value
 		var err error
-		switch txToLower(key) {
+		switch key {
 		case "adminurl":
 			s.adminURL = value
 		case "cs":
@@ -273,7 +281,7 @@ func decodeTxtScanner(svcType, svcInstance string,
 				rs = rs[:len(rs)-1]
 			}
 
-			s.uriPath = value
+			s.uriPath = rs
 		case "ty":
 			s.makeModel = value
 		case "uuid":
@@ -404,9 +412,9 @@ func txtPaperMax(value string) (discovery.PaperSize, error) {
 		return discovery.PaperA4, nil
 	case "tabloid-a3":
 		return discovery.PaperA3, nil
-	case "isoC-a2":
+	case "isoc-a2":
 		return discovery.PaperA2, nil
-	case ">isoC-a2":
+	case ">isoc-a2":
 		return discovery.PaperA2Plus, nil
 	}
 
