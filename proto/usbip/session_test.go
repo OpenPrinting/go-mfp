@@ -23,7 +23,7 @@ import (
 
 // ippUsbPrinter creates a printer with one IPP-over-USB (7/1/4)
 // interface. dev.endpoints: [0]=nil, [1]=bulk IN, [2]=bulk OUT.
-func ippUsbPrinter(t *testing.T, ctx context.Context) *Device {
+func ippUsbPrinter(ctx context.Context, t *testing.T) *Device {
 	desc := usb.DeviceDescriptor{
 		BCDUSB: 0x0200, Speed: usb.SpeedHigh, BMaxPacketSize: 64,
 		Configurations: []usb.ConfigurationDescriptor{{
@@ -108,7 +108,7 @@ func TestServerReattachGetsFreshHTTPState(t *testing.T) {
 	defer cancel()
 
 	srv := NewServer(ctx)
-	if err := srv.AddDevice(ippUsbPrinter(t, ctx)); err != nil {
+	if err := srv.AddDevice(ippUsbPrinter(ctx, t)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -159,7 +159,7 @@ func TestServerReattachNoStaleResponse(t *testing.T) {
 	defer cancel()
 
 	srv := NewServer(ctx)
-	if err := srv.AddDevice(ippUsbPrinter(t, ctx)); err != nil {
+	if err := srv.AddDevice(ippUsbPrinter(ctx, t)); err != nil {
 		t.Fatal(err)
 	}
 
