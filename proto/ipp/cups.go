@@ -158,6 +158,23 @@ type (
 		// Operational attributes
 		PrinterURI optional.Val[string] `ipp:"printer-uri"`
 	}
+
+	// CUPSDeletePrinterRequest operation removes the printer
+	// or class from the system.
+	CUPSDeletePrinterRequest struct {
+		ObjectRawAttrs
+		RequestHeader
+		OperationGroup
+		// Operation attributes
+		PrinterURI string `ipp:"printer-uri"`
+	}
+
+	// CUPSDeletePrinterResponse is the CUPS-Delete-Printer Response.
+	CUPSDeletePrinterResponse struct {
+		ObjectRawAttrs
+		ResponseHeader
+		OperationGroup
+	}
 )
 
 // ----- CUPS-Get-Default methods -----
@@ -621,23 +638,6 @@ func (rsp *CUPSGetPPDResponse) Decode(
 }
 
 // ----- CUPS-Delete-Printer methods -----
-
-// CUPSDeletePrinterRequest operation removes the printer
-// or class from the system.
-type CUPSDeletePrinterRequest struct {
-	ObjectRawAttrs
-	RequestHeader
-	OperationGroup
-	// Operation attributes
-	PrinterURI string `ipp:"printer-uri"`
-}
-
-// CUPSDeletePrinterResponse is the CUPS-Delete-Printer Response.
-type CUPSDeletePrinterResponse struct {
-	ObjectRawAttrs
-	ResponseHeader
-	OperationGroup
-}
 
 // GetOp returns CUPSDeletePrinterRequest IPP Operation code.
 func (rq *CUPSDeletePrinterRequest) GetOp() goipp.Op {
