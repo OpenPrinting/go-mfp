@@ -20,7 +20,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/proto/usb"
 )
 
-// Endpoint layout of testDevice (dev.endpoints): [0]=nil, [1]=bulk IN, [2]=bulk OUT
+// Endpoint layout of testDevice: bulk IN 0x81, bulk OUT 0x01
 func testDevice(t *testing.T) (*Device, *Endpoint, *Endpoint) {
 	desc := usb.DeviceDescriptor{
 		BCDUSB: 0x0200, Speed: usb.SpeedHigh, BMaxPacketSize: 64,
@@ -39,7 +39,7 @@ func testDevice(t *testing.T) (*Device, *Endpoint, *Endpoint) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	in, out := EndpointsInOut(dev.endpoints[1:])
+	in, out := EndpointsInOut(dev.endpointsTree[0][0][0])
 	return dev, in, out
 }
 
@@ -140,7 +140,7 @@ func TestServerPipelinedBulkOut(t *testing.T) {
 	go func() {
 		payload := make([]byte, 64)
 		for i := uint32(1); i <= n; i++ {
-			if _, err := cli.Write(cmdSubmit(i, false, 2, 64, payload)); err != nil {
+			if _, err := cli.Write(cmdSubmit(i, false, 1, 64, payload)); err != nil {
 				return
 			}
 		}
@@ -194,7 +194,7 @@ func TestServerUnlinkPendingBulkIn(t *testing.T) {
 	}
 }
 
-// TestServerSubmitBadEndpoint: CMD_SUBMIT to endpoint == len(dev.endpoints).
+// TestServerSubmitBadEndpoint: CMD_SUBMIT to a non-existent endpoint.
 func TestServerSubmitBadEndpoint(t *testing.T) {
 	dev, _, _ := testDevice(t)
 	cli := startServer(t, dev)

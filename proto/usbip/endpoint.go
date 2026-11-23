@@ -21,6 +21,7 @@ import (
 // the uni-direction data queue.
 type Endpoint struct {
 	ty       usb.EndpointType        // Endpoint type
+	num      int                     // Endpoint number (1...15)
 	attrs    usb.EndpointAttributes  // Endpoint attributes
 	pktsize  int                     // The packet size
 	inqueue  []*protoIOSubmitRequest // Queue of input submit requests

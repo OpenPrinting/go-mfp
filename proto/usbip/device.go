@@ -36,7 +36,8 @@ type Device struct {
 	configuration  int               // Current configuration
 	altSettings    []int             // Per-interface current alt setting
 	maxAltSettings []int             // Max alt setting, by interface
-	endpoints      []*Endpoint       // Endpoints of current configuration
+	endpointsIn    [16]*Endpoint     // IN endpoints of current config, by number
+	endpointsOut   [16]*Endpoint     // OUT endpoints of current config, by number
 	endpointsTree  [][][][]*Endpoint // All Endpoints, defined by descriptor
 	strings        []string          // Content of string descriptors
 	stringsmap     map[string]int    // Indices of strings descriptors
@@ -74,15 +75,26 @@ func NewDevice(desc usb.DeviceDescriptor) (*Device, error) {
 			return nil, err
 		}
 
-		cntEndpoints := 1 // Reserved for configuration endpoint
+		// Endpoints are numbered 1...15, separately for IN and OUT.
+		cntIn, cntOut := 0, 0
 		for _, iff := range conf.Interfaces {
-			cntEndpoints += iff.CntEndpoints()
-			if cntEndpoints > usb.MaxEndpoints {
-				err := fmt.Errorf(
-					"Configuration %d has too many (%d) endpoints",
-					confno, cntEndpoints)
-				return nil, err
+			for _, alt := range iff.AltSettings {
+				for _, ep := range alt.Endpoints {
+					if ep.Type == usb.EndpointIn {
+						cntIn++
+					} else {
+						cntOut++
+					}
+				}
 			}
+		}
+
+		if cntIn > 15 || cntOut > 15 {
+			err := fmt.Errorf(
+				"Configuration %d has too many endpoints "+
+					"(%d IN, %d OUT, max 15 each)",
+				confno, cntIn, cntOut)
+			return nil, err
 		}
 	}
 
@@ -95,6 +107,7 @@ func NewDevice(desc usb.DeviceDescriptor) (*Device, error) {
 	// Populate endpointsTree
 	dev.endpointsTree = make([][][][]*Endpoint, len(desc.Configurations))
 	for confno, conf := range desc.Configurations {
+		nextIn, nextOut := 1, 1
 		iffs := len(conf.Interfaces)
 		dev.endpointsTree[confno] = make([][][]*Endpoint, iffs)
 
@@ -109,8 +122,14 @@ func NewDevice(desc usb.DeviceDescriptor) (*Device, error) {
 					make([]*Endpoint, eps)
 
 				for epno, ep := range alt.Endpoints {
-					dev.endpointsTree[confno][iffno][altno][epno] =
-						NewEndpoint(ep)
+					epp := NewEndpoint(ep)
+					if ep.Type == usb.EndpointIn {
+						epp.num, nextIn = nextIn, nextIn+1
+					} else {
+						epp.num, nextOut = nextOut, nextOut+1
+					}
+
+					dev.endpointsTree[confno][iffno][altno][epno] = epp
 				}
 			}
 		}
@@ -289,7 +308,6 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, idx int) ([]byte, syscall
 		enc.PutU8(conf.BMaxPower) // bMaxPower
 
 		// Encode interfaces and endpoints
-		epnum := 1
 		for iffno, iff := range conf.Interfaces {
 			for altno, alt := range iff.AltSettings {
 				cntEndpoints := iff.CntEndpoints()
@@ -308,10 +326,8 @@ func (dev *Device) getDescriptor(t usb.DescriptorType, idx int) ([]byte, syscall
 
 				endpoints := dev.endpointsTree[idx][iffno][altno]
 				for _, ep := range endpoints {
-					ty := ep.Type()
-					addr := epnum
-					epnum++
-					if ty == usb.EndpointIn {
+					addr := ep.num
+					if ep.Type() == usb.EndpointIn {
 						addr |= 0x80
 					}
 
@@ -388,16 +404,18 @@ func (dev *Device) setConfiguration(n int) ([]byte, syscall.Errno) {
 			dev.maxAltSettings[i] = len(iff.AltSettings)
 		}
 
-		// Update dev.endpoints
-		// dev.endpoints[0] is reserved.
-		dev.endpoints = make([]*Endpoint, 0, 16)
-		dev.endpoints = append(dev.endpoints, nil)
+		// Update dev.endpointsIn and dev.endpointsOut
+		dev.endpointsIn = [16]*Endpoint{}
+		dev.endpointsOut = [16]*Endpoint{}
 
-		for iffno, iff := range conf.Interfaces {
-			for altno, alt := range iff.AltSettings {
-				for epno := range alt.Endpoints {
-					epp := dev.endpointsTree[confno][iffno][altno][epno]
-					dev.endpoints = append(dev.endpoints, epp)
+		for _, iff := range dev.endpointsTree[confno] {
+			for _, alt := range iff {
+				for _, epp := range alt {
+					if epp.Type() == usb.EndpointIn {
+						dev.endpointsIn[epp.num] = epp
+					} else {
+						dev.endpointsOut[epp.num] = epp
+					}
 				}
 			}
 		}
@@ -411,21 +429,23 @@ func (dev *Device) setConfiguration(n int) ([]byte, syscall.Errno) {
 	return []byte{}, 0
 }
 
+// endpoint returns the Endpoint of the current configuration
+// by its number and direction, or nil if there is no such endpoint.
+func (dev *Device) endpoint(num uint8, input bool) *Endpoint {
+	switch {
+	case int(num) >= len(dev.endpointsIn):
+		return nil
+	case input:
+		return dev.endpointsIn[num]
+	}
+	return dev.endpointsOut[num]
+}
+
 // submit routes protoIOSubmitRequest to the endpoint
 func (dev *Device) submit(rq *protoIOSubmitRequest) syscall.Errno {
 	// Lookup the endpoint
-	var ep *Endpoint
-	if int(rq.Endpoint) < len(dev.endpoints) {
-		ep = dev.endpoints[rq.Endpoint]
-	}
-
+	ep := dev.endpoint(rq.Endpoint, rq.Input)
 	if ep == nil {
-		return syscall.EPIPE
-	}
-
-	// Check for direction mismatch
-	if (rq.Input && ep.Type() == usb.EndpointOut) ||
-		(!rq.Input && ep.Type() == usb.EndpointIn) {
 		return syscall.EPIPE
 	}
 
@@ -436,11 +456,7 @@ func (dev *Device) submit(rq *protoIOSubmitRequest) syscall.Errno {
 // unlink routes protoIOUnlinkRequest to the endpoint
 func (dev *Device) unlink(rq *protoIOUnlinkRequest) syscall.Errno {
 	// Lookup the endpoint
-	var ep *Endpoint
-	if int(rq.Endpoint) < len(dev.endpoints) {
-		ep = dev.endpoints[rq.Endpoint]
-	}
-
+	ep := dev.endpoint(rq.Endpoint, rq.Input)
 	if ep == nil {
 		return syscall.EPIPE
 	}
@@ -451,8 +467,16 @@ func (dev *Device) unlink(rq *protoIOUnlinkRequest) syscall.Errno {
 
 // shutdown cancels app pending protoIOSubmitRequest at all endpoints.
 func (dev *Device) shutdown() {
-	for _, ep := range dev.endpoints[1:] {
-		ep.shutdown()
+	for _, ep := range dev.endpointsIn {
+		if ep != nil {
+			ep.shutdown()
+		}
+	}
+
+	for _, ep := range dev.endpointsOut {
+		if ep != nil {
+			ep.shutdown()
+		}
 	}
 
 	// Call user callback
