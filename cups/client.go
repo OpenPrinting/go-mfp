@@ -42,6 +42,8 @@ func (c *Client) SetDecoderOptions(opt *ipp.DecoderOptions) {
 	c.IPPClient.SetDecoderOptions(opt)
 }
 
+// PrinterURI returns printer URI for the specified printer name
+// (the queue name, in CUPS terms).
 func (c *Client) PrinterURI(name string) string {
 	return "ipp://localhost/printers/" + name
 }
