@@ -197,5 +197,12 @@ func (out *output) mergeUnitGrousByUUID(groups []unitgroup) []unitgroup {
 		}
 	}
 
+	// Groups without UUID are not in byUUID, keep them as is
+	for idx, grp := range groups {
+		if consumed.TestAndAdd(idx) {
+			result = append(result, grp)
+		}
+	}
+
 	return result
 }
