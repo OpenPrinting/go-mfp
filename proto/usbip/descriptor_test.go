@@ -181,16 +181,18 @@ func TestServerBulkRoutingMatchesDescriptor(t *testing.T) {
 
 // findQueued returns the Endpoint that holds the URB with given seqnum.
 func findQueued(dev *Device, seq uint32) *Endpoint {
-	for _, iff := range dev.endpointsTree[0] {
-		for _, alt := range iff {
-			for _, ep := range alt {
-				ep.lock.Lock()
-				q := append(append([]*protoIOSubmitRequest{},
-					ep.inqueue...), ep.outqueue...)
-				ep.lock.Unlock()
-				for _, rq := range q {
-					if rq.Seqnum == seq {
-						return ep
+	for _, conf := range dev.endpointsTree {
+		for _, iff := range conf {
+			for _, alt := range iff {
+				for _, ep := range alt {
+					ep.lock.Lock()
+					q := append(append([]*protoIOSubmitRequest{},
+						ep.inqueue...), ep.outqueue...)
+					ep.lock.Unlock()
+					for _, rq := range q {
+						if rq.Seqnum == seq {
+							return ep
+						}
 					}
 				}
 			}
@@ -204,14 +206,17 @@ func describeEndpoint(dev *Device, ep *Endpoint) string {
 	if ep == nil {
 		return "nowhere (rejected)"
 	}
-	conf := dev.Descriptor.Configurations[0]
-	for iffno, iff := range dev.endpointsTree[0] {
-		for altno, alt := range iff {
-			for i, e := range alt {
-				if e == ep {
-					return fmt.Sprintf("interface %d (%s) ep %d",
-						iffno, conf.Interfaces[iffno].
-							AltSettings[altno].IInterface, i)
+	for confno, tree := range dev.endpointsTree {
+		conf := dev.Descriptor.Configurations[confno]
+		for iffno, iff := range tree {
+			for altno, alt := range iff {
+				for i, e := range alt {
+					if e == ep {
+						return fmt.Sprintf("conf %d interface %d "+
+							"alt %d (%s) ep %d", confno, iffno,
+							altno, conf.Interfaces[iffno].
+								AltSettings[altno].IInterface, i)
+					}
 				}
 			}
 		}
