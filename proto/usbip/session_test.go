@@ -22,7 +22,7 @@ import (
 )
 
 // ippUsbPrinter creates a printer with one IPP-over-USB (7/1/4)
-// interface. dev.endpoints: [0]=nil, [1]=bulk IN, [2]=bulk OUT.
+// interface: bulk IN 0x81, bulk OUT 0x01.
 func ippUsbPrinter(ctx context.Context, t *testing.T) *Device {
 	desc := usb.DeviceDescriptor{
 		BCDUSB: 0x0200, Speed: usb.SpeedHigh, BMaxPacketSize: 64,
@@ -116,7 +116,7 @@ func TestServerReattachGetsFreshHTTPState(t *testing.T) {
 	// when the host disappears.
 	c1 := attach(t, srv)
 	partial := "POST /ipp/print HTTP/1.1\r\nHost: localhost\r\n"
-	go c1.Write(cmdSubmit(1, false, 2, uint32(len(partial)), []byte(partial)))
+	go c1.Write(cmdSubmit(1, false, 1, uint32(len(partial)), []byte(partial)))
 	readRetSubmit(t, c1, false)
 	c1.Close()
 	time.Sleep(100 * time.Millisecond)
@@ -126,7 +126,7 @@ func TestServerReattachGetsFreshHTTPState(t *testing.T) {
 	defer c2.Close()
 	req := "GET /second HTTP/1.1\r\nHost: localhost\r\n\r\n"
 	go func() {
-		c2.Write(cmdSubmit(1, false, 2, uint32(len(req)), []byte(req)))
+		c2.Write(cmdSubmit(1, false, 1, uint32(len(req)), []byte(req)))
 		c2.Write(cmdSubmit(2, true, 1, 16384, nil))
 	}()
 
@@ -166,7 +166,7 @@ func TestServerReattachNoStaleResponse(t *testing.T) {
 	// Session 1: full request, host goes away before reading reply.
 	c1 := attach(t, srv)
 	req1 := "GET /first HTTP/1.1\r\nHost: localhost\r\n\r\n"
-	go c1.Write(cmdSubmit(1, false, 2, uint32(len(req1)), []byte(req1)))
+	go c1.Write(cmdSubmit(1, false, 1, uint32(len(req1)), []byte(req1)))
 	readRetSubmit(t, c1, false)
 	time.Sleep(50 * time.Millisecond) // handler runs, reply is pending
 	c1.Close()
@@ -177,7 +177,7 @@ func TestServerReattachNoStaleResponse(t *testing.T) {
 	defer c2.Close()
 	req2 := "GET /second HTTP/1.1\r\nHost: localhost\r\n\r\n"
 	go func() {
-		c2.Write(cmdSubmit(1, false, 2, uint32(len(req2)), []byte(req2)))
+		c2.Write(cmdSubmit(1, false, 1, uint32(len(req2)), []byte(req2)))
 		c2.Write(cmdSubmit(2, true, 1, 16384, nil))
 	}()
 
