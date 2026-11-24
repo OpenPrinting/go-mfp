@@ -11,6 +11,7 @@ package usbip
 import (
 	"context"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -33,11 +34,14 @@ type EndpointConn struct {
 // NewEndpointConn creates the [EndpointConn] on a top of the existent
 // [EndpointPair].
 func NewEndpointConn(epp EndpointPair) *EndpointConn {
+	return newEndpointConn(context.Background(), epp)
+}
+
+// newEndpointConn creates the [EndpointConn], which will be
+// closed when either Close is called or parent context is canceled.
+func newEndpointConn(parent context.Context, epp EndpointPair) *EndpointConn {
 	conn := &EndpointConn{epp: epp}
-
-	ctx := context.Background()
-	conn.closectx, conn.closecancel = context.WithCancel(ctx)
-
+	conn.closectx, conn.closecancel = context.WithCancel(parent)
 	return conn
 }
 
@@ -111,8 +115,11 @@ func (conn *EndpointConn) SetWriteDeadline(t time.Time) error {
 // wrapped into the [EndpointConn] type. The [EndpointConn.Close]
 // returns connection into the pool.
 type EndpointListener struct {
-	endpoints chan EndpointPair // Queue of available endpoint pairs
-	closechan chan struct{}     // Closed by EndpointListener.Close
+	endpoints chan EndpointPair  // Queue of available endpoint pairs
+	closechan chan struct{}      // Closed by EndpointListener.Close
+	connctx   context.Context    // Parent context for accepted conns
+	conncncl  context.CancelFunc // Cancels connctx
+	connlock  sync.Mutex         // Protects connctx and conncncl
 }
 
 // NewEndpointListener creates the new [EndpointListener] on a top
@@ -122,6 +129,9 @@ func NewEndpointListener(endpoints []EndpointPair) *EndpointListener {
 		endpoints: make(chan EndpointPair, len(endpoints)),
 		closechan: make(chan struct{}),
 	}
+
+	listener.connctx, listener.conncncl =
+		context.WithCancel(context.Background())
 
 	for _, epp := range endpoints {
 		listener.endpoints <- epp
@@ -142,7 +152,10 @@ func (listener *EndpointListener) Accept() (net.Conn, error) {
 	// Wait for connection or close
 	select {
 	case ep := <-listener.endpoints:
-		conn := NewEndpointConn(ep)
+		listener.connlock.Lock()
+		conn := newEndpointConn(listener.connctx, ep)
+		listener.connlock.Unlock()
+
 		conn.listener.Store(listener)
 		return conn, nil
 	case <-listener.closechan:
@@ -155,6 +168,20 @@ func (listener *EndpointListener) Accept() (net.Conn, error) {
 func (listener *EndpointListener) Close() error {
 	close(listener.closechan)
 	return nil
+}
+
+// CloseConns closes all connections, accepted so far. Their pending
+// and future Reads and Writes fail with [net.ErrClosed]. Connections
+// accepted after this call are not affected.
+//
+// Use it when the device is unplugged, so the next host will not inherit
+// half-received requests or pending responses of the previous one.
+func (listener *EndpointListener) CloseConns() {
+	listener.connlock.Lock()
+	listener.conncncl()
+	listener.connctx, listener.conncncl =
+		context.WithCancel(context.Background())
+	listener.connlock.Unlock()
 }
 
 // Addr returns the listener's network address.

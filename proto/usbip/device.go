@@ -30,6 +30,7 @@ type Device struct {
 
 	// User-defined callbacks
 	OnConfigurationChange func() // Called when configuration changes
+	OnUnplug              func() // Called when device is unplugged
 
 	// Device state
 	configuration  int               // Current configuration
@@ -483,6 +484,11 @@ func (dev *Device) shutdown() {
 		if ep != nil {
 			ep.shutdown()
 		}
+	}
+
+	// Call user callback
+	if dev.OnUnplug != nil {
+		dev.OnUnplug()
 	}
 }
 

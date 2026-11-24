@@ -158,6 +158,23 @@ type (
 		// Operational attributes
 		PrinterURI optional.Val[string] `ipp:"printer-uri"`
 	}
+
+	// CUPSDeletePrinterRequest operation removes the printer
+	// or class from the system.
+	CUPSDeletePrinterRequest struct {
+		ObjectRawAttrs
+		RequestHeader
+		OperationGroup
+		// Operation attributes
+		PrinterURI string `ipp:"printer-uri"`
+	}
+
+	// CUPSDeletePrinterResponse is the CUPS-Delete-Printer Response.
+	CUPSDeletePrinterResponse struct {
+		ObjectRawAttrs
+		ResponseHeader
+		OperationGroup
+	}
 )
 
 // ----- CUPS-Get-Default methods -----
@@ -603,6 +620,84 @@ func (rsp *CUPSGetPPDResponse) Encode() *goipp.Message {
 
 // Decode decodes CUPSGetPPDResponse from goipp.Message.
 func (rsp *CUPSGetPPDResponse) Decode(
+	msg *goipp.Message, opt *DecoderOptions) error {
+
+	rsp.Version = msg.Version
+	rsp.RequestID = msg.RequestID
+	rsp.Status = goipp.Status(msg.Code)
+
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	err := dec.Decode(rsp, msg.Operation)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ----- CUPS-Delete-Printer methods -----
+
+// GetOp returns CUPSDeletePrinterRequest IPP Operation code.
+func (rq *CUPSDeletePrinterRequest) GetOp() goipp.Op {
+	return goipp.OpCupsDeletePrinter
+}
+
+// Encode encodes CUPSDeletePrinterRequest into the goipp.Message.
+func (rq *CUPSDeletePrinterRequest) Encode() *goipp.Message {
+	enc := ippEncoder{}
+
+	groups := goipp.Groups{
+		{
+			Tag:   goipp.TagOperationGroup,
+			Attrs: enc.Encode(rq),
+		},
+	}
+
+	msg := goipp.NewMessageWithGroups(rq.Version, goipp.Code(rq.GetOp()),
+		rq.RequestID, groups)
+
+	return msg
+}
+
+// Decode decodes CUPSDeletePrinterRequest from goipp.Message.
+func (rq *CUPSDeletePrinterRequest) Decode(
+	msg *goipp.Message, opt *DecoderOptions) error {
+
+	rq.Version = msg.Version
+	rq.RequestID = msg.RequestID
+
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	err := dec.Decode(rq, msg.Operation)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Encode encodes CUPSDeletePrinterResponse into the goipp.Message.
+func (rsp *CUPSDeletePrinterResponse) Encode() *goipp.Message {
+	enc := ippEncoder{}
+
+	groups := goipp.Groups{
+		{
+			Tag:   goipp.TagOperationGroup,
+			Attrs: enc.Encode(rsp),
+		},
+	}
+
+	msg := goipp.NewMessageWithGroups(rsp.Version, goipp.Code(rsp.Status),
+		rsp.RequestID, groups)
+
+	return msg
+}
+
+// Decode decodes CUPSDeletePrinterResponse from goipp.Message.
+func (rsp *CUPSDeletePrinterResponse) Decode(
 	msg *goipp.Message, opt *DecoderOptions) error {
 
 	rsp.Version = msg.Version
