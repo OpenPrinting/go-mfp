@@ -356,20 +356,20 @@ func optUserGet(inv *argv.Invocation) string {
 	return opt
 }
 
-// optPrinterURI describes the --printer-uri option.
+// optPrinter describes the --printer option.
 // This option specifies printer by its URI
-var optPrinterURI = argv.Option{
-	Name: "--printer-uri",
+var optPrinter = argv.Option{
+	Name: "--printer",
 	Help: "Specify printer URI or printer name.\n" +
 		"Use mfp-cups get-printers for the list.",
-	HelpArg:  "URI",
+	HelpArg:  "URI|name",
 	Validate: argv.ValidateAny,
-	Complete: optPrinterURIGetComplete,
+	Complete: optPrinterGetComplete,
 }
 
-// optPrinterURIGet return --printer-uri option value.
-func optPrinterURIGet(inv *argv.Invocation) string {
-	opt, _ := inv.Get("--printer-uri")
+// optPrinterGet return --printer option value.
+func optPrinterGet(inv *argv.Invocation) string {
+	opt, _ := inv.Get("--printer")
 	if err := urilib.Err(opt); err == urilib.ErrURISchemeMissed {
 		client := cups.NewClient(optCUPSURL, nil)
 		opt = client.PrinterURI(opt)
@@ -377,9 +377,8 @@ func optPrinterURIGet(inv *argv.Invocation) string {
 	return opt
 }
 
-// optPrinterURIGetComplete is the completion callback for
-// the --printer-uri option.
-func optPrinterURIGetComplete(arg string) (compl []argv.Completion) {
+// optPrinterGetComplete is the completion callback for the --printer option.
+func optPrinterGetComplete(arg string) (compl []argv.Completion) {
 	// Obtain printer names and URIs
 	client := cups.NewClient(optCUPSURL, nil)
 	attrs := []string{"printer-name", "printer-uri-supported"}

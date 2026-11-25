@@ -24,7 +24,7 @@ var cmdGetPPD = argv.Command{
 	Help:    "Get PPD file by printer URI of PPD file name",
 	Handler: cmdGetPPDHandler,
 	Options: []argv.Option{
-		optPrinterURI,
+		optPrinter,
 		optPPDName,
 		argv.HelpOption,
 	},
@@ -33,16 +33,16 @@ var cmdGetPPD = argv.Command{
 // cmdGetPPDHandler is the "get-ppd" command handler
 func cmdGetPPDHandler(ctx context.Context, inv *argv.Invocation) error {
 	// Validate options
-	printerURI := optPrinterURIGet(inv)
+	printerURI := optPrinterGet(inv)
 	ppdName := optPPDNameGet(inv)
 
 	switch {
 	case printerURI == "" && ppdName == "":
 		return fmt.Errorf("either %s or %s option required",
-			optPrinterURI.Name, optPPDName.Name)
+			optPrinter.Name, optPPDName.Name)
 	case printerURI != "" && ppdName != "":
 		return fmt.Errorf("confliction options: %s and %s",
-			optPrinterURI.Name, optPPDName.Name)
+			optPrinter.Name, optPPDName.Name)
 	}
 
 	// Perform the query

@@ -22,16 +22,16 @@ var cmdDisablePrinter = argv.Command{
 	Help:    "Make a print queue reject jobs",
 	Handler: cmdDisablePrinterHandler,
 	Options: []argv.Option{
-		optPrinterURI,
+		optPrinter,
 		argv.HelpOption,
 	},
 }
 
 // cmdDisablePrinterHandler is the "disable-printer" command handler.
 func cmdDisablePrinterHandler(ctx context.Context, inv *argv.Invocation) error {
-	printerURI := optPrinterURIGet(inv)
+	printerURI := optPrinterGet(inv)
 	if printerURI == "" {
-		return fmt.Errorf("%s option required", optPrinterURI.Name)
+		return fmt.Errorf("%s option required", optPrinter.Name)
 	}
 
 	clnt := cups.NewClient(optCUPSURL, nil)

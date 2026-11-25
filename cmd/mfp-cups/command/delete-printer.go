@@ -22,16 +22,16 @@ var cmdDeletePrinter = argv.Command{
 	Help:    "Delete a print queue",
 	Handler: cmdDeletePrinterHandler,
 	Options: []argv.Option{
-		optPrinterURI,
+		optPrinter,
 		argv.HelpOption,
 	},
 }
 
 // cmdDeletePrinterHandler is the "delete-printer" command handler.
 func cmdDeletePrinterHandler(ctx context.Context, inv *argv.Invocation) error {
-	printerURI := optPrinterURIGet(inv)
+	printerURI := optPrinterGet(inv)
 	if printerURI == "" {
-		return fmt.Errorf("%s option required", optPrinterURI.Name)
+		return fmt.Errorf("%s option required", optPrinter.Name)
 	}
 
 	clnt := cups.NewClient(optCUPSURL, nil)

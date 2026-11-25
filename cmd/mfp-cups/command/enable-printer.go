@@ -22,16 +22,16 @@ var cmdEnablePrinter = argv.Command{
 	Help:    "Make a print queue accept jobs",
 	Handler: cmdEnablePrinterHandler,
 	Options: []argv.Option{
-		optPrinterURI,
+		optPrinter,
 		argv.HelpOption,
 	},
 }
 
 // cmdEnablePrinterHandler is the "enable-printer" command handler.
 func cmdEnablePrinterHandler(ctx context.Context, inv *argv.Invocation) error {
-	printerURI := optPrinterURIGet(inv)
+	printerURI := optPrinterGet(inv)
 	if printerURI == "" {
-		return fmt.Errorf("%s option required", optPrinterURI.Name)
+		return fmt.Errorf("%s option required", optPrinter.Name)
 	}
 
 	clnt := cups.NewClient(optCUPSURL, nil)
