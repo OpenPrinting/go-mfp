@@ -46,6 +46,24 @@ type DeviceName struct {
 	URI  optional.Val[string] `json:"usb_URI,omitempty"`  // CUPS-compatible URI
 }
 
+// DeviceInfo represents information on connected device.
+type DeviceInfo struct {
+	DeviceName                       // Device name
+	Port       int                   `json:"port"`
+	Status     string                `json:"status"`
+	IPP        optional.Val[Service] `json:"_ipp._tcp"`
+	ESCL       optional.Val[Service] `json:"_uscan._tcp"`
+}
+
+// Service represents information of a particular service (i.e.,
+// _ipp._tcp, _uscan._tcp), implemented by the device.
+type Service struct {
+	TXT     []string `json:"port"`    // Service TXT record
+	Printer bool     `json:"printer"` // Printing supported
+	Scanner bool     `json:"scanner"` // Scanning supported
+	Faxout  bool     `json:"faxout"`  // Faxout supported
+}
+
 // DeviceConf represents a device configuration.
 type DeviceConf struct {
 	DeviceName                    // Device name
@@ -87,13 +105,46 @@ func (client *Client) Version() (string, error) {
 	return strings.TrimSpace(string(version)), err
 }
 
+// Devices returns information on connected device
+func (client *Client) Devices() ([]DeviceInfo, error) {
+	// Perform the HTTP query
+	out, err := client.post("/get/devices", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Decode response
+	if out == nil {
+		return nil, nil
+	}
+
+	items, ok := out.([]json.RawMessage)
+	if !ok {
+		err = errors.New("invalid response received")
+		return nil, err
+	}
+
+	devices := make([]DeviceInfo, len(items))
+	for i, item := range items {
+		decoder := json.NewDecoder(bytes.NewReader(item))
+		err = decoder.Decode(&devices[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return devices, nil
+}
+
 // GetConf returns configuration of devices, searched by name.
 func (client *Client) GetConf(name DeviceName) ([]DeviceConf, error) {
+	// Perform the HTTP query
 	out, err := client.post("/get/conf", name)
 	if err != nil {
 		return nil, err
 	}
 
+	// Decode response
 	if out == nil {
 		return nil, nil
 	}
@@ -190,7 +241,9 @@ func (client *Client) post(path string, in any) (out any, err error) {
 	buf := bytes.Buffer{}
 	encoder := json.NewEncoder(&buf)
 	encoder.SetEscapeHTML(false)
-	err = encoder.Encode(in)
+	if in != nil {
+		err = encoder.Encode(in)
+	}
 	assert.NoError(err)
 
 	// Build GET request
@@ -201,8 +254,12 @@ func (client *Client) post(path string, in any) (out any, err error) {
 	}
 
 	rq.Header.Set("Content-Type", "application/json")
-	rq.Body = io.NopCloser(&buf)
 	rq.ContentLength = int64(buf.Len())
+	if rq.ContentLength != 0 {
+		// Go stdlib treats a non-nil Body with zero
+		// ContentLength as having unknown length..
+		rq.Body = io.NopCloser(&buf)
+	}
 
 	// Dump request
 	log.Begin(client.ctx).
