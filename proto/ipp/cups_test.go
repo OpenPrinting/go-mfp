@@ -14,10 +14,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/OpenPrinting/go-mfp/util/optional"
 	"github.com/OpenPrinting/goipp"
 )
 
 var (
+	_ Request = &CUPSAddModifyPrinterRequest{}
 	_ Request = &CUPSDeletePrinterRequest{}
 	_ Request = &CUPSGetDefaultRequest{}
 	_ Request = &CUPSGetPrintersRequest{}
@@ -25,6 +27,7 @@ var (
 	_ Request = &CUPSGetPPDsRequest{}
 	_ Request = &CUPSGetPPDRequest{}
 
+	_ Response = &CUPSAddModifyPrinterResponse{}
 	_ Response = &CUPSDeletePrinterResponse{}
 	_ Response = &CUPSGetDefaultResponse{}
 	_ Response = &CUPSGetPrintersResponse{}
@@ -55,6 +58,83 @@ func TestCupsRequests(t *testing.T) {
 	}
 
 	tests := []testData{
+		// ----- CUPSAddModifyPrinterRequest tests -----
+		{
+			op: 0x4003,
+
+			rq: &CUPSAddModifyPrinterRequest{
+				RequestHeader: hdr,
+				PrinterURI:    "ipp://localhost/printers/TestPrinter",
+				Printer: CUPSAddModifyPrinterAttributes{
+					PrinterIsShared: optional.New(false),
+				},
+			},
+
+			msg: goipp.NewMessageWithGroups(
+				ippVersion,
+				goipp.Code(goipp.OpCupsAddModifyPrinter),
+				ippRequestID,
+				goipp.Groups{
+					{
+						Tag: goipp.TagOperationGroup,
+						Attrs: []goipp.Attribute{
+							goipp.MakeAttribute(
+								"attributes-charset",
+								goipp.TagCharset,
+								goipp.String(DefaultCharset)),
+							goipp.MakeAttribute(
+								"attributes-natural-language",
+								goipp.TagLanguage,
+								goipp.String(DefaultNaturalLanguage)),
+							goipp.MakeAttribute(
+								"printer-uri",
+								goipp.TagURI,
+								goipp.String("ipp://localhost/printers/TestPrinter")),
+						},
+					},
+					{
+						Tag: goipp.TagPrinterGroup,
+						Attrs: []goipp.Attribute{
+							goipp.MakeAttribute(
+								"printer-is-shared",
+								goipp.TagBoolean,
+								goipp.Boolean(false)),
+						},
+					},
+				},
+			),
+		},
+
+		{
+			rq: &CUPSAddModifyPrinterRequest{},
+
+			msg: goipp.NewMessageWithGroups(
+				ippVersion,
+				goipp.Code(goipp.OpCupsAddModifyPrinter),
+				ippRequestID,
+				goipp.Groups{
+					{
+						Tag: goipp.TagOperationGroup,
+						Attrs: []goipp.Attribute{
+							goipp.MakeAttribute(
+								"attributes-charset",
+								goipp.TagInteger,
+								goipp.Integer(111)),
+							goipp.MakeAttribute(
+								"attributes-natural-language",
+								goipp.TagLanguage,
+								goipp.String(DefaultNaturalLanguage)),
+							goipp.MakeAttribute(
+								"printer-uri",
+								goipp.TagURI,
+								goipp.String("ipp://localhost/printers/TestPrinter")),
+						},
+					},
+				},
+			),
+
+			err: `IPP decode ipp.CUPSAddModifyPrinterRequest: "attributes-charset": can't use integer as charset`,
+		},
 		// ----- CUPSDeletePrinterRequest tests -----
 		{
 			op: 0x4004,
@@ -233,6 +313,10 @@ func TestCupsRequests(t *testing.T) {
 		if err.Error() != test.err {
 			t.Errorf("Error mismatch:\n  <<< %s\n  >>> %s\n", test.err, err)
 		} else if test.err == "" {
+			if addModify, ok := rq.(*CUPSAddModifyPrinterRequest); ok {
+				// Ignore saved raw attributes in the nested printer settings.
+				addModify.Printer.ObjectRawAttrs = ObjectRawAttrs{}
+			}
 			diff := testDiffStruct(test.rq, rq)
 			if diff != "" {
 				t.Errorf("Decoded data doesn't match:\n%s", diff)
@@ -263,6 +347,68 @@ func TestCupsRequesponses(t *testing.T) {
 	}
 
 	tests := []testData{
+		// ----- CUPSAddModifyPrinterResponse tests -----
+		{
+			rsp: &CUPSAddModifyPrinterResponse{
+				ResponseHeader: hdr,
+			},
+
+			msg: goipp.NewMessageWithGroups(
+				ippVersion,
+				goipp.Code(goipp.StatusOk),
+				ippRequestID,
+				goipp.Groups{
+					{
+						Tag: goipp.TagOperationGroup,
+						Attrs: []goipp.Attribute{
+							goipp.MakeAttribute(
+								"attributes-charset",
+								goipp.TagCharset,
+								goipp.String(DefaultCharset)),
+							goipp.MakeAttribute(
+								"attributes-natural-language",
+								goipp.TagLanguage,
+								goipp.String(DefaultNaturalLanguage)),
+							goipp.MakeAttribute(
+								"status-message",
+								goipp.TagText,
+								goipp.String("success")),
+						},
+					},
+				},
+			),
+		},
+
+		{
+			rsp: &CUPSAddModifyPrinterResponse{},
+
+			msg: goipp.NewMessageWithGroups(
+				ippVersion,
+				goipp.Code(goipp.StatusOk),
+				ippRequestID,
+				goipp.Groups{
+					{
+						Tag: goipp.TagOperationGroup,
+						Attrs: []goipp.Attribute{
+							goipp.MakeAttribute(
+								"attributes-charset",
+								goipp.TagCharset,
+								goipp.String(DefaultCharset)),
+							goipp.MakeAttribute(
+								"attributes-natural-language",
+								goipp.TagBoolean,
+								goipp.Boolean(true)),
+							goipp.MakeAttribute(
+								"status-message",
+								goipp.TagText,
+								goipp.String("success")),
+						},
+					},
+				},
+			),
+
+			err: `IPP decode ipp.CUPSAddModifyPrinterResponse: "attributes-natural-language": can't use boolean as naturalLanguage`,
+		},
 		// ----- CUPSDeletePrinterResponse tests -----
 		{
 			rsp: &CUPSDeletePrinterResponse{

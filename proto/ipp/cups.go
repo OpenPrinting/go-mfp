@@ -14,6 +14,69 @@ import (
 )
 
 type (
+
+	// CUPSAddModifyPrinterAttributes contains optional printer settings.
+	CUPSAddModifyPrinterAttributes struct {
+		ObjectRawAttrs
+
+		AuthInfoRequired []string `ipp:"auth-info-required,1setOf keyword"`
+
+		DeviceURI   optional.Val[string] `ipp:"device-uri,uri"`
+		PortMonitor optional.Val[string] `ipp:"port-monitor,name"`
+		PPDName     optional.Val[string] `ipp:"ppd-name,name"`
+
+		PrinterInfo               optional.Val[string] `ipp:"printer-info,text"`
+		PrinterLocation           optional.Val[string] `ipp:"printer-location,text"`
+		PrinterMoreInfo           optional.Val[string] `ipp:"printer-more-info,uri"`
+		PrinterGeoLocation        optional.Val[string] `ipp:"printer-geo-location,uri"`
+		PrinterOrganization       optional.Val[string] `ipp:"printer-organization,text"`
+		PrinterOrganizationalUnit optional.Val[string] `ipp:"printer-organizational-unit,text"`
+
+		PrinterIsAcceptingJobs optional.Val[bool] `ipp:"printer-is-accepting-jobs,boolean"`
+		PrinterIsShared        optional.Val[bool] `ipp:"printer-is-shared,boolean"`
+		PrinterIsTemporary     optional.Val[bool] `ipp:"printer-is-temporary,boolean"`
+
+		PrinterState        optional.Val[int]    `ipp:"printer-state,enum"`
+		PrinterStateMessage optional.Val[string] `ipp:"printer-state-message,text"`
+		PrinterStateReasons []string             `ipp:"printer-state-reasons,1setOf keyword"`
+
+		JobSheetsDefault []string `ipp:"job-sheets-default,1setOf name"`
+
+		RequestingUserNameAllowed []string `ipp:"requesting-user-name-allowed,1setOf name"`
+		RequestingUserNameDenied  []string `ipp:"requesting-user-name-denied,1setOf name"`
+
+		JobQuotaPeriod optional.Val[int] `ipp:"job-quota-period,integer"`
+		JobKLimit      optional.Val[int] `ipp:"job-k-limit,integer"`
+		JobPageLimit   optional.Val[int] `ipp:"job-page-limit,integer"`
+
+		PrinterOpPolicy    optional.Val[string] `ipp:"printer-op-policy,name"`
+		PrinterErrorPolicy optional.Val[string] `ipp:"printer-error-policy,name"`
+
+		ColorModel optional.Val[string] `ipp:"ColorModel,name"`
+	}
+
+	// CUPSAddModifyPrinterRequest operation (0x4003) adds or modifies
+	// a printer. RequestHeader.Body may contain a PPD file.
+	CUPSAddModifyPrinterRequest struct {
+		ObjectRawAttrs
+		RequestHeader
+		OperationGroup
+
+		// Operation attributes.
+		PrinterURI         string               `ipp:"printer-uri"`
+		RequestingUserName optional.Val[string] `ipp:"requesting-user-name"`
+
+		// Printer attributes.
+		Printer CUPSAddModifyPrinterAttributes
+	}
+
+	// CUPSAddModifyPrinterResponse is the CUPS-Add-Modify-Printer response.
+	CUPSAddModifyPrinterResponse struct {
+		ObjectRawAttrs
+		ResponseHeader
+		OperationGroup
+	}
+
 	// CUPSGetDefaultRequest operation (0x4001) returns the default printer URI
 	// and attributes.
 	CUPSGetDefaultRequest struct {
@@ -176,6 +239,92 @@ type (
 		OperationGroup
 	}
 )
+
+// ----- CUPS-Add-Modify-Printer methods -----
+
+// GetOp returns CUPSAddModifyPrinterRequest IPP Operation code.
+func (rq *CUPSAddModifyPrinterRequest) GetOp() goipp.Op {
+	return goipp.OpCupsAddModifyPrinter
+}
+
+// Encode encodes CUPSAddModifyPrinterRequest into goipp.Message.
+func (rq *CUPSAddModifyPrinterRequest) Encode() *goipp.Message {
+	enc := ippEncoder{}
+
+	printerAttrs := enc.Encode(&rq.Printer)
+
+	groups := goipp.Groups{
+		{
+			Tag:   goipp.TagOperationGroup,
+			Attrs: enc.Encode(rq),
+		},
+	}
+
+	if len(printerAttrs) != 0 {
+		groups.Add(goipp.Group{
+			Tag:   goipp.TagPrinterGroup,
+			Attrs: printerAttrs,
+		})
+	}
+
+	return goipp.NewMessageWithGroups(
+		rq.Version,
+		goipp.Code(rq.GetOp()),
+		rq.RequestID,
+		groups,
+	)
+}
+
+// Decode decodes CUPSAddModifyPrinterRequest from goipp.Message.
+func (rq *CUPSAddModifyPrinterRequest) Decode(
+	msg *goipp.Message, opt *DecoderOptions) error {
+
+	rq.Version = msg.Version
+	rq.RequestID = msg.RequestID
+	rq.Printer = CUPSAddModifyPrinterAttributes{}
+
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	if err := dec.Decode(rq, msg.Operation); err != nil {
+		return err
+	}
+
+	return dec.Decode(&rq.Printer, msg.Printer)
+}
+
+// Encode encodes CUPSAddModifyPrinterResponse into goipp.Message.
+func (rsp *CUPSAddModifyPrinterResponse) Encode() *goipp.Message {
+	enc := ippEncoder{}
+
+	groups := goipp.Groups{
+		{
+			Tag:   goipp.TagOperationGroup,
+			Attrs: enc.Encode(rsp),
+		},
+	}
+
+	return goipp.NewMessageWithGroups(
+		rsp.Version,
+		goipp.Code(rsp.Status),
+		rsp.RequestID,
+		groups,
+	)
+}
+
+// Decode decodes CUPSAddModifyPrinterResponse from goipp.Message.
+func (rsp *CUPSAddModifyPrinterResponse) Decode(
+	msg *goipp.Message, opt *DecoderOptions) error {
+
+	rsp.Version = msg.Version
+	rsp.RequestID = msg.RequestID
+	rsp.Status = goipp.Status(msg.Code)
+
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	return dec.Decode(rsp, msg.Operation)
+}
 
 // ----- CUPS-Get-Default methods -----
 

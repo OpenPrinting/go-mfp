@@ -188,6 +188,9 @@ func TestIppCodecGenerate(t *testing.T) {
 // generates codecs for  the standard types.
 func TestIppCodecStandardTypes(t *testing.T) {
 	tests := []Object{
+		&CUPSAddModifyPrinterAttributes{},
+		&CUPSAddModifyPrinterRequest{},
+		&CUPSAddModifyPrinterResponse{},
 		&CUPSDeletePrinterRequest{},
 		&CUPSDeletePrinterResponse{},
 		&CUPSGetDefaultRequest{},
