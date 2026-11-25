@@ -9,6 +9,7 @@
 package command
 
 import (
+	"context"
 	"math"
 	"strconv"
 	"strings"
@@ -17,7 +18,7 @@ import (
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/cups"
 	"github.com/OpenPrinting/go-mfp/proto/ipp"
-	"github.com/OpenPrinting/go-mfp/transport"
+	"github.com/OpenPrinting/go-mfp/transport/urilib"
 )
 
 // optAttrs describes the --attrs option.
@@ -359,16 +360,56 @@ func optUserGet(inv *argv.Invocation) string {
 // This option specifies printer by its URI
 var optPrinterURI = argv.Option{
 	Name: "--printer-uri",
-	Help: "Specify printer URI.\n" +
+	Help: "Specify printer URI or printer name.\n" +
 		"Use mfp-cups get-printers for the list.",
 	HelpArg:  "URI",
-	Validate: transport.ValidateURL,
+	Validate: argv.ValidateAny,
+	Complete: optPrinterURIGetComplete,
 }
 
 // optPrinterURIGet return --printer-uri option value.
 func optPrinterURIGet(inv *argv.Invocation) string {
 	opt, _ := inv.Get("--printer-uri")
+	if err := urilib.Err(opt); err == urilib.ErrURISchemeMissed {
+		client := cups.NewClient(optCUPSURL, nil)
+		opt = client.PrinterURI(opt)
+	}
 	return opt
+}
+
+// optPrinterURIGetComplete is the completion callback for
+// the --printer-uri option.
+func optPrinterURIGetComplete(arg string) (compl []argv.Completion) {
+	// Obtain printer names and URIs
+	client := cups.NewClient(optCUPSURL, nil)
+	attrs := []string{"printer-name", "printer-uri-supported"}
+	ctx := context.Background()
+	printers, err := client.CUPSGetPrinters(ctx, nil, attrs)
+	if err != nil {
+		return nil
+	}
+
+	// Build list of names and URIs
+	names := make([]string, 0, len(printers)*2)
+	for _, p := range printers {
+		if p.PrinterName != nil {
+			names = append(names, *p.PrinterName)
+			names = append(names, p.PrinterURISupported...)
+		}
+	}
+
+	// Make completions
+	for _, name := range names {
+		if strings.HasPrefix(name, arg) {
+			c := argv.Completion{
+				String:  name,
+				NoSpace: true,
+			}
+			compl = append(compl, c)
+		}
+	}
+
+	return
 }
 
 // optPPDName describes the --ppd-name option.
