@@ -400,10 +400,7 @@ func optPrinterGetComplete(arg string) (compl []argv.Completion) {
 	// Make completions
 	for _, name := range names {
 		if strings.HasPrefix(name, arg) {
-			c := argv.Completion{
-				String:  name,
-				NoSpace: true,
-			}
+			c := argv.Completion{String: name}
 			compl = append(compl, c)
 		}
 	}
