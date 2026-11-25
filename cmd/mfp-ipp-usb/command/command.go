@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/OpenPrinting/go-mfp/argv"
 	"github.com/OpenPrinting/go-mfp/log"
@@ -50,6 +51,11 @@ var Command = argv.Command{
 			Name:    "version",
 			Help:    "Print ipp-usb API version",
 			Handler: cmdVersionHandler,
+		},
+		argv.Command{
+			Name:    "devices",
+			Help:    "Show connected devices",
+			Handler: cmdDevicesHandler,
 		},
 		argv.Command{
 			Name:    "getconf",
@@ -154,6 +160,75 @@ func cmdVersionHandler(ctx context.Context, inv *argv.Invocation) error {
 	}
 
 	fmt.Println(version)
+	return nil
+}
+
+// cmdDevicesHandler is the "devices" sub-command handler
+func cmdDevicesHandler(ctx context.Context, inv *argv.Invocation) error {
+	clnt := ippusbapi.NewClient(ctx)
+	devices, err := clnt.Devices()
+	if err != nil {
+		return err
+	}
+
+	for i, dev := range devices {
+		if i != 0 {
+			fmt.Println("")
+		}
+
+		// Report device identification
+		fmt.Println("Device identification:")
+
+		if dev.MFG != nil {
+			fmt.Printf("  usb_MFG:   %q\n", *dev.MFG)
+		}
+		if dev.MDL != nil {
+			fmt.Printf("  usb_MDL:   %q\n", *dev.MDL)
+		}
+		if dev.SN != nil {
+			fmt.Printf("  usb_SN:    %q\n", *dev.SN)
+		}
+		if dev.HWID != nil {
+			fmt.Printf("  usb_HWID:  %q\n", *dev.HWID)
+		}
+		if dev.URI != nil {
+			fmt.Printf("  usb_URI:   %q\n", *dev.URI)
+		}
+
+		// Report general information
+		fmt.Println("Device information:")
+		fmt.Printf("  Status:    %s\n", dev.Status)
+		fmt.Printf("  TPC port:  %d\n", dev.Port)
+
+		// Report IPP capabilities
+		ippcaps := []string{}
+		if dev.IPP != nil {
+			if dev.IPP.Printer {
+				ippcaps = append(ippcaps, "print")
+			}
+			if dev.IPP.Faxout {
+				ippcaps = append(ippcaps, "faxout")
+			}
+			if dev.IPP.Scanner {
+				ippcaps = append(ippcaps, "scan")
+			}
+		}
+
+		if len(ippcaps) == 0 {
+			ippcaps = append(ippcaps, "-")
+		}
+
+		fmt.Printf("  IPP:       %s\n",
+			strings.Join(ippcaps, ","))
+
+		// Report eSCL capabilities
+		if dev.ESCL != nil {
+			fmt.Printf("  eSCL:      scan\n")
+		} else {
+			fmt.Printf("  eSCL:      -\n")
+		}
+	}
+
 	return nil
 }
 
