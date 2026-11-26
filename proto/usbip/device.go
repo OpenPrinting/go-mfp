@@ -89,11 +89,11 @@ func NewDevice(desc usb.DeviceDescriptor) (*Device, error) {
 			}
 		}
 
-		if cntIn > 15 || cntOut > 15 {
+		if cntIn >= usb.MaxEndpoints || cntOut >= usb.MaxEndpoints {
 			err := fmt.Errorf(
 				"Configuration %d has too many endpoints "+
-					"(%d IN, %d OUT, max 15 each)",
-				confno, cntIn, cntOut)
+					"(%d IN, %d OUT, max %d each)",
+				confno, cntIn, cntOut, usb.MaxEndpoints-1)
 			return nil, err
 		}
 	}
