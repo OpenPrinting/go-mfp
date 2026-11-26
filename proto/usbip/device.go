@@ -130,13 +130,14 @@ func NewDevice(desc usb.DeviceDescriptor) (*Device, error) {
 					make([]*Endpoint, eps)
 
 				for i, ep := range alt.Endpoints {
-					epp := newEndpoint(ep)
+					var num int
 					if ep.Type == usb.EndpointIn {
-						epp.num, nextIn = nextIn, nextIn+1
+						num, nextIn = nextIn, nextIn+1
 					} else {
-						epp.num, nextOut = nextOut, nextOut+1
+						num, nextOut = nextOut, nextOut+1
 					}
 
+					epp := newEndpoint(ep, num)
 					dev.endpointsTree[confno][iffno][altno][i] = epp
 				}
 			}
