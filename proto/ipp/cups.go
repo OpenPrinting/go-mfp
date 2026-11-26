@@ -22,7 +22,8 @@ type (
 		OperationGroup
 
 		// Operation attributes
-		RequestedAttributes []string `ipp:"requested-attributes"`
+		RequestedAttributes []string             `ipp:"requested-attributes"`
+		RequestingUserName  optional.Val[string] `ipp:"requesting-user-name"`
 	}
 
 	// CUPSGetDefaultResponse is the CUPS-Get-Default Response.
@@ -59,6 +60,9 @@ type (
 		ResponseHeader
 		OperationGroup
 
+		// Operation attributes
+		RequestingUserName optional.Val[string] `ipp:"requesting-user-name"`
+
 		// Other attributes.
 		Printer []*PrinterAttributes
 	}
@@ -72,11 +76,12 @@ type (
 		OperationGroup
 
 		// Operational attributes
-		ExcludeSchemes      []string          `ipp:"exclude-schemes"`
-		IncludeSchemes      []string          `ipp:"include-schemes"`
-		Limit               optional.Val[int] `ipp:"limit"`
-		RequestedAttributes []string          `ipp:"requested-attributes"`
-		Timeout             optional.Val[int] `ipp:"timeout"`
+		ExcludeSchemes      []string             `ipp:"exclude-schemes"`
+		IncludeSchemes      []string             `ipp:"include-schemes"`
+		Limit               optional.Val[int]    `ipp:"limit"`
+		RequestedAttributes []string             `ipp:"requested-attributes"`
+		Timeout             optional.Val[int]    `ipp:"timeout"`
+		RequestingUserName  optional.Val[string] `ipp:"requesting-user-name"`
 	}
 
 	// CUPSGetDevicesResponse is the CUPS-Get-Devices Response.
@@ -109,6 +114,7 @@ type (
 		PPDPsVersion        optional.Val[string] `ipp:"ppd-psversion"`
 		PPDType             optional.Val[string] `ipp:"ppd-type,keyword"`
 		RequestedAttributes []string             `ipp:"requested-attributes"`
+		RequestingUserName  optional.Val[string] `ipp:"requesting-user-name"`
 	}
 
 	// CUPSGetPPDsResponse is the CUPS-Get-PPDs Response.
@@ -134,8 +140,9 @@ type (
 		//
 		// Use PrinterURI to specify particular print queue
 		// or PPDName to request PPD file by its name.
-		PrinterURI optional.Val[string] `ipp:"printer-uri"`
-		PPDName    optional.Val[string] `ipp:"ppd-name"`
+		PrinterURI         optional.Val[string] `ipp:"printer-uri"`
+		PPDName            optional.Val[string] `ipp:"ppd-name"`
+		RequestingUserName optional.Val[string] `ipp:"requesting-user-name"`
 	}
 
 	// CUPSGetPPDResponse is the CUPS-Get-PPD Response.
@@ -166,7 +173,8 @@ type (
 		RequestHeader
 		OperationGroup
 		// Operation attributes
-		PrinterURI string `ipp:"printer-uri"`
+		PrinterURI         string               `ipp:"printer-uri"`
+		RequestingUserName optional.Val[string] `ipp:"requesting-user-name"`
 	}
 
 	// CUPSDeletePrinterResponse is the CUPS-Delete-Printer Response.
