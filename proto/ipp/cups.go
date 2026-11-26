@@ -50,7 +50,7 @@ type (
 		PrinterType         optional.Val[int]    `ipp:"printer-type"`
 		PrinterTypeMask     optional.Val[int]    `ipp:"printer-type-mask"`
 		RequestedAttributes []string             `ipp:"requested-attributes"`
-		RequestedUserName   optional.Val[string] `ipp:"requested-user-name,name"`
+		RequestingUserName  optional.Val[string] `ipp:"requesting-user-name"`
 	}
 
 	// CUPSGetPrintersResponse is the CUPS-Get-Printers Response.
