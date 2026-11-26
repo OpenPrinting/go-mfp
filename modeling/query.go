@@ -9,8 +9,6 @@
 package modeling
 
 import (
-	"os"
-
 	"github.com/OpenPrinting/go-mfp/cpython"
 	"github.com/OpenPrinting/go-mfp/transport"
 )
@@ -61,8 +59,6 @@ func (model *Model) queryFromPython(query *transport.ServerQuery,
 	// Update query headers
 	transport.HTTPPurgeHeaders(query.RequestHeader())
 	transport.HTTPCopyHeaders(query.RequestHeader(), requestHdr)
-
-	requestHdr.WriteSubset(os.Stdout, nil)
 
 	transport.HTTPPurgeHeaders(query.ResponseHeader())
 	transport.HTTPCopyHeaders(query.ResponseHeader(), responseHdr)
