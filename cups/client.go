@@ -112,7 +112,7 @@ func (c *Client) CUPSGetPrinters(ctx context.Context,
 		PrinterLocation:     optional.NotZero(sel.PrinterLocation),
 		PrinterType:         optional.NotZero(sel.PrinterType),
 		PrinterTypeMask:     optional.NotZero(sel.PrinterTypeMask),
-		RequestedUserName:   optional.NotZero(sel.User),
+		RequestingUserName:  optional.NotZero(sel.User),
 		RequestedAttributes: attrs,
 	}
 
