@@ -31,9 +31,12 @@ const (
 	MaxInterfaces = 256
 
 	// MaxEndpoints defines the maximum number of endpoints
-	// per configuration. Note, this limit includes the reserved
-	// zero endpoint.
-	MaxEndpoints = 32
+	// per configuration.
+	//
+	// Notes:
+	//   - this limit includes the reserved zero endpoint.
+	//   - endpoints are counted separately at each direction
+	MaxEndpoints = 16
 
 	// MaxStringLength defines the length limit for the strings
 	// used in the configuration descriptors.
