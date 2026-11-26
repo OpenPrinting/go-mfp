@@ -172,6 +172,7 @@ type (
 		ObjectRawAttrs
 		RequestHeader
 		OperationGroup
+
 		// Operation attributes
 		PrinterURI         string               `ipp:"printer-uri"`
 		RequestingUserName optional.Val[string] `ipp:"requesting-user-name"`
@@ -182,6 +183,63 @@ type (
 		ObjectRawAttrs
 		ResponseHeader
 		OperationGroup
+	}
+
+	// CUPSAddModifyPrinterRequest operation (0x4003) adds or modifies
+	// a printer. RequestHeader.Body may contain a PPD file.
+	CUPSAddModifyPrinterRequest struct {
+		ObjectRawAttrs
+		RequestHeader
+		OperationGroup
+
+		// Operation attributes.
+		PrinterURI         string               `ipp:"printer-uri"`
+		RequestingUserName optional.Val[string] `ipp:"requesting-user-name"`
+
+		// Printer attributes.
+		Printer *CUPSPrinterAttributes
+	}
+
+	// CUPSAddModifyPrinterResponse is the CUPS-Add-Modify-Printer response.
+	CUPSAddModifyPrinterResponse struct {
+		ObjectRawAttrs
+		ResponseHeader
+		OperationGroup
+	}
+
+	// CUPSPrinterAttributes is the subset of [PrinterAttributes] that
+	// can be used for the [CUPSAddModifyPrinterRequest].
+	CUPSPrinterAttributes struct {
+		ObjectRawAttrs
+
+		PrinterDescriptionGroup
+		PrinterStatusGroup
+
+		AuthInfoRequired            []string                           `ipp:"auth-info-required"`
+		DeviceURI                   optional.Val[string]               `ipp:"device-uri"`
+		JobKLimit                   optional.Val[int]                  `ipp:"job-k-limit"`
+		JobPageLimit                optional.Val[int]                  `ipp:"job-page-limit"`
+		JobQuotaPeriod              optional.Val[int]                  `ipp:"job-quota-period"`
+		JobSheetsDefault            []KwJobSheets                      `ipp:"job-sheets-default"`
+		PortMonitor                 optional.Val[string]               `ipp:"port-monitor"`
+		PPDName                     optional.Val[string]               `ipp:"ppd-name"`
+		PrinterErrorPolicy          optional.Val[KwPrinterErrorPolicy] `ipp:"printer-error-policy"`
+		PrinterErrorPolicySupported []KwPrinterErrorPolicy             `ipp:"printer-error-policy-supported"`
+		PrinterGeoLocation          optional.Val[string]               `ipp:"printer-geo-location"`
+		PrinterInfo                 optional.Val[string]               `ipp:"printer-info"`
+		PrinterIsAcceptingJobs      optional.Val[bool]                 `ipp:"printer-is-accepting-jobs"`
+		PrinterIsShared             optional.Val[bool]                 `ipp:"printer-is-shared"`
+		PrinterIsTemporary          optional.Val[bool]                 `ipp:"printer-is-temporary"`
+		PrinterLocation             optional.Val[string]               `ipp:"printer-location"`
+		PrinterMoreInfo             optional.Val[string]               `ipp:"printer-more-info"`
+		PrinterOpPolicy             optional.Val[string]               `ipp:"printer-op-policy"`
+		PrinterOrganization         []string                           `ipp:"printer-organization"`
+		PrinterOrganizationalUnit   []string                           `ipp:"printer-organizational-unit"`
+		PrinterState                optional.Val[int]                  `ipp:"printer-state"`
+		PrinterStateMessage         optional.Val[string]               `ipp:"printer-state-message"`
+		PrinterStateReasons         []KwPrinterStateReasons            `ipp:"printer-state-reasons"`
+		RequestingUserNameAllowed   []string                           `ipp:"requesting-user-name-allowed"`
+		RequestingUserNameDenied    []string                           `ipp:"requesting-user-name-denied"`
 	}
 )
 
@@ -721,4 +779,93 @@ func (rsp *CUPSDeletePrinterResponse) Decode(
 	}
 
 	return nil
+}
+
+// ----- CUPS-Add-Modify-Printer methods -----
+
+// GetOp returns CUPSAddModifyPrinterRequest IPP Operation code.
+func (rq *CUPSAddModifyPrinterRequest) GetOp() goipp.Op {
+	return goipp.OpCupsAddModifyPrinter
+}
+
+// Encode encodes CUPSAddModifyPrinterRequest into goipp.Message.
+func (rq *CUPSAddModifyPrinterRequest) Encode() *goipp.Message {
+	enc := ippEncoder{}
+
+	groups := goipp.Groups{
+		{
+			Tag:   goipp.TagOperationGroup,
+			Attrs: enc.Encode(rq),
+		},
+	}
+
+	if rq.Printer != nil {
+		printerAttrs := enc.Encode(rq.Printer)
+		if len(printerAttrs) != 0 {
+			groups.Add(goipp.Group{
+				Tag:   goipp.TagPrinterGroup,
+				Attrs: printerAttrs,
+			})
+		}
+	}
+
+	msg := goipp.NewMessageWithGroups(rq.Version, goipp.Code(rq.GetOp()),
+		rq.RequestID, groups)
+
+	return msg
+}
+
+// Decode decodes CUPSAddModifyPrinterRequest from goipp.Message.
+func (rq *CUPSAddModifyPrinterRequest) Decode(
+	msg *goipp.Message, opt *DecoderOptions) error {
+
+	rq.Version = msg.Version
+	rq.RequestID = msg.RequestID
+
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	if err := dec.Decode(rq, msg.Operation); err != nil {
+		return err
+	}
+
+	if len(msg.Printer) != 0 {
+		rq.Printer = &CUPSPrinterAttributes{}
+		err := dec.Decode(rq.Printer, msg.Printer)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Encode encodes CUPSAddModifyPrinterResponse into goipp.Message.
+func (rsp *CUPSAddModifyPrinterResponse) Encode() *goipp.Message {
+	enc := ippEncoder{}
+	groups := goipp.Groups{
+		{
+			Tag:   goipp.TagOperationGroup,
+			Attrs: enc.Encode(rsp),
+		},
+	}
+
+	msg := goipp.NewMessageWithGroups(rsp.Version, goipp.Code(rsp.Status),
+		rsp.RequestID, groups)
+
+	return msg
+}
+
+// Decode decodes CUPSAddModifyPrinterResponse from goipp.Message.
+func (rsp *CUPSAddModifyPrinterResponse) Decode(
+	msg *goipp.Message, opt *DecoderOptions) error {
+
+	rsp.Version = msg.Version
+	rsp.RequestID = msg.RequestID
+	rsp.Status = goipp.Status(msg.Code)
+
+	dec := NewDecoder(opt)
+	defer dec.Free()
+
+	return dec.Decode(rsp, msg.Operation)
 }

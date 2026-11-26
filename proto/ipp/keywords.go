@@ -32,6 +32,29 @@ const (
 	KwCompressionCompress KwCompression = "compress"
 )
 
+// KwPrinterErrorPolicy represents standard keyword values for printer
+// error policy.
+//
+// This is the CUPS extension.
+type KwPrinterErrorPolicy string
+
+const (
+	// KwPrinterErrorPolicyRetryCurrentJob tells CUPS to retry
+	// failed job immediately.
+	KwPrinterErrorPolicyRetryCurrentJob KwPrinterErrorPolicy = "retry-current-job"
+
+	// KwPrinterErrorPolicyAbortJob tells CUPS to abort failed job.
+	KwPrinterErrorPolicyAbortJob KwPrinterErrorPolicy = "abort-job"
+
+	// KwPrinterErrorPolicyRetryJob tells CUPS to retry failed job.
+	// The job will be held for some time, then rescheduled.
+	KwPrinterErrorPolicyRetryJob KwPrinterErrorPolicy = "retry-job"
+
+	// KwPrinterErrorPolicyStopPrinter tells CUPS to stop the
+	// printer in a case of error.
+	KwPrinterErrorPolicyStopPrinter KwPrinterErrorPolicy = "stop-printer"
+)
+
 // KwJobDelayOutputUntil represents standard keyword values for
 // "job-delay-output-until" attribute.
 //
@@ -619,6 +642,7 @@ const (
 var kwRegisteredTypes = map[reflect.Type]struct{}{
 	// Types, defined here
 	reflect.TypeOf(KwCompression("")):              struct{}{},
+	reflect.TypeOf(KwPrinterErrorPolicy("")):       struct{}{},
 	reflect.TypeOf(KwJobDelayOutputUntil("")):      struct{}{},
 	reflect.TypeOf(KwJobHoldUntil("")):             struct{}{},
 	reflect.TypeOf(KwJobSheets("")):                struct{}{},
