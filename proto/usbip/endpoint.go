@@ -31,8 +31,8 @@ type Endpoint struct {
 	lock     sync.Mutex              // Access lock
 }
 
-// NewEndpoint creates a new endpoint.
-func NewEndpoint(desc usb.EndpointDescriptor) *Endpoint {
+// newEndpoint creates a new endpoint.
+func newEndpoint(desc usb.EndpointDescriptor) *Endpoint {
 	ep := &Endpoint{
 		ty:      desc.Type,
 		attrs:   desc.BMAttributes,
