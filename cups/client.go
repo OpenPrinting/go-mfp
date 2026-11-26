@@ -48,6 +48,45 @@ func (c *Client) PrinterURI(name string) string {
 	return "ipp://localhost/printers/" + name
 }
 
+// CUPSAddModifyPrinter adds or modifies the specified print queue.
+func (c *Client) CUPSAddModifyPrinter(
+	ctx context.Context,
+	printerURI string,
+	attrs ipp.CUPSAddModifyPrinterAttributes,
+	ppd io.Reader,
+) error {
+	if printerURI == "" {
+		return fmt.Errorf("printer-uri is required")
+	}
+
+	rq := &ipp.CUPSAddModifyPrinterRequest{
+		RequestHeader: ipp.DefaultRequestHeader,
+		PrinterURI:    printerURI,
+		Printer:       attrs,
+	}
+	rq.Body = ppd
+
+	rsp := &ipp.CUPSAddModifyPrinterResponse{}
+
+	err := c.IPPClient.DoWithBody(ctx, rq, rsp)
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
+
+	if rsp.Status != goipp.StatusOk {
+		return &ipp.ErrIPP{
+			Version:       rsp.Version,
+			RequestID:     rsp.RequestID,
+			Op:            rq.GetOp(),
+			Status:        rsp.Status,
+			StatusMessage: rsp.StatusMessage,
+		}
+	}
+
+	return nil
+}
+
 // CUPSDeletePrinter removes the print queue specified by printerURI.
 func (c *Client) CUPSDeletePrinter(ctx context.Context, printerURI string) error {
 	rq := &ipp.CUPSDeletePrinterRequest{
