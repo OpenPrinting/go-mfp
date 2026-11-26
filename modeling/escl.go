@@ -203,7 +203,6 @@ func (model *Model) esclOnScanJobsRequest(
 	var err error
 
 	defer func() {
-		println(err)
 		if err != nil {
 			log.Begin(ctx).
 				Error("MODEL: on %s:", esclOnScanJobsRequestName).
@@ -283,7 +282,6 @@ func (model *Model) esclOnNextDocumentResponse(
 	var err error
 
 	defer func() {
-		println(err)
 		if err != nil {
 			log.Begin(ctx).
 				Error("MODEL: on %s:", esclOnNextDocumentResponseName).
