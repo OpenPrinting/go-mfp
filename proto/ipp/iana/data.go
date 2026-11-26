@@ -1738,6 +1738,13 @@ var EventNotifications = map[string]*DefAttr{
 
 // JobDescription is the Job Description attributes
 var JobDescription = map[string]*DefAttr{
+	// Job Description/auth-info (CUPS)
+	"auth-info": &DefAttr{
+		SetOf: true,
+		Min:   0,
+		Max:   1023,
+		Tags:  []goipp.Tag{goipp.TagText},
+	},
 	// Job Description/current-page-order (IPP20190509B)
 	"current-page-order": &DefAttr{
 		SetOf: false,
@@ -1824,6 +1831,13 @@ var JobDescription = map[string]*DefAttr{
 			},
 		}},
 	},
+	// Job Description/job-media-progress (CUPS)
+	"job-media-progress": &DefAttr{
+		SetOf: false,
+		Min:   0,
+		Max:   100,
+		Tags:  []goipp.Tag{goipp.TagInteger},
+	},
 	// Job Description/job-media-sheets-col (PWG5100.7)
 	"job-media-sheets-col": &DefAttr{
 		SetOf: false,
@@ -1909,6 +1923,27 @@ var JobDescription = map[string]*DefAttr{
 		Min:   0,
 		Max:   255,
 		Tags:  []goipp.Tag{goipp.TagName},
+	},
+	// Job Description/job-originating-host-name (CUPS)
+	"job-originating-host-name": &DefAttr{
+		SetOf: false,
+		Min:   0,
+		Max:   255,
+		Tags:  []goipp.Tag{goipp.TagName},
+	},
+	// Job Description/job-printer-state-message (CUPS)
+	"job-printer-state-message": &DefAttr{
+		SetOf: false,
+		Min:   0,
+		Max:   1023,
+		Tags:  []goipp.Tag{goipp.TagText},
+	},
+	// Job Description/job-printer-state-reasons (CUPS)
+	"job-printer-state-reasons": &DefAttr{
+		SetOf: true,
+		Min:   1,
+		Max:   255,
+		Tags:  []goipp.Tag{goipp.TagKeyword},
 	},
 	// Job Description/job-save-printer-make-and-model (PWG5100.11)
 	"job-save-printer-make-and-model": &DefAttr{
@@ -3011,13 +3046,6 @@ var JobStatus = map[string]*DefAttr{
 
 // JobTemplate is the Job Template attributes
 var JobTemplate = map[string]*DefAttr{
-	// Job Template/auth-info (CUPS)
-	"auth-info": &DefAttr{
-		SetOf: true,
-		Min:   0,
-		Max:   1023,
-		Tags:  []goipp.Tag{goipp.TagText},
-	},
 	// Job Template/chamber-humidity (PWG5100.21)
 	"chamber-humidity": &DefAttr{
 		SetOf: false,
@@ -3738,26 +3766,12 @@ var JobTemplate = map[string]*DefAttr{
 		Max:   MAX,
 		Tags:  []goipp.Tag{goipp.TagDateTime},
 	},
-	// Job Template/job-media-progress (CUPS)
-	"job-media-progress": &DefAttr{
-		SetOf: false,
-		Min:   0,
-		Max:   100,
-		Tags:  []goipp.Tag{goipp.TagInteger},
-	},
 	// Job Template/job-message-to-operator (PWG5100.3)
 	"job-message-to-operator": &DefAttr{
 		SetOf: false,
 		Min:   0,
 		Max:   1023,
 		Tags:  []goipp.Tag{goipp.TagText},
-	},
-	// Job Template/job-originating-host-name (CUPS)
-	"job-originating-host-name": &DefAttr{
-		SetOf: false,
-		Min:   0,
-		Max:   255,
-		Tags:  []goipp.Tag{goipp.TagName},
 	},
 	// Job Template/job-pages-per-set (PWG5100.1)
 	"job-pages-per-set": &DefAttr{
@@ -3772,20 +3786,6 @@ var JobTemplate = map[string]*DefAttr{
 		Min:   0,
 		Max:   1023,
 		Tags:  []goipp.Tag{goipp.TagURI},
-	},
-	// Job Template/job-printer-state-message (CUPS)
-	"job-printer-state-message": &DefAttr{
-		SetOf: false,
-		Min:   0,
-		Max:   1023,
-		Tags:  []goipp.Tag{goipp.TagText},
-	},
-	// Job Template/job-printer-state-reasons (CUPS)
-	"job-printer-state-reasons": &DefAttr{
-		SetOf: true,
-		Min:   1,
-		Max:   255,
-		Tags:  []goipp.Tag{goipp.TagKeyword},
 	},
 	// Job Template/job-priority (rfc8011)
 	"job-priority": &DefAttr{
@@ -8727,6 +8727,20 @@ var PrinterDescription = map[string]*DefAttr{
 		Max:   1023,
 		Tags:  []goipp.Tag{goipp.TagURI},
 	},
+	// Printer Description/printer-error-policy (CUPS)
+	"printer-error-policy": &DefAttr{
+		SetOf: false,
+		Min:   1,
+		Max:   255,
+		Tags:  []goipp.Tag{goipp.TagKeyword},
+	},
+	// Printer Description/printer-error-policy-supported (CUPS)
+	"printer-error-policy-supported": &DefAttr{
+		SetOf: true,
+		Min:   1,
+		Max:   255,
+		Tags:  []goipp.Tag{goipp.TagKeyword},
+	},
 	// Printer Description/printer-fax-log-uri (PWG5100.15)
 	"printer-fax-log-uri": &DefAttr{
 		SetOf: false,
@@ -8896,6 +8910,20 @@ var PrinterDescription = map[string]*DefAttr{
 		Min:   0,
 		Max:   127,
 		Tags:  []goipp.Tag{goipp.TagName},
+	},
+	// Printer Description/printer-op-policy (CUPS)
+	"printer-op-policy": &DefAttr{
+		SetOf: false,
+		Min:   1,
+		Max:   127,
+		Tags:  []goipp.Tag{goipp.TagKeyword, goipp.TagName},
+	},
+	// Printer Description/printer-op-policy-supported (CUPS)
+	"printer-op-policy-supported": &DefAttr{
+		SetOf: true,
+		Min:   1,
+		Max:   127,
+		Tags:  []goipp.Tag{goipp.TagKeyword, goipp.TagName},
 	},
 	// Printer Description/printer-organization (PWG5100.13)
 	"printer-organization": &DefAttr{

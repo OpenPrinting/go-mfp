@@ -26,13 +26,6 @@
     </record>
 
     <record>
-      <collection>Printer Description</collection>
-      <name>job-sheets-default(extension)</name>
-      <syntax>1setOf type2 keyword | name(MAX)</syntax>
-      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
-    </record>
-
-    <record>
       <collection>Operation</collection>
       <name>first-printer-name</name>
       <syntax>name(127)</syntax>
@@ -58,38 +51,44 @@
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
 
-    <! CUPS extension -- Job Attributes !>
+    <! CUPS extension -- Job Description !>
 
     <record>
-      <collection>Job Template</collection>
+      <collection>Job Description</collection>
       <name>auth-info</name>
       <syntax>1setOf text(MAX)</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
+
     <record>
-      <collection>Job Template</collection>
+      <collection>Job Description</collection>
       <name>job-media-progress</name>
       <syntax>integer(0:100)</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
+
     <record>
-      <collection>Job Template</collection>
+      <collection>Job Description</collection>
+      <name>job-originating-host-name</name>
+      <syntax>name(MAX)</syntax>
+      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
+    </record>
+
+    <record>
+      <collection>Job Description</collection>
       <name>job-printer-state-message</name>
       <syntax>text(MAX)</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
     <record>
-      <collection>Job Template</collection>
+      <collection>Job Description</collection>
       <name>job-printer-state-reasons</name>
       <syntax>1setOf type2 keyword</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
-    <record>
-      <collection>Job Template</collection>
-      <name>job-originating-host-name</name>
-      <syntax>name(MAX)</syntax>
-      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
-    </record>
+
+    <! CUPS extension -- Job Template !>
+
     <record>
       <collection>Job Template</collection>
       <name>page-border</name>
@@ -103,7 +102,7 @@
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
 
-    <! CUPS extension -- Printer Attributes !>
+    <! CUPS extension -- Printer Description !>
 
     <record>
       <collection>Printer Description</collection>
@@ -127,14 +126,20 @@
     </record>
     <record>
       <collection>Printer Description</collection>
+      <name>job-quota-period</name>
+      <syntax>integer</syntax>
+      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
+    </record>
+    <record>
+      <collection>Printer Description</collection>
       <name>job-page-limit</name>
       <syntax>integer</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
     <record>
       <collection>Printer Description</collection>
-      <name>job-quota-period</name>
-      <syntax>integer</syntax>
+      <name>job-sheets-default(extension)</name>
+      <syntax>1setOf type2 keyword | name(MAX)</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
 
@@ -215,6 +220,18 @@
     </record>
     <record>
       <collection>Printer Description</collection>
+      <name>printer-error-policy</name>
+      <syntax>keyword</syntax>
+      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
+    </record>
+    <record>
+      <collection>Printer Description</collection>
+      <name>printer-error-policy-supported</name>
+      <syntax>1setOf keyword</syntax>
+      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
+    </record>
+    <record>
+      <collection>Printer Description</collection>
       <name>printer-id</name>
       <syntax>integer(0:65535)</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
@@ -243,6 +260,19 @@
       <syntax>uri</syntax>
       <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
     </record>
+    <record>
+      <collection>Printer Description</collection>
+      <name>printer-op-policy</name>
+      <syntax>keyword | name(127)</syntax>
+      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
+    </record>
+    <record>
+      <collection>Printer Description</collection>
+      <name>printer-op-policy-supported</name>
+      <syntax>1setOf (keyword | name(127)</syntax>
+      <xref data="https://www.cups.org/doc/spec-ipp.html" type="uri">CUPS</xref>
+    </record>
+
     <record>
       <collection>Printer Description</collection>
       <name>printer-type</name>
